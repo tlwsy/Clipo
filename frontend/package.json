@@ -1,0 +1,33 @@
+{
+  "name": "clipo-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build && node scripts/export.mjs",
+    "lint": "next lint && tsc --noEmit",
+    "fmt": "prettier --write app components lib scripts *.json *.mjs *.ts",
+    "test": "vitest run",
+    "gen-api": "openapi-typescript openapi.json -o lib/api-types.ts"
+  },
+  "dependencies": {
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.35",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.7"
+  }
+}

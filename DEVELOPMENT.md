@@ -1,0 +1,173 @@
+# Clipo 开发指南
+
+## 仓库结构（目标）
+
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；平台适配器、存储和扩展随后续阶段创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+
+```
+clipo/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              FastAPI 入口，挂载路由与静态前端
+│   │   ├── config.py            配置加载：环境变量 > 数据库 > 默认值
+│   │   ├── db/                  会话、基类、Alembic 迁移
+│   │   ├── models/              SQLAlchemy 模型
+│   │   ├── schemas/             Pydantic 请求/响应模型
+│   │   ├── api/v1/              路由：auth notes captures jobs tags settings share meta
+│   │   ├── services/            业务逻辑：notes tags backup media search
+│   │   ├── extractors/          base.py registry.py generic.py xhs.py xiaoheihe.py video.py
+│   │   ├── llm/                 client.py prompts.py orchestrator.py
+│   │   ├── tasks/               Huey 任务：capture retry export backup
+│   │   ├── storage/             local.py s3.py webdav.py
+│   │   └── security/            密码、JWT、API Token、字段加密、SSRF 防护
+│   └── tests/
+│       ├── fixtures/            离线 HTML 夹具
+│       ├── unit/
+│       └── integration/
+├── frontend/
+│   ├── app/                     Next.js App Router 页面
+│   ├── components/
+│   ├── lib/                     API 客户端、离线队列、IndexedDB
+│   ├── public/                  manifest.webmanifest、图标
+│   └── sw.ts                    Service Worker
+├── extension/
+│   ├── manifest.json
+│   ├── background/
+│   ├── content/                 平台适配器
+│   ├── popup/
+│   └── options/
+├── shortcuts/                   iOS Shortcut 文件与说明
+├── docs/
+├── docker-compose.yml
+├── Dockerfile
+└── Makefile
+```
+
+## 本地开发
+
+推荐在仓库根目录运行（Python 3.11+、uv、Node.js 20+、npm）：
+
+```bash
+make install                       # 安装 Python 与前端依赖
+make configure                     # 生成随机密钥；已有 .env 不会覆盖
+make dev                           # 自动迁移，启动 API、前端与 worker
+```
+
+打开 `http://localhost:3000` 完成首次设置。API 在 8000，交互文档 `/docs`；Next 开发服务器会代理 API 与文档请求。使用 Ctrl+C 会停止 API、前端和 Huey worker 三个进程。修改 worker 相关代码后需重启 `make dev`。默认 SQLite 保存在仓库的 `data/clipo.db`，不要提交 `.env`、数据库或令牌。
+
+### 分别启动后端和前端
+
+```bash
+# 仓库根目录，终端一
+make upgrade
+.venv/bin/uvicorn app.asgi:app --reload --port 8000
+
+# 仓库根目录，终端二
+.venv/bin/python -m app.tasks.worker
+
+# 仓库根目录，终端三
+npm --prefix frontend run dev
+```
+
+不使用 uv 时，可手动安装。由于 pip 的哈希校验模式不支持可编辑安装，后端依赖分两步安装：
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r backend/requirements.lock
+.venv/bin/pip install -e './backend[dev]'
+npm --prefix frontend ci
+make configure
+```
+
+`backend/requirements.lock` 锁定运行时依赖，`frontend/package-lock.json` 锁定前端依赖。更新后端锁文件用 `uv pip compile backend/pyproject.toml --python-version 3.11 --generate-hashes -o backend/requirements.lock`。
+
+### 生产静态构建
+
+Next.js 导出的页面会自动复制到 `backend/app/static`，由 FastAPI 托管，生产环境无需 Node.js 进程：
+
+```bash
+make build
+make serve                         # http://localhost:8000
+```
+
+Huey worker 将在 Phase 2 接入，浏览器扩展在 Phase 5 接入，当前无需启动或构建这些组件。
+
+## 常用命令
+
+```bash
+make dev          # 启动后端与前端，自动执行迁移
+make lint         # ruff + black --check + eslint
+make fmt          # black + ruff --fix + prettier
+make test         # pytest + vitest
+make migrate m="add notes table"   # 生成迁移
+make upgrade                       # 应用所有迁移
+make gen-api                       # 导出 OpenAPI 与生成 TypeScript 类型
+make up / make down                # docker compose
+.venv/bin/pre-commit install        # 安装提交前检查
+```
+
+## 代码约定
+
+**Python**：ruff + black，行宽 100。全量类型注解，公共函数必须有返回类型。业务异常继承 `ClipoError`，由统一异常处理器转成标准错误体。禁止在路由函数里写业务逻辑，路由只做参数校验与服务调用。
+
+**数据访问**：所有涉及用户数据的查询经仓储层，由仓储层统一注入 `user_id` 过滤，防止越权。禁止在 service 层裸写跨用户查询。
+
+**TypeScript**：严格模式，API 类型由后端 OpenAPI 生成（`make gen-api`），不手写接口类型。生成过程不依赖运行中的 API 或真实密钥；提交 `frontend/openapi.json` 与 `frontend/lib/api-types.ts`。浏览器仅在内存持有 Access Token，刷新令牌使用 `HttpOnly; SameSite=Strict` Cookie；API 客户端会合并并发的续期请求。
+
+**提交信息**：Conventional Commits，例如 `feat(extractor): add xiaohongshu adapter`。
+
+**分支**：`main` 保持可发布；功能走 `feat/*`，修复走 `fix/*`，经 PR 合入。
+
+## 测试策略
+
+| 层次 | 范围 | 工具 |
+|------|------|------|
+| 单元 | 适配器解析、评论初筛、LLM 输出解析、加密 | pytest |
+| 集成 | 提交 URL 到笔记可见的完整链路 | pytest + 测试库 |
+| 契约 | OpenAPI 快照，防止意外破坏客户端 | schemathesis |
+| 前端 | 组件与离线队列逻辑 | vitest |
+| 端到端 | 登录、保存、搜索主流程 | Playwright（Phase 4 起） |
+
+适配器测试必须使用 `tests/fixtures/` 下的离线 HTML，不允许请求真实站点；线上结构变更时更新夹具并同步改适配器。
+
+LLM 在测试中默认走假客户端，返回固定结构；只有显式设置 `CLIPO_TEST_REAL_LLM=1` 时才打真实接口。
+
+## 数据库迁移
+
+```bash
+make migrate m="描述"      # 生成
+.venv/bin/alembic -c backend/alembic.ini upgrade head   # 应用
+.venv/bin/alembic -c backend/alembic.ini downgrade -1   # 回滚一步
+```
+
+规则：迁移必须可重复执行且可回滚；涉及数据搬迁的迁移要写成幂等脚本；生产升级前先备份（见部署文档）。
+
+## 新增一个平台适配器
+
+1. 在 `backend/app/extractors/` 新建文件，实现 `matches` 与 `extract`，返回 `CapturedContent`。
+2. 在 `registry.py` 注册，注意匹配顺序：专用适配器先于通用适配器。
+3. 放入离线夹具并写单元测试，覆盖正文、作者、时间、图片、评论字段。
+4. 若该平台需要登录态，在设置页补充 Cookie 项与获取教程。
+5. 如需绕过反爬，在 `extension/content/` 补一个同名适配器，输出与后端一致的 payload 结构。
+
+## 调试建议
+
+- 抓取问题：Phase 2 使用 HTTP 抓取与 trafilatura/readability；检查网页是否为公开的静态 HTML，适配器测试使用离线夹具。
+- LLM 问题：先检查模型地址、密钥和额度，再用假客户端重现结构解析问题。运行日志不打印 API Key、模型返回体或笔记正文。
+- 队列问题：直接查 `capture_jobs` 表的 `status`、`attempts`、`last_error`。
+- 前端离线问题：Chrome DevTools → Application → Service Workers，配合 Network 的 Offline 模式。
+
+## Phase 2 验收
+
+`make dev` 和 `make serve` 都会启动 Huey worker。仅运行 uvicorn 时需要另起 `.venv/bin/python -m app.tasks.worker`；两个进程必须共用数据库、主密钥与 `CLIPO_QUEUE_PATH`。
+
+```bash
+make lint
+make test
+make build
+# 可选浏览器验收：使用临时数据库和离线网页/模型夹具，不修改正式数据
+uv run --no-project --with playwright playwright install chromium
+uv run --no-project --with playwright python scripts/smoke_capture.py
+```
+
+浏览器截图写入忽略目录 `frontend/test-results/`。笔记详情使用 `/notes/?id=42`，以兼容 Next.js 静态导出；API 使用 `/api/v1/notes/42`。

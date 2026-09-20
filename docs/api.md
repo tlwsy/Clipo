@@ -1,0 +1,148 @@
+# Clipo API 参考
+
+基址 `/api/v1`。除注明外均需认证，请求与响应皆为 JSON，时间为 ISO 8601 UTC。可执行契约以 `/docs`、`/openapi.json` 和仓库的 `frontend/openapi.json` 为准。
+
+当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除。平台内容直传、标签、检索、分享链接、导出和备份尚未提供。
+
+## 认证与错误
+
+| 方式 | 头部 | 适用 |
+|------|------|------|
+| Access JWT | `Authorization: Bearer <access_token>` | Web、移动客户端 |
+| API Token | `X-Clipo-Token: <api_token>` | 脚本、后续扩展与 Shortcut |
+
+```json
+{ "error": { "code": "invalid_credentials", "message": "用户名或密码错误", "detail": {} } }
+```
+
+错误状态：400 参数错误、401 未认证、403 无权限、404 不存在、409 冲突、422 校验失败、500 内部错误、503 数据库不可用。校验错误的 `error.detail.fields` 提供字段、类型和可操作提示，不回显输入值。当前没有频控实现。
+
+## 元信息与初始化
+
+- `GET /health`：匿名，检查数据库连通性，返回 `{"status":"ok"}`。
+- `GET /meta/version`：匿名，返回 `version`、`api_version`、`setup_completed`、`registration_open`。
+- `GET /meta/capabilities`：返回 `capture_available: true`、`fulltext_search: "unavailable"`、`storage_backends: []`、`llm_configured`、`registration_open`。模型配置完整不代表连通性已经验证。
+- `POST /setup/validate`：匿名，仅在初始化前可用。校验 `username`、`email`、`password`，成功返回 204，不创建账号。
+- `POST /setup`：匿名，仅在初始化前可用；创建管理员，成功返回 201 和会话，之后返回 409。
+
+```json
+{
+  "username": "reader",
+  "email": "reader@example.com",
+  "password": "a-long-password",
+  "llm": {
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model": "qwen-plus",
+    "api_key": "sk-..."
+  }
+}
+```
+
+`llm` 可省略。用户名为 3–64 个字符，仅允许文字、数字、下划线和短横线，忽略大小写；邮箱必须有效；密码为 10–128 个字符。设置向导默认跳过 AI，之后可在设置页补充。
+
+## 认证接口
+
+- `POST /auth/register`：开放注册时创建账号，请求为用户名、邮箱和密码；关闭时返回 403。
+- `POST /auth/login`：请求为 `username`、`password`，返回 `access_token`、`refresh_token`、`expires_in`、`user`。
+- `POST /auth/refresh`：请求 `{"refresh_token":"rt_..."}`；轮换令牌，旧刷新令牌立即失效。
+- `POST /auth/logout`：请求同刷新，撤销刷新令牌，返回 204。
+- `GET /auth/me`：返回当前账号。
+
+浏览器会收到 `clipo_refresh` Cookie（HttpOnly、SameSite=Strict、路径 `/api/v1/auth`，HTTPS 部署使用 Secure）。Web 的 Access Token 仅驻留内存，刷新/登出发送 `{}` 使用 Cookie。非浏览器客户端可显式提交刷新令牌。Access JWT 登出后在到期前仍有效，API Token 需另行撤销。
+
+## API Token
+
+- `GET /tokens`：列表，仅返回名称、时间，不返回明文。
+- `POST /tokens`：请求 `{"name":"my-client"}`，返回 201 与 `id`、`name`、`token` 等；明文只显示一次。
+- `DELETE /tokens/{id}`：撤销，返回 204。
+
+## 采集
+
+### POST /captures
+
+请求 `{"url":"https://example.com/article"}`，返回 202。只支持公开的 HTTP(S) HTML 网页，端口限 80/443；拒绝账号密码、内网地址、超大内容和非 HTML。当前不接受 `payload`、`selection` 或 `source_hint`，多余字段返回 422。
+
+可选请求头 `Idempotency-Key` 为 1–128 字符。相同用户、相同键和规范化 URL 返回同一任务；将同一个键用于不同 URL 返回 409。URL 规范化保留查询参数、移除 fragment。不同键可以生成多篇笔记，去重缓存用于复用提取结果。
+
+```json
+{
+  "job_id": "j_0123456789abcdef0123456789abcdef",
+  "url": "https://example.com/article",
+  "status": "queued",
+  "attempts": 0,
+  "last_error": null,
+  "note_id": null,
+  "cached": false,
+  "next_retry_at": null,
+  "created_at": "2026-09-20T08:00:00Z",
+  "updated_at": "2026-09-20T08:00:00Z"
+}
+```
+
+任务先写入数据库，再分发到 Huey。`cached` 表示提取缓存命中；缓存按账号隔离，默认有效期 24 小时。
+
+### GET /jobs · GET /jobs/{job_id}
+
+列表支持 `?status=queued,running,retrying,failed,success&cursor=<opaque>&limit=50`，`limit` 为 1–100。返回 `{"items":[任务对象],"next_cursor":null}`。详情返回上面的任务对象，记录仅对所属账号可见。
+
+状态流转：`queued → running → success`；暂时性抓取失败进入 `retrying → running`，自动重试 3 次后为 `failed`，最多执行 4 次。等待时间为 30 / 120 / 480 秒，`next_retry_at` 为下次时间。永久性错误直接失败。模型失败会保存原文，因此任务为 `success`，笔记为 `original_only`。
+
+### POST /jobs/{job_id}/retry
+
+仅失败任务可手动重试，返回 202 和任务对象；清零次数并重新入队。其他状态返回 409。删除任务记录的接口尚未提供。
+
+## 笔记
+
+### GET /notes
+
+按创建时间倒序，支持 `?cursor=<opaque>&limit=50`，`limit` 为 1–100。当前不支持搜索、标签、收藏和排序参数。
+
+```json
+{
+  "items": [{
+    "id": 42,
+    "title": "给未来的自己留一份知识笔记",
+    "url": "https://example.com/article",
+    "platform": "web",
+    "author": "林舟",
+    "summary_excerpt": "保留来源、压缩观点，并定期回顾。",
+    "status": "ready",
+    "created_at": "2026-09-20T08:01:00Z"
+  }],
+  "next_cursor": null
+}
+```
+
+`summary_excerpt` 使用摘要或原文前 160 字。`status` 为 `ready` 或 `original_only`。
+
+### GET /notes/{id}
+
+返回 `id`、`title`、`url`、`source`、`content`、`summary_markdown`、`key_points`、`suggested_tags`、`comments`、`status`、`summary_error`、`created_at`、`updated_at`。
+
+- `source`：平台、最终来源 URL、作者、作者 URL、发布时间；没有的元数据为 `null`。
+- `content`：统一提取结构（URL、平台、标题、完整正文 `text`、作者、发布时间、图片 URL 和评论）。数据库保留原始 HTML，但接口的 `raw_html` 始终为 `null`。
+- `summary_markdown`：AI 摘要；未生成时为 `null`，要点与建议标签为空数组。
+- `summary_error`：未配置密钥或模型失败时的可读原因，不包含供应商原始返回或密钥。
+- `comments`：已支持落库的结构；通用网页提取器目前不提取评论，专项平台在 Phase 3 接入。
+
+图片目前只保留来源链接，不下载媒体。建议标签只用于展示，尚未提供标签管理。
+
+### DELETE /notes/{id}
+
+返回 204，删除笔记、来源和评论。任务记录保留，`note_id` 变为 `null`；已删除或不属于当前账号的笔记返回 404。
+
+## 设置
+
+`GET /settings` 返回 `llm`：`base_url`、`model`、`api_key_set`、`comment_score_threshold`、`max_comments`、`text_token_budget`、`overridden_fields`。
+
+`PUT /settings` 请求示例：
+
+```json
+{"llm":{"base_url":"https://api.deepseek.com/v1","model":"deepseek-chat","api_key":"sk-...","text_token_budget":8000}}
+```
+
+省略字段保留原值；传 `null` 恢复默认或清除密钥。模型配置按环境变量 > 用户数据库 > 默认值生效，读接口不返回密钥。正文预算按 UTF-8 字节保守估算，仅截断送给模型的内容。评论评分相关配置已保存，在 Phase 3 生效。连通性测试接口尚未实现。
+
+## 后续接口规划
+
+Phase 3 接入平台 Cookie 与评论评分；Phase 4 接入 `q` 搜索、标签、收藏和 Shortcut；Phase 5 扩展 `POST /captures` 的内容直传；Phase 6 接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。
