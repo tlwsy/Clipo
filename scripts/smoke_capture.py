@@ -85,6 +85,13 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     expect(job.locator(".job-status.failed")).to_be_visible(timeout=20000)
     expect(job).to_contain_text("登录态失效")
     page.goto(base + "/settings/")
+    page.get_by_label("候选评论上限").fill("2")
+    page.get_by_label("高价值评论阈值").fill("0.7")
+    page.get_by_role("button", name="保存配置", exact=True).click()
+    expect(page.locator("#llm .notice.success")).to_be_visible()
+    page.reload()
+    expect(page.get_by_label("候选评论上限")).to_have_value("2")
+    expect(page.get_by_label("高价值评论阈值")).to_have_value("0.7")
     page.get_by_label("小红书 Cookie", exact=True).fill("web_session=offline-capture")
     page.get_by_role("button", name="保存平台配置").click()
     expect(page.locator("#platforms").get_by_role("status")).to_be_visible()
@@ -97,7 +104,13 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     expect(page.locator(".original-text")).to_contain_text("保留正文与来源")
     expect(page.locator(".comment")).to_have_count(10)
     expect(page.locator(".comment").first).to_contain_text("12 赞 · 2 回复")
-    expect(page.get_by_text("采集到的评论可能不完整，尚未进行价值评分。")).to_be_visible()
+    expect(page.get_by_text("采集到的评论可能不完整。", exact=True)).to_be_visible()
+    expect(page.get_by_text("已评分 2 / 10 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment .pill")).to_have_count(1)
+    expect(page.locator(".comment").first).to_contain_text("AI 评分 0.9")
+    expect(page.locator(".comment").nth(1)).to_contain_text("AI 评分 0.6")
+    expect(page.locator(".comment").nth(2)).to_contain_text("未评分")
+    expect(page.locator(".comment").first).to_contain_text("提供了可操作的补充建议")
     expect(page.get_by_role("link", name="查看图片")).to_have_count(2)
     screenshots = ROOT / "frontend/test-results"
     page.screenshot(path=str(screenshots / "xiaohongshu-desktop.png"), full_page=True)
@@ -105,6 +118,25 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     page.screenshot(path=str(screenshots / "xiaohongshu-mobile.png"), full_page=True)
     page.set_viewport_size({"width": 1440, "height": 1000})
+
+    # Reuse the cached extraction with a model that omits scores: retain the summary and comments.
+    page.goto(base + "/settings/")
+    page.get_by_label("模型名称").fill("offline-no-scores")
+    page.get_by_role("button", name="保存配置", exact=True).click()
+    expect(page.locator("#llm .notice.success")).to_be_visible()
+    page.goto(base + "/")
+    page.get_by_label("网页链接").fill("https://www.xiaohongshu.com/explore/64abc123")
+    page.get_by_role("button", name="保存网页").click()
+    latest = page.locator(".job-card").filter(has_text="www.xiaohongshu.com/explore/64abc123").first
+    expect(latest.locator(".job-status.success")).to_be_visible(timeout=20000)
+    latest.get_by_role("link", name="阅读笔记").click()
+    expect(page.locator(".markdown")).to_be_visible()
+    expect(
+        page.get_by_text("未生成评论评分：模型服务不可用或评分格式无效", exact=False)
+    ).to_be_visible()
+    expect(page.locator(".comment")).to_have_count(10)
+    expect(page.locator(".comment .pill")).to_have_count(0)
+    expect(page.get_by_text("已评分 0 / 10 条", exact=False)).to_be_visible()
 
 
 def main() -> None:
@@ -244,7 +276,7 @@ def main() -> None:
                                     "original-only note",
                                     "AI summary",
                                     "platform Cookie save, replace, clear and retry",
-                                    "Xiaohongshu login failure, Cookie retry and comments",
+                                    "Xiaohongshu login failure, Cookie retry and comment scores",
                                     "delete",
                                     "manual retry",
                                     "share through login",

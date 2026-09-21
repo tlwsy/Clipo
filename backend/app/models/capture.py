@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -34,6 +34,7 @@ class Note(Base):
     suggested_tags: Mapped[list[str]] = mapped_column(json_type, default=list)
     status: Mapped[str] = mapped_column(String(32))
     summary_error: Mapped[str | None] = mapped_column(Text)
+    comment_score_error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
@@ -48,6 +49,9 @@ class Comment(Base):
     likes: Mapped[int] = mapped_column(default=0)
     replies: Mapped[int] = mapped_column(default=0)
     position: Mapped[int]
+    ai_score: Mapped[float | None]
+    ai_reason: Mapped[str | None] = mapped_column(Text)
+    is_valuable: Mapped[bool] = mapped_column(default=False, server_default=false())
 
 
 class CaptureJob(Base):

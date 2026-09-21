@@ -248,11 +248,23 @@ class CaptureRepository(UserRepository):
             suggested_tags=summary.suggested_tags if summary else [],
             status="ready" if summary else "original_only",
             summary_error=result.error,
+            comment_score_error=result.comment_score_error,
         )
         self.db.add(note)
         self.db.flush()
+        scores = {score.index: score for score in result.comment_scores}
         for position, comment in enumerate(content.comments):
-            self.db.add(Comment(note_id=note.id, position=position, **comment.model_dump()))
+            score = scores.get(position)
+            self.db.add(
+                Comment(
+                    note_id=note.id,
+                    position=position,
+                    **comment.model_dump(),
+                    ai_score=score.score if score else None,
+                    ai_reason=score.reason if score else None,
+                    is_valuable=score is not None and score.score >= result.comment_score_threshold,
+                )
+            )
         job.note_id, job.status, job.cached = note.id, "success", cached
         job.last_error = job.next_retry_at = job.lease_expires_at = job.execution_id = None
 

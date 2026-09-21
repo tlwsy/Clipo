@@ -13,8 +13,9 @@ class CompatibleClient:
         model: str,
         messages: list[dict],
         json_mode: bool = True,
+        max_tokens: int = 2000,
     ) -> str:
-        body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 2000}
+        body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": max_tokens}
         if json_mode:
             body["response_format"] = {"type": "json_object"}
         started = time.monotonic()

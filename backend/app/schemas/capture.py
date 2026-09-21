@@ -58,6 +58,9 @@ class CommentResponse(BaseModel):
     likes: int
     replies: int
     position: int
+    ai_score: float | None
+    ai_reason: str | None
+    is_valuable: bool
 
 
 class NoteItem(BaseModel):
@@ -89,5 +92,6 @@ class NoteResponse(BaseModel):
     suggested_tags: list[str]
     status: Literal["ready", "original_only"]
     summary_error: str | None
+    comment_score_error: str | None
     created_at: datetime
     updated_at: datetime

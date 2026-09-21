@@ -1661,6 +1661,10 @@ input[aria-invalid="true"] {
 .comment small {
   color: var(--muted);
 }
+
+.comment > .pill {
+  margin-left: 0.75rem;
+}
 .shared-url {
   overflow-wrap: anywhere;
   max-width: 100%;

@@ -421,6 +421,12 @@ export interface components {
             replies: number;
             /** Position */
             position: number;
+            /** Ai Score */
+            ai_score: number | null;
+            /** Ai Reason */
+            ai_reason: string | null;
+            /** Is Valuable */
+            is_valuable: boolean;
         };
         /** ErrorBody */
         ErrorBody: {
@@ -592,6 +598,8 @@ export interface components {
             status: "ready" | "original_only";
             /** Summary Error */
             summary_error: string | null;
+            /** Comment Score Error */
+            comment_score_error: string | null;
             /**
              * Created At
              * Format: date-time

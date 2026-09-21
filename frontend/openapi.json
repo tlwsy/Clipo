@@ -2766,6 +2766,32 @@
           "position": {
             "type": "integer",
             "title": "Position"
+          },
+          "ai_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Score"
+          },
+          "ai_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Reason"
+          },
+          "is_valuable": {
+            "type": "boolean",
+            "title": "Is Valuable"
           }
         },
         "type": "object",
@@ -2775,7 +2801,10 @@
           "content",
           "likes",
           "replies",
-          "position"
+          "position",
+          "ai_score",
+          "ai_reason",
+          "is_valuable"
         ],
         "title": "CommentResponse"
       },
@@ -3298,6 +3327,17 @@
             ],
             "title": "Summary Error"
           },
+          "comment_score_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment Score Error"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3322,6 +3362,7 @@
           "suggested_tags",
           "status",
           "summary_error",
+          "comment_score_error",
           "created_at",
           "updated_at"
         ],

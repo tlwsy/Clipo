@@ -21,6 +21,8 @@ def validation_message(field: str, error_type: str) -> str:
         "body.llm.base_url": "AI 服务地址需为完整的 HTTP(S) 地址，例如 https://api.deepseek.com/v1",
         "body.llm.model": "模型名称需为 1–100 个字符，例如 qwen-plus",
         "body.llm.api_key": "API Key 最多为 4096 个字符，也可以留空稍后配置",
+        "body.llm.max_comments": "候选评论上限需为 1–100 之间的整数",
+        "body.llm.comment_score_threshold": "高价值评论阈值需为 0–1 之间的数字",
         "body.url": "请提供公开网页的 HTTP(S) 链接，不支持内网地址、账号密码或非标准端口",
         "body.payload": "当前仅支持提交网页链接，内容直传将在浏览器扩展阶段开放",
     }

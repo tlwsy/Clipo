@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 from app.config import Settings
@@ -38,12 +39,23 @@ def fetch_xiaohongshu(
 
 
 class OfflineModel:
-    def complete(self, **kwargs) -> str:
+    def complete(self, **kwargs: Any) -> str:
+        comments = json.loads(kwargs["messages"][1]["content"])["comments"]
+        if kwargs["model"] == "offline-no-scores":
+            comments = []
         return json.dumps(
             {
                 "summary_markdown": "## 给未来留一份笔记\n保留来源、压缩观点，并定期回顾。",
                 "key_points": ["保存来源与完整正文", "定期回顾并付诸行动"],
                 "suggested_tags": ["知识管理"],
+                "comment_scores": [
+                    {
+                        "index": row["index"],
+                        "score": 0.9 if row["index"] == 0 else 0.6,
+                        "reason": "提供了可操作的补充建议",
+                    }
+                    for row in comments
+                ],
             }
         )
 

@@ -12,6 +12,10 @@ function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
   const [baseUrl, setBaseUrl] = useState(initial.base_url);
   const [model, setModel] = useState(initial.model);
   const [budget, setBudget] = useState(initial.text_token_budget);
+  const [maxComments, setMaxComments] = useState(initial.max_comments);
+  const [commentThreshold, setCommentThreshold] = useState(
+    initial.comment_score_threshold,
+  );
   const [key, setKey] = useState("");
   const [clearKey, setClearKey] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -27,6 +31,8 @@ function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
     setError("");
     const llm: Schema["LlmUpdate"] = {};
     llm.text_token_budget = budget;
+    llm.max_comments = maxComments;
+    llm.comment_score_threshold = commentThreshold;
     if (!overridden("base_url")) llm.base_url = baseUrl;
     if (!overridden("model")) llm.model = model;
     if (!overridden("api_key") && (clearKey || key))
@@ -40,6 +46,8 @@ function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
       setBaseUrl(result.llm.base_url);
       setModel(result.llm.model);
       setBudget(result.llm.text_token_budget);
+      setMaxComments(result.llm.max_comments);
+      setCommentThreshold(result.llm.comment_score_threshold);
       setKey("");
       setClearKey(false);
       setMessage("模型配置已保存");
@@ -130,8 +138,41 @@ function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
           <small>超出预算的正文仅截断后送给模型，保存的原文保持完整。</small>
         </label>
         <div className="notice">
-          配置生效后，新保存的网页会自动生成摘要与要点。模型暂时不可用时，仍会为你保存原文。
+          配置生效后，新保存的网页会自动生成摘要与要点。模型暂时不可用时，仍会为你保存原文和已采集评论。
         </div>
+        <label>
+          候选评论上限
+          <input
+            type="number"
+            required
+            min={1}
+            max={100}
+            step={1}
+            value={maxComments}
+            onChange={(event) => setMaxComments(Number(event.target.value))}
+          />
+          <small>
+            按点赞、回复数排序并去重，过滤过短和纯表情评论后，最多选取这些评论评分。长评论可能进一步限量，原始评论全部保留。
+          </small>
+        </label>
+        <label>
+          高价值评论阈值
+          <input
+            type="number"
+            required
+            min={0}
+            max={1}
+            step="any"
+            value={commentThreshold}
+            onChange={(event) =>
+              setCommentThreshold(Number(event.target.value))
+            }
+          />
+          <small>
+            评分范围为
+            0–1，达到阈值即标记为高价值。设置仅对之后的采集生效，已有笔记保留原来的评分。
+          </small>
+        </label>
         {error && (
           <div className="notice error" role="alert">
             {error}
@@ -401,7 +442,10 @@ function SettingsContent() {
           <div className="settings-tip">
             <Icon name="lock" size={22} />
             <h3>属于你的空间</h3>
-            <p>配置按账号独立保存。API Key 与平台 Cookie 加密存储，访问令牌可以随时撤销。</p>
+            <p>
+              配置按账号独立保存。API Key 与平台 Cookie
+              加密存储，访问令牌可以随时撤销。
+            </p>
           </div>
         </aside>
       </div>

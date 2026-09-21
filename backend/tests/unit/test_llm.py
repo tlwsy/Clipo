@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from app.extractors.base import CapturedContent
 from app.llm.orchestrator import LlmConfig, parse_summary, summarize
 from app.llm.prompts import truncate_text
@@ -63,7 +64,7 @@ def test_accepts_fenced_json_from_compatible_models():
     assert parse_summary("```json\n" + json.dumps(OUTPUT) + "\n```").suggested_tags == ["阅读"]
 
 
-def test_compatible_http_client_sends_expected_protocol(monkeypatch):
+def test_compatible_http_client_sends_expected_protocol(monkeypatch: pytest.MonkeyPatch) -> None:
     import httpx
     from app.llm.client import CompatibleClient
 
@@ -82,9 +83,11 @@ def test_compatible_http_client_sends_expected_protocol(monkeypatch):
         api_key="test-key",
         model="test-model",
         messages=[{"role": "user", "content": "text"}],
+        max_tokens=2400,
     )
     assert parse_summary(content).key_points == ["保存来源"]
     request = requests[0]
     assert request.url == "https://model.example/v1/chat/completions"
     assert request.headers["authorization"] == "Bearer test-key"
     assert json.loads(request.content)["response_format"] == {"type": "json_object"}
+    assert json.loads(request.content)["max_tokens"] == 2400

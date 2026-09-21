@@ -99,7 +99,7 @@ def notes(repository: Repo, cursor: Cursor = None, limit: Limit = 50):
 
 
 @router.get("/notes/{note_id}", response_model=NoteResponse, tags=["notes"])
-def note(note_id: int, repository: Repo):
+def note(note_id: int, repository: Repo) -> NoteResponse:
     note = repository.note(note_id)
     content = dict(note.content)
     # The snapshot is retained in storage but never rendered or sent to the reader.
@@ -118,6 +118,7 @@ def note(note_id: int, repository: Repo):
         suggested_tags=note.suggested_tags,
         status=note.status,
         summary_error=note.summary_error,
+        comment_score_error=note.comment_score_error,
         created_at=note.created_at,
         updated_at=note.updated_at,
     )

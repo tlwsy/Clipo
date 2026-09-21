@@ -64,7 +64,13 @@ class CapturePipeline:
                 result = summarize(content, config, self.llm)
             except Exception:
                 result = SummaryResult(
-                    None, "未生成摘要：模型配置无法读取，请重新保存模型设置；原文已保存"
+                    None,
+                    "未生成摘要：模型配置无法读取，请重新保存模型设置；原文已保存",
+                    comment_score_error=(
+                        "未生成评论评分：模型配置无法读取，请重新保存模型设置；已采集评论已保留"
+                        if content.comments
+                        else None
+                    ),
                 )
             with self.sessions.begin() as db:
                 CaptureRepository(db, user_id).finish(job_id, execution_id, content, result, cached)
