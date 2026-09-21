@@ -40,6 +40,7 @@ def _fetch(
     headers: dict[str, str] | None = None,
     json_response: bool = False,
     before_request: Callable[[], None] | None = None,
+    json_body: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     """Validate every hop, pin DNS results, preserve TLS SNI and never use ambient proxies."""
     current = normalize_url(url)
@@ -59,8 +60,9 @@ def _fetch(
                 # Pinned URLs can share an IP. Never replay server cookies across hosts/hops.
                 client.cookies.clear()
                 with client.stream(
-                    "GET",
+                    "POST" if json_body is not None else "GET",
                     pinned,
+                    **({"json": json_body} if json_body is not None else {}),
                     headers={
                         "Host": parts.netloc,
                         "User-Agent": (headers or {}).get(
@@ -181,6 +183,7 @@ def fetch_json(
     headers: dict[str, str] | None = None,
     check_status: Callable[[int], None] | None = None,
     requests: PlatformRequests | None = None,
+    json_body: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     try:
         body, _ = _fetch(
@@ -193,6 +196,7 @@ def fetch_json(
                 **({"User-Agent": requests.user_agent} if requests else {}),
             },
             json_response=True,
+            json_body=json_body,
             before_request=requests.wait if requests else None,
         )
         value = json.loads(body)

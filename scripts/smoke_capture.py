@@ -307,6 +307,26 @@ def check_bilibili_capture(page: Page, base: str) -> None:
     expect(page.get_by_text("已评分 2 / 23 条", exact=False)).to_be_visible()
 
 
+def check_youtube_capture(page: Page, base: str) -> None:
+    url = "https://youtu.be/abcDEF123_-"
+    page.goto(base + "/")
+    page.get_by_label("网页链接").fill(url)
+    page.get_by_role("button", name="保存网页").click()
+    job = page.locator(".job-card").filter(has_text=url).first
+    expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+    job.get_by_role("link", name="阅读笔记").click()
+    expect(page.get_by_role("heading", name="离线 YouTube 视频")).to_be_visible()
+    expect(page.locator(".original-text")).to_contain_text("First save the source.")
+    expect(page.locator(".original-text")).to_contain_text("字幕（en，自动字幕）")
+    expect(page.locator(".comment")).to_have_count(3)
+    expect(page.get_by_text("已评分 2 / 3 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment").last).to_contain_text("Modern comment")
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.screenshot(path=str(ROOT / "frontend/test-results/youtube-mobile.png"), full_page=True)
+    page.set_viewport_size({"width": 1440, "height": 1000})
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
@@ -434,6 +454,7 @@ def main() -> None:
                     check_xhs_pagination(page, base)
                     check_heybox_capture(page, base)
                     check_bilibili_capture(page, base)
+                    check_youtube_capture(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -456,6 +477,7 @@ def main() -> None:
                                     "XHS .cn short link and two comment API pages",
                                     "Heybox share link, pagination and comment scores",
                                     "Bilibili video, captions and paginated hot comments",
+                                    "YouTube captions, top sort, old and modern comments",
                                     "delete",
                                     "manual retry",
                                     "share through login",

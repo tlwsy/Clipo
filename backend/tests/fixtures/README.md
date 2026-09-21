@@ -22,3 +22,7 @@
 `bilibili.html`、`bilibili-player.json`、`bilibili-captions.json` 与
 `bilibili-comments1.json` / `comments2.json` 均为人工构造的回归数据，
 覆盖分 P、语言选择、字幕文本和两页 23 条唯一顶层热评。未包含真实视频正文、作者或评论。
+
+`youtube.html` 与 `youtube-captions.json` 模拟播放器/页面配置/英文自动字幕；
+`youtube-comments-initial.json` / `top.json` / `page2.json` 覆盖切换热评、旧评论 renderer、
+新版实体引用、跨页重复和不得采集的楼中楼。所有视频、作者、评论和访客标识均为虚构。

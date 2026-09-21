@@ -191,12 +191,12 @@ function Reader() {
             </section>
           )}
           {(note.comments.length > 0 ||
-            ["xiaohongshu", "xiaoheihe", "bilibili"].includes(
+            ["xiaohongshu", "xiaoheihe", "bilibili", "youtube"].includes(
               note.source.platform,
             )) && (
             <section className="original-section">
               <h2>评论</h2>
-              {["xiaohongshu", "xiaoheihe", "bilibili"].includes(
+              {["xiaohongshu", "xiaoheihe", "bilibili", "youtube"].includes(
                 note.source.platform,
               ) && (
                 <p className="muted">

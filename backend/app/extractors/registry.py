@@ -7,6 +7,7 @@ from app.extractors.bilibili import BilibiliExtractor
 from app.extractors.generic import GenericExtractor
 from app.extractors.xiaoheihe import XiaoheiheExtractor
 from app.extractors.xiaohongshu import XiaohongshuExtractor
+from app.extractors.youtube import YoutubeExtractor
 
 
 class ExtractorRegistry:
@@ -21,6 +22,7 @@ class ExtractorRegistry:
             XiaohongshuExtractor(cookie_loader, max_comments=max_comments),
             XiaoheiheExtractor(cookie_loader, max_comments=max_comments),
             BilibiliExtractor(max_comments=max_comments),
+            YoutubeExtractor(max_comments=max_comments),
             GenericExtractor(),
         ]
 

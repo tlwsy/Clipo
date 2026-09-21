@@ -1,0 +1,47 @@
+{
+  "onResponseReceivedEndpoints": [
+    {
+      "reloadContinuationItemsCommand": {
+        "continuationItems": [
+          {
+            "commentsHeaderRenderer": {
+              "sortMenu": {
+                "sortFilterSubMenuRenderer": {
+                  "subMenuItems": [
+                    {
+                      "title": "Top comments",
+                      "selected": false,
+                      "serviceEndpoint": {
+                        "continuationCommand": {
+                          "token": "top"
+                        }
+                      }
+                    },
+                    {
+                      "title": "Newest first",
+                      "selected": true,
+                      "serviceEndpoint": {
+                        "continuationCommand": {
+                          "token": "newest"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "continuationItemRenderer": {
+              "continuationEndpoint": {
+                "continuationCommand": {
+                  "token": "newest"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

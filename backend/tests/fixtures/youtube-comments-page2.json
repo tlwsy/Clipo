@@ -1,0 +1,94 @@
+{
+  "onResponseReceivedEndpoints": [
+    {
+      "reloadContinuationItemsCommand": {
+        "continuationItems": [
+          {
+            "commentThreadRenderer": {
+              "comment": {
+                "commentRenderer": {
+                  "commentId": "c2",
+                  "authorText": {
+                    "simpleText": "Viewer 2"
+                  },
+                  "contentText": {
+                    "runs": [
+                      {
+                        "text": "A useful "
+                      },
+                      {
+                        "text": "comment 2 with practical details."
+                      }
+                    ]
+                  },
+                  "voteCount": {
+                    "simpleText": "1,234"
+                  },
+                  "replyCount": 2
+                }
+              },
+              "replies": {
+                "commentRepliesRenderer": {
+                  "contents": [
+                    {
+                      "commentRenderer": {
+                        "commentId": "reply",
+                        "contentText": {
+                          "simpleText": "Nested reply must not be captured"
+                        }
+                      }
+                    },
+                    {
+                      "continuationItemRenderer": {
+                        "continuationEndpoint": {
+                          "continuationCommand": {
+                            "token": "reply-only"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "commentThreadRenderer": {
+              "commentViewModel": {
+                "commentViewModel": {
+                  "commentKey": "entity3",
+                  "replyCount": "3"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "frameworkUpdates": {
+    "entityBatchUpdate": {
+      "mutations": [
+        {
+          "entityKey": "entity3",
+          "payload": {
+            "commentEntityPayload": {
+              "properties": {
+                "commentId": "c3",
+                "content": {
+                  "content": "Modern comment with additional helpful context."
+                }
+              },
+              "author": {
+                "displayName": "Viewer 3"
+              },
+              "toolbar": {
+                "likeCountA11y": "42 likes"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

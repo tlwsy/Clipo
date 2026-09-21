@@ -38,3 +38,12 @@
 - 热评：`GET /x/v2/reply?oid=…&type=1&sort=2&pn=…&ps=20`，仅取顶层回复，不抓楼中楼；按 ID 去重、最多 5 页/180 秒检查预算，并服从 0–100 采集上限。字幕/热评读取失败时保留已取得内容并显示原因。元数据无法确认则任务失败。
 - 不配置或使用 B 站 Cookie，不复用其他平台凭据，不下载视频或音频。接口与字段依据 [yt-dlp B 站适配器](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/bilibili.py) 的公开协议使用和 2026-09-21 官方接口响应核对；未复制其实现。
 - 2026-09-21 对公开视频 `BV1xx411c7mD` 的实际请求取得标题、3 字符简介、1 个封面与 3 条评论；该样本没有公开字幕，已正确提示。离线夹具另验证字幕、分 P、跨页去重和拒绝非官方字幕主机。这个样本不能证明需要登录的字幕可用。
+
+## YouTube
+
+- 支持 watch、youtu.be、Shorts、live 和 embed 单视频链接，规范为同 ID 的 watch 页面。读取 `ytInitialPlayerResponse`、`ytInitialData` 及 JSON 形式的 `ytcfg.set`，不执行页面脚本；检查播放器 videoId 与请求一致，登录/年龄/地区/不可播放状态明确报错，不保存推荐内容。
+- 字幕读取 `captions.playerCaptionsTracklistRenderer.captionTracks`，优先中文、其次英文的一轨；自动字幕保留标记。仅接受 HTTPS 的 `www.youtube.com` / `youtube.com` / `video.google.com` 官方 timedtext 路径，且 URL 的 v 必须与视频相同；请求 `fmt=json3` 后拼接 `events[].segs[].utf8`，标注语言后并入正文供模型使用，最多 200000 字符且截断提示。
+- 只在评论区域寻找 continuation；通过 `POST https://www.youtube.com/youtubei/v1/next?prettyPrint=false` 请求评论数据。上下文只取页面给出的 WEB 版本和访客数据，固定官方 endpoint；不接收页面任意请求 URL，不使用登录 Cookie。先选择排序菜单首项（Top comments），随后解析 `commentThreadRenderer.comment.commentRenderer` 或 commentViewModel 引用的 `frameworkUpdates.entityBatchUpdate.mutations[].payload.commentEntityPayload`。
+- 仅抓顶层评论，忽略楼中楼 continuation，按 ID 去重，最多 10 次接口调用、180 秒检查预算和 0–100 采集上限。点赞简写不是准确计数时留为默认 0。未知结构、频控、验证码或网络失败保留已取得内容并显示原因。
+- 带 JSON 请求体的网络路径复用现有 IP 固定、全 DNS 校验、HTTPS 固定主机、禁止接口重定向、MIME/5 MB/超时限制；正文、访客数据和 continuation 不写日志。协议字段参考 [yt-dlp YouTube 适配器](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/youtube/_video.py)，仅核对协议、未复制其实现。
+- 2026-09-21：当前环境对 `www.youtube.com` 域名解析失败，未取得真实页面，也未完成线上字幕/评论验收。人工离线夹具验证语法解析、字幕入模、热评切换、跨页去重、两代评论结构及安全边界，不能替代线上兼容性。

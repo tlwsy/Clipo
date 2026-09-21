@@ -1,0 +1,117 @@
+{
+  "onResponseReceivedEndpoints": [
+    {
+      "reloadContinuationItemsCommand": {
+        "continuationItems": [
+          {
+            "commentThreadRenderer": {
+              "comment": {
+                "commentRenderer": {
+                  "commentId": "c1",
+                  "authorText": {
+                    "simpleText": "Viewer 1"
+                  },
+                  "contentText": {
+                    "runs": [
+                      {
+                        "text": "A useful "
+                      },
+                      {
+                        "text": "comment 1 with practical details."
+                      }
+                    ]
+                  },
+                  "voteCount": {
+                    "simpleText": "1,234"
+                  },
+                  "replyCount": 2
+                }
+              },
+              "replies": {
+                "commentRepliesRenderer": {
+                  "contents": [
+                    {
+                      "commentRenderer": {
+                        "commentId": "reply",
+                        "contentText": {
+                          "simpleText": "Nested reply must not be captured"
+                        }
+                      }
+                    },
+                    {
+                      "continuationItemRenderer": {
+                        "continuationEndpoint": {
+                          "continuationCommand": {
+                            "token": "reply-only"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "commentThreadRenderer": {
+              "comment": {
+                "commentRenderer": {
+                  "commentId": "c2",
+                  "authorText": {
+                    "simpleText": "Viewer 2"
+                  },
+                  "contentText": {
+                    "runs": [
+                      {
+                        "text": "A useful "
+                      },
+                      {
+                        "text": "comment 2 with practical details."
+                      }
+                    ]
+                  },
+                  "voteCount": {
+                    "simpleText": "1,234"
+                  },
+                  "replyCount": 2
+                }
+              },
+              "replies": {
+                "commentRepliesRenderer": {
+                  "contents": [
+                    {
+                      "commentRenderer": {
+                        "commentId": "reply",
+                        "contentText": {
+                          "simpleText": "Nested reply must not be captured"
+                        }
+                      }
+                    },
+                    {
+                      "continuationItemRenderer": {
+                        "continuationEndpoint": {
+                          "continuationCommand": {
+                            "token": "reply-only"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "continuationItemRenderer": {
+              "continuationEndpoint": {
+                "continuationCommand": {
+                  "token": "page2"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

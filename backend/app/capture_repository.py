@@ -192,9 +192,13 @@ class CaptureRepository(UserRepository):
             "bilibili.com",
             "m.bilibili.com",
             "b23.tv",
+            "www.youtube.com",
+            "youtube.com",
+            "m.youtube.com",
+            "youtu.be",
         ):
             return None
-        if content.platform in ("xiaohongshu", "xiaoheihe", "bilibili"):
+        if content.platform in ("xiaohongshu", "xiaoheihe", "bilibili", "youtube"):
             if content.platform == "xiaohongshu" and content.extractor_version < 2:
                 return None
             limit = self.capture_settings().max_comments if max_comments is None else max_comments

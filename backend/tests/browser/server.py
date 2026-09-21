@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, urlsplit
 import uvicorn
 from app.config import Settings
 from app.db.session import create_db_engine, session_factory
-from app.extractors import bilibili, generic, xiaoheihe, xiaohongshu
+from app.extractors import bilibili, generic, xiaoheihe, xiaohongshu, youtube
 from app.extractors.base import ExtractionError
 from app.extractors.generic import ScopedCookie
 from app.extractors.xhs_api import XhsClient
@@ -90,6 +90,21 @@ def bili_json(url: str, **kwargs: object) -> dict[str, Any]:
     return json.loads((Path(__file__).parents[1] / "fixtures" / name).read_text())
 
 
+def fetch_youtube(url: str, **kwargs: object) -> tuple[str, str]:
+    return (Path(__file__).parents[1] / "fixtures" / "youtube.html").read_text(), url
+
+
+def youtube_json(url: str, **kwargs: Any) -> dict[str, Any]:
+    if urlsplit(url).path == "/api/timedtext":
+        name = "youtube-captions.json"
+    else:
+        token = kwargs["json_body"]["continuation"]
+        if token not in ("initial", "top", "page2"):
+            raise AssertionError("Unexpected offline comment cursor")
+        name = f"youtube-comments-{token}.json"
+    return json.loads((Path(__file__).parents[1] / "fixtures" / name).read_text())
+
+
 class OfflineModel:
     def complete(self, **kwargs: Any) -> str:
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
@@ -124,6 +139,8 @@ if __name__ == "__main__":
         xiaoheihe.HeyboxClient.check_login = heybox_login
         bilibili.fetch_html = fetch_bilibili
         bilibili.fetch_json = bili_json
+        youtube.fetch_html = fetch_youtube
+        youtube.fetch_json = youtube_json
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()

@@ -1,0 +1,23 @@
+{
+  "events": [
+    {
+      "tStartMs": 0,
+      "segs": [
+        {
+          "utf8": "First "
+        },
+        {
+          "utf8": "save the source."
+        }
+      ]
+    },
+    {
+      "tStartMs": 3000,
+      "segs": [
+        {
+          "utf8": "Then review the useful comments."
+        }
+      ]
+    }
+  ]
+}
