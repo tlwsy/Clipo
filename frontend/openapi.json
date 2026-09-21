@@ -618,6 +618,18 @@
               ],
               "title": "Favorite"
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "pattern": "^[^\\x00-\\x1f\\x7f]*$",
+              "default": "",
+              "title": "Q"
+            }
           }
         ],
         "responses": {

@@ -150,3 +150,9 @@ YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复
 - 本节点 `make lint`、`make test` 通过：后端 316 项、前端 10 项。临时源码副本的 `make build` 通过，保留现有开发服务器构建目录。
 - Docker Desktop/Compose 已可连接；独立 PostgreSQL 16 容器执行 21 项组织管理、迁移与采集链路测试通过，包含重复升级/回滚、模型一致性、账号隔离与持久化队列。通过 `--postgres-url` 使用逐测试随机 schema，测试后清理。应用镜像与 Compose 完整验收继续推进。
 - 本次 Chromium 完整浏览器回归通过，新增添加/移除标签、收藏刷新保留、组合筛选验收；没有脚本错误，使用临时数据库和离线夹具。
+
+## Phase 4 全文检索节点（2026-09-21）
+
+- 新增 `q` 搜索标题、正文、摘要；支持多关键词与标签/收藏组合筛选，保留账号隔离和创建时间游标。SQLite FTS5 trigram，短词字面匹配；PostgreSQL tsvector/GIN，中文无扩展回退匹配，启动探测 `pg_bigm`。迁移 `0007_note_search` 回填已有笔记，插入/更新/删除保持索引同步。
+- 本次 `make gen-api`、`make lint`、`make test` 通过（后端 328 项、前端 10 项）；临时副本 `make build` 通过。PostgreSQL 16 实机执行 19 项检索、组织与迁移测试通过；未安装/实测可选 `pg_bigm`。
+- 完整 Chromium 回归通过，新增中文搜索与标签/收藏组合验收；无脚本错误。iOS Shortcut、离线阅读与写队列继续推进。

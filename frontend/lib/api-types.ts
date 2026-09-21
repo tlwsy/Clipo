@@ -1313,6 +1313,7 @@ export interface operations {
                 limit?: number;
                 tag_id?: number | null;
                 favorite?: boolean | null;
+                q?: string;
             };
             header?: never;
             path?: never;

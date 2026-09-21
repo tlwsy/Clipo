@@ -1,5 +1,7 @@
 import re
 
+from sqlalchemy.sql.elements import ColumnElement
+
 from app.note_repository import NoteRepository
 from app.schemas.capture import (
     CommentResponse,
@@ -41,8 +43,9 @@ def list_notes(
     limit: int,
     tag_id: int | None,
     favorite: bool | None,
+    search: ColumnElement[bool] | None = None,
 ) -> NotePage:
-    rows, next_cursor = repository.list_notes(cursor, limit, tag_id, favorite)
+    rows, next_cursor = repository.list_notes(cursor, limit, tag_id, favorite, search)
     tags = repository.tags_for([note.id for note in rows])
     items = []
     for note in rows:

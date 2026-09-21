@@ -177,3 +177,9 @@ uv run --no-project --with playwright python scripts/smoke_capture.py
 ### Android 模拟器连接
 
 Windows + WSL 下已验证 MuMu 自带 ADB 可通过 `127.0.0.1:16384` 连接 Android 15 实例。路径、可复用命令、端口来源及验收边界见 [Android 模拟器连接与验收](docs/android-testing.md)。当前仅连接验证通过，PWA 安装与系统分享仍待实际验收。
+
+## PostgreSQL 集成验证
+
+测试支持 `.venv/bin/pytest backend/tests/integration/test_note_search.py backend/tests/integration/test_note_organization.py backend/tests/integration/test_migrations.py --postgres-url postgresql+psycopg://USER:PASSWORD@HOST/TEST_DB`。仅传入独立测试数据库；每项测试创建随机 schema 并清理，配置使用 `_env_file=None`，不读取部署密钥。默认仍用临时 SQLite。
+
+搜索迁移拥有 SQLite FTS5 虚表/触发器和 PostgreSQL 表达式索引，Alembic 自动比较会跳过这些派生对象；增删搜索字段时需要显式迁移。先装 `pg_bigm` 再运行 `0007_note_search` 才会建立可选双字索引；无扩展使用 tsvector + 字面匹配，`/meta/capabilities` 报告启动探测结果。

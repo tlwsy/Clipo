@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, useAccount } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { Icon } from "@/components/icon";
@@ -10,6 +10,9 @@ function Notes() {
   const user = useAccount();
   const [items, setItems] = useState<Schema["NoteItem"][]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [draft, setDraft] = useState("");
+  const generation = useRef(0);
   const [tags, setTags] = useState<Schema["TagResponse"][]>([]);
   const [tag, setTag] = useState("");
   const [favorite, setFavorite] = useState(false);
@@ -17,23 +20,25 @@ function Notes() {
   const [error, setError] = useState("");
   const load = useCallback(
     async (next?: string) => {
+      const current = ++generation.current;
       setBusy(true);
       setError("");
       try {
         const page = await api<Schema["NotePage"]>(
-          `/notes?limit=24${tag ? `&tag_id=${tag}` : ""}${favorite ? "&favorite=true" : ""}${next ? `&cursor=${encodeURIComponent(next)}` : ""}`,
+          `/notes?limit=24&q=${encodeURIComponent(query)}${tag ? `&tag_id=${tag}` : ""}${favorite ? "&favorite=true" : ""}${next ? `&cursor=${encodeURIComponent(next)}` : ""}`,
         );
+        if (current !== generation.current) return;
         setItems((previous) =>
           next ? [...previous, ...page.items] : page.items,
         );
         setCursor(page.next_cursor);
       } catch (cause) {
-        setError(errorMessage(cause));
+        if (current === generation.current) setError(errorMessage(cause));
       } finally {
-        setBusy(false);
+        if (current === generation.current) setBusy(false);
       }
     },
-    [tag, favorite],
+    [tag, favorite, query],
   );
   useEffect(() => {
     api<Schema["TagResponse"][]>("/tags")
@@ -58,6 +63,38 @@ function Notes() {
         </Link>
       </div>
       <CaptureForm />
+      <form
+        className="search-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setQuery(draft.trim());
+        }}
+      >
+        <label className="sr-only" htmlFor="search-notes">
+          搜索笔记
+        </label>
+        <input
+          id="search-notes"
+          type="search"
+          maxLength={200}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="搜索标题、正文和摘要"
+        />
+        <button className="button secondary small">搜索</button>
+        {query && (
+          <button
+            type="button"
+            className="inline-button"
+            onClick={() => {
+              setDraft("");
+              setQuery("");
+            }}
+          >
+            清除搜索
+          </button>
+        )}
+      </form>
       <div className="note-filters">
         <label>
           标签

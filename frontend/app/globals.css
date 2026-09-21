@@ -1739,3 +1739,17 @@ input[aria-invalid="true"] {
 .checkbox-label input {
   width: auto;
 }
+
+.search-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.search-form input {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}

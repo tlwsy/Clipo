@@ -79,9 +79,10 @@ def version(db: Db, settings: Config) -> VersionResponse:
 
 
 @router.get("/meta/capabilities", response_model=CapabilitiesResponse, tags=["meta"])
-def capabilities(repository: UserRepo, settings: Config) -> CapabilitiesResponse:
+def capabilities(repository: UserRepo, settings: Config, request: Request) -> CapabilitiesResponse:
     llm = read_settings(repository, settings).llm
     return CapabilitiesResponse(
+        fulltext_search=request.app.state.search.mode,
         llm_configured=bool(llm.api_key_set and llm.base_url and llm.model),
         registration_open=settings.registration_open,
     )

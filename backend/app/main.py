@@ -16,6 +16,7 @@ from app.api.v1.routes import router
 from app.config import Settings, get_settings
 from app.db.session import create_db_engine, session_factory
 from app.errors import ClipoError, validation_message
+from app.services.search import SearchBackend
 from app.tasks.capture import CaptureQueue
 
 logger = logging.getLogger("clipo")
@@ -41,6 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        app.state.search = SearchBackend.detect(engine)
         logger.info("Clipo %s started", __version__)
         yield
         engine.dispose()

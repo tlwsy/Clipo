@@ -2,7 +2,7 @@
 
 基址 `/api/v1`。除注明外均需认证，请求与响应皆为 JSON，时间为 ISO 8601 UTC。可执行契约以 `/docs`、`/openapi.json` 和仓库的 `frontend/openapi.json` 为准。
 
-当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置及小红书 HTML 帖子与内嵌评论采集，复用现有采集和笔记接口。小黑盒帖子与顶层评论分页也已接入；B 站与 YouTube 视频适配也已接入；内容直传、检索、分享链接、导出和备份尚未提供。
+当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置及小红书 HTML 帖子与内嵌评论采集，复用现有采集和笔记接口。小黑盒帖子与顶层评论分页也已接入；B 站与 YouTube 视频适配也已接入；内容直传、分享链接、导出和备份尚未提供。
 
 ## 认证与错误
 
@@ -21,7 +21,7 @@
 
 - `GET /health`：匿名，检查数据库连通性，返回 `{"status":"ok"}`。
 - `GET /meta/version`：匿名，返回 `version`、`api_version`、`setup_completed`、`registration_open`。
-- `GET /meta/capabilities`：返回 `capture_available: true`、`fulltext_search: "unavailable"`、`storage_backends: []`、`llm_configured`、`registration_open`。模型配置完整不代表连通性已经验证。
+- `GET /meta/capabilities`：返回 `capture_available: true`、`fulltext_search`（`sqlite_fts5`、`postgresql_bigm` 或 `postgresql_tsvector_like`）、`storage_backends: []`、`llm_configured`、`registration_open`。模型配置完整不代表连通性已经验证。
 - `POST /setup/validate`：匿名，仅在初始化前可用。校验 `username`、`email`、`password`，成功返回 204，不创建账号。
 - `POST /setup`：匿名，仅在初始化前可用；创建管理员，成功返回 201 和会话，之后返回 409。
 
@@ -95,7 +95,7 @@
 
 ### GET /notes
 
-按创建时间倒序，支持 `?cursor=<opaque>&limit=50`，`limit` 为 1–100。支持 `tag_id` 与 `favorite=true/false` 组合筛选；列表和详情均含 `tags: [{id,name}]` 与 `is_favorite`。
+按创建时间倒序，支持 `?cursor=<opaque>&limit=50`，`limit` 为 1–100。支持 `q`（最多 200 字符，空白分隔的词需全部命中）、`tag_id` 与 `favorite=true/false` 组合筛选；列表和详情均含 `tags: [{id,name}]` 与 `is_favorite`。
 
 ```json
 {

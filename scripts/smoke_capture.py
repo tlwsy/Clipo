@@ -336,6 +336,8 @@ def check_note_organization(page: Page, base: str) -> None:
     page.goto(base + "/")
     page.get_by_label("按标签筛选").select_option(label="阶段四验收")
     page.get_by_label("只看收藏").check()
+    page.get_by_label("搜索笔记").fill("离线")
+    page.get_by_role("button", name="搜索", exact=True).click()
     expect(page.locator(".note-card")).to_have_count(1)
     page.locator(".note-card").click()
     page.get_by_role("button", name="移除标签 阶段四验收").click()
