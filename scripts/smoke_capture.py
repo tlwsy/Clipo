@@ -77,6 +77,44 @@ def check_platform_settings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 1000})
 
 
+def check_capture_settings(page: Page) -> None:
+    card = page.locator("#capture")
+    limit = card.get_by_label("评论采集上限")
+    save = card.get_by_role("button", name="保存采集配置")
+    expect(limit).to_have_value("100")
+    for value in ("", "-1", "101", "1.5"):
+        limit.fill(value)
+        save.click()
+        assert limit.evaluate("input => !input.validity.valid")
+    limit.fill("7")
+    page.route(
+        "**/api/v1/settings",
+        lambda route: route.fulfill(
+            status=503,
+            content_type="application/json",
+            body=json.dumps({"error": {"message": "测试保存失败，请重试"}}),
+        ),
+    )
+    save.click()
+    expect(card.get_by_role("alert")).to_have_text("测试保存失败，请重试")
+    expect(limit).to_have_value("7")
+    page.unroute("**/api/v1/settings")
+    save.click()
+    expect(card.get_by_role("status")).to_contain_text("采集配置已保存")
+    page.reload()
+    expect(limit).to_have_value("7")
+    expect(page.get_by_label("候选评论上限")).to_have_value("30")
+    screenshots = ROOT / "frontend/test-results"
+    card.screenshot(path=str(screenshots / "capture-settings-desktop.png"))
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    card.screenshot(path=str(screenshots / "capture-settings-mobile.png"))
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    limit.fill("100")
+    save.click()
+    expect(card.get_by_role("status")).to_be_visible()
+
+
 def check_xiaohongshu_capture(page: Page, base: str) -> None:
     page.goto(base + "/")
     page.get_by_label("网页链接").fill("https://www.xiaohongshu.com/explore/64abc123")
@@ -137,6 +175,49 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     expect(page.locator(".comment")).to_have_count(10)
     expect(page.locator(".comment .pill")).to_have_count(0)
     expect(page.get_by_text("已评分 0 / 10 条", exact=False)).to_be_visible()
+
+
+def check_comment_capture_limit(page: Page, base: str) -> None:
+    url = "https://www.xiaohongshu.com/explore/64abc123?capture-limit=offline"
+    original_note_url = ""
+    for limit in (3, 0, 6):
+        page.goto(base + "/settings/")
+        page.get_by_label("评论采集上限").fill(str(limit))
+        page.get_by_role("button", name="保存采集配置").click()
+        expect(page.locator("#capture").get_by_role("status")).to_be_visible()
+        page.reload()
+        expect(page.get_by_label("评论采集上限")).to_have_value(str(limit))
+        expect(page.get_by_label("候选评论上限")).to_have_value("2")
+        page.get_by_label("模型名称").fill("offline-scores")
+        page.get_by_role("button", name="保存配置", exact=True).click()
+        expect(page.locator("#llm .notice.success")).to_be_visible()
+        page.goto(base + "/")
+        page.get_by_label("网页链接").fill(url)
+        page.get_by_role("button", name="保存网页").click()
+        job = page.locator(".job-card").filter(has_text=url).first
+        expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+        job.get_by_role("link", name="阅读笔记").click()
+        expect(page.locator(".comment")).to_have_count(limit)
+        expect(page.locator(".markdown")).to_be_visible()
+        expect(page.locator(".original-text")).to_contain_text("保留正文与来源")
+        if limit:
+            expect(page.get_by_text(f"本次评论采集上限：{limit} 条。")).to_be_visible()
+            expect(page.get_by_text(f"已评分 2 / {limit} 条", exact=False)).to_be_visible()
+        else:
+            expect(page.get_by_text("本次已关闭评论采集，帖子内容已保存。")).to_be_visible()
+            expect(page.get_by_text("未生成评论评分", exact=False)).to_have_count(0)
+            page.set_viewport_size({"width": 390, "height": 844})
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            page.screenshot(
+                path=str(ROOT / "frontend/test-results/comments-disabled-mobile.png"),
+                full_page=True,
+            )
+            page.set_viewport_size({"width": 1440, "height": 1000})
+        if limit == 3:
+            original_note_url = page.url
+    page.goto(original_note_url)
+    expect(page.locator(".comment")).to_have_count(3)
+    expect(page.get_by_text("本次评论采集上限：3 条。")).to_be_visible()
 
 
 def main() -> None:
@@ -221,6 +302,7 @@ def main() -> None:
                     page.get_by_role("button", name="保存配置").click()
                     expect(page.locator(".notice.success")).to_be_visible()
                     check_platform_settings(page)
+                    check_capture_settings(page)
                     page.goto(base + "/")
                     page.get_by_label("网页链接").fill("https://example.com/summary")
                     page.get_by_role("button", name="保存网页").click()
@@ -260,6 +342,7 @@ def main() -> None:
                     expect(page.locator(".key-points")).to_be_visible()
                     page.screenshot(path=str(screenshots / "note-detail.png"), full_page=True)
                     check_xiaohongshu_capture(page, base)
+                    check_comment_capture_limit(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -277,6 +360,7 @@ def main() -> None:
                                     "AI summary",
                                     "platform Cookie save, replace, clear and retry",
                                     "Xiaohongshu login failure, Cookie retry and comment scores",
+                                    "comment limits, disable, cache and larger recapture",
                                     "delete",
                                     "manual retry",
                                     "share through login",

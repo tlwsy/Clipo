@@ -120,6 +120,24 @@ def test_embedded_comments_are_bounded_and_image_only_notes_are_supported() -> N
     assert len(content.images) == 1 and len(content.comments) == 100
 
 
+@pytest.mark.parametrize("limit,expected", [(0, []), (1, [1]), (2, [1, 10]), (100, [1, 10, 30])])
+def test_comment_limit_counts_valid_unique_rows_in_page_order(
+    limit: int, expected: list[int]
+) -> None:
+    html = (FIXTURES / "xiaohongshu-comment-limit.html").read_text()
+    content = parse_xiaohongshu(html, URL, max_comments=limit)
+    assert [comment.likes for comment in content.comments] == expected
+    assert content.comment_capture_limit == limit
+    assert content.text == "正文应完整保留。"
+    assert content.raw_html == html
+
+
+@pytest.mark.parametrize("limit", [-1, 101, True, 2.5])
+def test_parser_rejects_invalid_comment_limits(limit: Any) -> None:
+    with pytest.raises(ValueError):
+        parse_xiaohongshu(HTML, URL, max_comments=limit)
+
+
 @pytest.mark.parametrize(
     "html,url,message,retryable",
     [

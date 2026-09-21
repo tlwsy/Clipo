@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AppShell, useAccount } from "@/components/app-shell";
+import { CaptureSettings } from "@/components/capture-settings";
 import { Icon } from "@/components/icon";
 import { PlatformSettings } from "@/components/platform-settings";
 import { api, errorMessage, type Schema } from "@/lib/api";
@@ -152,7 +153,7 @@ function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
             onChange={(event) => setMaxComments(Number(event.target.value))}
           />
           <small>
-            按点赞、回复数排序并去重，过滤过短和纯表情评论后，最多选取这些评论评分。长评论可能进一步限量，原始评论全部保留。
+            在已采集的评论中按点赞、回复数排序并去重，过滤过短和纯表情评论后，最多选取这些评论评分。长评论可能进一步限量，已采集评论全部保留。
           </small>
         </label>
         <label>
@@ -421,6 +422,7 @@ function SettingsContent() {
           {data ? (
             <>
               <ModelSettings initial={data.settings.llm} />
+              <CaptureSettings initial={data.settings.capture} />
               <PlatformSettings initial={data.settings.platform_cookies} />
               <TokenSettings initial={data.tokens} />
             </>

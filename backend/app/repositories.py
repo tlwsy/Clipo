@@ -91,6 +91,9 @@ class UserRepository:
     def set_platform_cookies(self, cookies: dict[str, str]) -> None:
         self.settings().platform_cookies = cookies
 
+    def set_capture_config(self, config: dict[str, Any]) -> None:
+        self.settings().capture_config = config
+
     def list_tokens(self) -> list[ApiToken]:
         return list(
             self.db.scalars(

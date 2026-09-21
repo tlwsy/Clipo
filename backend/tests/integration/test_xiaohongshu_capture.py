@@ -105,11 +105,17 @@ def test_expired_cookie_is_terminal_and_manual_retry_reads_replacement(
     client.put(
         "/api/v1/settings",
         headers=auth,
-        json={"platform_cookies": {"xiaohongshu": "session=replaced"}},
+        json={
+            "platform_cookies": {"xiaohongshu": "session=replaced"},
+            "capture": {"max_comments": 4},
+        },
     )
     assert client.post(f"/api/v1/jobs/{job_id}/retry", headers=auth).status_code == 202
     pipeline.run(1, job_id)
-    assert client.get(f"/api/v1/jobs/{job_id}", headers=auth).json()["status"] == "success"
+    job = client.get(f"/api/v1/jobs/{job_id}", headers=auth).json()
+    assert job["status"] == "success"
+    note = client.get(f"/api/v1/notes/{job['note_id']}", headers=auth).json()
+    assert len(note["comments"]) == 4 and note["content"]["comment_capture_limit"] == 4
     assert offline_xhs == ["session=expired", "session=replaced"]
 
 
@@ -135,6 +141,7 @@ def test_user_cookie_and_cache_are_isolated_in_concurrent_worker_runs(
             headers=headers,
             json={
                 "platform_cookies": {"xiaohongshu": f"session={value}"},
+                "capture": {"max_comments": 1 if value == "first" else 5},
             },
         )
     jobs = [(1, submit(client, auth)), (second["user"]["id"], submit(client, other_auth))]
@@ -157,6 +164,7 @@ def test_user_cookie_and_cache_are_isolated_in_concurrent_worker_runs(
         assert job["status"] == "success" and job["cached"] is False
         note = client.get(f"/api/v1/notes/{job['note_id']}", headers=headers).json()
         assert note["source"]["author"] == expected
+        assert len(note["comments"]) == (1 if expected == "first" else 5)
         # Subsequent captures use only this user's own cache.
         cached_job = submit(client, headers)
         user_id = jobs[0][0] if headers == auth else jobs[1][0]
@@ -165,6 +173,7 @@ def test_user_cookie_and_cache_are_isolated_in_concurrent_worker_runs(
         assert cached["cached"]
         note = client.get(f"/api/v1/notes/{cached['note_id']}", headers=headers).json()
         assert note["source"]["author"] == expected
+        assert len(note["comments"]) == (1 if expected == "first" else 5)
 
 
 def test_corrupt_cookie_fails_without_network_or_secret_disclosure(

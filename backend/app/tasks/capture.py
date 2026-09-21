@@ -47,11 +47,14 @@ class CapturePipeline:
             url, attempts = job.url, job.attempts
         try:
             with self.sessions() as db:
-                content = CaptureRepository(db, user_id).cache(url)
+                repository = CaptureRepository(db, user_id)
+                max_comments = repository.capture_settings().max_comments
+                content = repository.cache(url, max_comments=max_comments)
             cached = content is not None
             if content is None:
                 registry = self.registry or ExtractorRegistry(
-                    cookie_loader=lambda platform: self._cookie(user_id, platform)
+                    cookie_loader=lambda platform: self._cookie(user_id, platform),
+                    max_comments=max_comments,
                 )
                 content = registry.get(url).extract(url)
                 with self.sessions.begin() as db:

@@ -2613,6 +2613,39 @@
         ],
         "title": "CaptureRequest"
       },
+      "CaptureSettingsResponse": {
+        "properties": {
+          "max_comments": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Max Comments",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "title": "CaptureSettingsResponse"
+      },
+      "CaptureSettingsUpdate": {
+        "properties": {
+          "max_comments": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Comments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CaptureSettingsUpdate"
+      },
       "CapturedComment": {
         "properties": {
           "author": {
@@ -2713,6 +2746,19 @@
             },
             "type": "array",
             "title": "Comments"
+          },
+          "comment_capture_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment Capture Limit"
           },
           "raw_html": {
             "anyOf": [
@@ -3512,12 +3558,16 @@
           },
           "platform_cookies": {
             "$ref": "#/components/schemas/PlatformCookiesResponse"
+          },
+          "capture": {
+            "$ref": "#/components/schemas/CaptureSettingsResponse"
           }
         },
         "type": "object",
         "required": [
           "llm",
-          "platform_cookies"
+          "platform_cookies",
+          "capture"
         ],
         "title": "SettingsResponse"
       },
@@ -3537,6 +3587,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/PlatformCookiesUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "capture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaptureSettingsUpdate"
               },
               {
                 "type": "null"

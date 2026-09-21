@@ -57,6 +57,9 @@ class UserSettings(Base):
     )
     llm_config: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
     platform_cookies: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
+    capture_config: Mapped[dict[str, Any]] = mapped_column(
+        json_type, default=dict, server_default="{}"
+    )
     media_policy: Mapped[str] = mapped_column(String(32), default="thumbnail_only")
     backup_config: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
 

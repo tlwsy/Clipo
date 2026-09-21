@@ -13,8 +13,12 @@ class ExtractorRegistry:
         extractors: list[Extractor] | None = None,
         *,
         cookie_loader: Callable[[str], SecretStr | None] | None = None,
+        max_comments: int = 100,
     ) -> None:
-        self.extractors = extractors or [XiaohongshuExtractor(cookie_loader), GenericExtractor()]
+        self.extractors = extractors or [
+            XiaohongshuExtractor(cookie_loader, max_comments=max_comments),
+            GenericExtractor(),
+        ]
 
     def get(self, url: str) -> Extractor:
         for extractor in self.extractors:

@@ -120,10 +120,10 @@
 返回 `id`、`title`、`url`、`source`、`content`、`summary_markdown`、`key_points`、`suggested_tags`、`comments`、`status`、`summary_error`、`created_at`、`updated_at`。
 
 - `source`：平台、最终来源 URL、作者、作者 URL、发布时间；没有的元数据为 `null`。
-- `content`：统一提取结构（URL、平台、标题、完整正文 `text`、作者、发布时间、图片 URL 和评论）。数据库保留原始 HTML，但接口的 `raw_html` 始终为 `null`。
+- `content`：统一提取结构（URL、平台、标题、完整正文 `text`、作者、发布时间、图片 URL 和评论）。`comment_capture_limit` 记录本次小红书采集上限（0–100，0 表示关闭），历史笔记和通用网页为 `null`。数据库保留原始 HTML，但接口的 `raw_html` 始终为 `null`。
 - `summary_markdown`：AI 摘要；未生成时为 `null`，要点与建议标签为空数组。
 - `summary_error`：未配置密钥或模型失败时的可读原因，不包含供应商原始返回或密钥。
-- `comments`：小红书适配器保存页面内嵌的顶层评论（最多 100 条，含作者、内容、点赞及回复数），不包含未加载的分页或楼中楼内容。新增 `ai_score`（0–1 或 `null`）、`ai_reason`（理由或 `null`）与 `is_valuable`（评分达到采集时阈值）。初筛只选择评分候选，原始评论全部保留且保持原始顺序；未评分不等于 0 分。通用网页提取器不提取评论。
+- `comments`：小红书适配器按 `capture.max_comments` 保存页面内嵌的顶层评论（默认最多 100 条，含作者、内容、点赞及回复数），不包含未加载的分页或楼中楼内容。新增 `ai_score`（0–1 或 `null`）、`ai_reason`（理由或 `null`）与 `is_valuable`（评分达到采集时阈值）。初筛只选择评分候选，已采集评论全部保留且保持原始顺序；未评分不等于 0 分。通用网页提取器不提取评论。
 - `comment_score_error`：评论评分失败原因；无评分错误或历史笔记为 `null`。有效摘要不会因评分失败而丢失。
 
 图片目前只保留来源链接，不下载媒体。建议标签只用于展示，尚未提供标签管理。
@@ -134,7 +134,7 @@
 
 ## 设置
 
-`GET /settings` 返回 `llm` 与 `platform_cookies`。`llm` 包含 `base_url`、`model`、`api_key_set`、`comment_score_threshold`、`max_comments`、`text_token_budget`、`overridden_fields`；`platform_cookies` 只返回保存状态：
+`GET /settings` 返回 `llm`、`capture` 与 `platform_cookies`。`capture` 包含 `max_comments`（默认 100）；`llm` 包含 `base_url`、`model`、`api_key_set`、`comment_score_threshold`、`max_comments`、`text_token_budget`、`overridden_fields`；`platform_cookies` 只返回保存状态：
 
 ```json
 {"xiaohongshu":{"cookie_set":false},"xiaoheihe":{"cookie_set":false}}
@@ -149,6 +149,16 @@
 ```
 
 省略字段保留原值；传 `null` 恢复默认或清除密钥。模型配置按环境变量 > 用户数据库 > 默认值生效，读接口不返回密钥。正文预算按 UTF-8 字节保守估算，仅截断送给模型的内容。`max_comments`（1–100，默认 30）控制评论初筛后的候选数量，`comment_score_threshold`（0–1，默认 0.6）控制高价值标记。评论输入还受字节预算限制；配置在任务执行时读取，已有笔记不自动重算。连通性测试接口尚未实现。
+
+评论采集使用同一 `PUT /settings` 接口，独立于 `llm.max_comments`：
+
+```json
+{"capture":{"max_comments":10}}
+```
+
+`capture.max_comments` 只接受 0–100 的整数，0 表示关闭评论采集，`null` 恢复默认 100；省略整个 `capture`、传 `null` 或 `{}` 均保留原配置。`capture` 内未知字段返回 422。修改按账号隔离，参数非法时同次请求的所有配置均不落库。
+
+小红书后台任务执行时读取采集上限，先采集再按 LLM 候选上限评分。命中缓存时按当前上限裁剪副本；如果当前上限大于缓存记录的原采集上限，会重新抓取，此时 `cached` 为 `false`。旧缓存按原有 100 条上限兼容。现有笔记不变；关闭采集不删除完整 HTML 快照或已有缓存。
 
 平台 Cookie 使用同一 `PUT /settings` 接口：
 

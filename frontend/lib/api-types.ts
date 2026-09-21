@@ -364,6 +364,19 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** CaptureSettingsResponse */
+        CaptureSettingsResponse: {
+            /**
+             * Max Comments
+             * @default 100
+             */
+            max_comments: number;
+        };
+        /** CaptureSettingsUpdate */
+        CaptureSettingsUpdate: {
+            /** Max Comments */
+            max_comments?: number | null;
+        };
         /** CapturedComment */
         CapturedComment: {
             /** Author */
@@ -404,6 +417,8 @@ export interface components {
             images?: string[];
             /** Comments */
             comments?: components["schemas"]["CapturedComment"][];
+            /** Comment Capture Limit */
+            comment_capture_limit?: number | null;
             /** Raw Html */
             raw_html?: string | null;
         };
@@ -659,11 +674,13 @@ export interface components {
         SettingsResponse: {
             llm: components["schemas"]["LlmResponse"];
             platform_cookies: components["schemas"]["PlatformCookiesResponse"];
+            capture: components["schemas"]["CaptureSettingsResponse"];
         };
         /** SettingsUpdate */
         SettingsUpdate: {
             llm?: components["schemas"]["LlmUpdate"] | null;
             platform_cookies?: components["schemas"]["PlatformCookiesUpdate"] | null;
+            capture?: components["schemas"]["CaptureSettingsUpdate"] | null;
         };
         /** SetupRequest */
         SetupRequest: {

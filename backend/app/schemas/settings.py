@@ -46,9 +46,20 @@ class PlatformCookiesUpdate(BaseModel):
         return SecretStr(cookie)
 
 
+class CaptureSettingsUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    max_comments: int | None = Field(default=None, ge=0, le=100, strict=True)
+
+
+class CaptureSettingsResponse(BaseModel):
+    max_comments: int = Field(default=100, ge=0, le=100, strict=True)
+
+
 class SettingsUpdate(BaseModel):
     llm: LlmUpdate | None = None
     platform_cookies: PlatformCookiesUpdate | None = None
+    capture: CaptureSettingsUpdate | None = None
 
 
 class LlmResponse(BaseModel):
@@ -73,6 +84,7 @@ class PlatformCookiesResponse(BaseModel):
 class SettingsResponse(BaseModel):
     llm: LlmResponse
     platform_cookies: PlatformCookiesResponse
+    capture: CaptureSettingsResponse
 
 
 class VersionResponse(BaseModel):

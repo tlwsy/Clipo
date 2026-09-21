@@ -21,6 +21,7 @@ class CapturedContent(BaseModel):
     published_at: datetime | None = None
     images: list[str] = Field(default_factory=list)
     comments: list[CapturedComment] = Field(default_factory=list)
+    comment_capture_limit: int | None = Field(default=None, ge=0, le=100)
     raw_html: str | None = None
 
 

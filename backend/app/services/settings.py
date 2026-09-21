@@ -6,6 +6,8 @@ from app.config import Settings
 from app.extractors.base import ExtractionError
 from app.repositories import UserRepository
 from app.schemas.settings import (
+    CaptureSettingsResponse,
+    CaptureSettingsUpdate,
     LlmResponse,
     LlmUpdate,
     PlatformCookiesResponse,
@@ -43,6 +45,7 @@ def read_settings(repository: UserRepository, settings: Settings) -> SettingsRes
     else:
         api_key_set = bool(stored.get("api_key"))
     return SettingsResponse(
+        capture=CaptureSettingsResponse.model_validate(user_settings.capture_config),
         llm=LlmResponse(**effective, api_key_set=api_key_set, overridden_fields=overrides),
         platform_cookies=PlatformCookiesResponse(
             xiaohongshu=PlatformCookieStatus(
@@ -84,6 +87,17 @@ def update_platform_cookies(
         else:
             cookies.pop(platform, None)
     repository.set_platform_cookies(cookies)
+
+
+def update_capture_settings(repository: UserRepository, payload: CaptureSettingsUpdate) -> None:
+    config = dict(repository.settings().capture_config)
+    for key in payload.model_fields_set:
+        value = getattr(payload, key)
+        if value is None:
+            config.pop(key, None)
+        else:
+            config[key] = value
+    repository.set_capture_config(config)
 
 
 def load_platform_cookie(

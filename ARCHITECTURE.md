@@ -113,7 +113,9 @@ class Extractor(Protocol):
 }
 ```
 
-Phase 3 已接入评论初筛与评分：按点赞、回复数降序排列，Unicode/空白规范化后去重，过滤少于 5 个文字或数字字符以及纯表情的评论，选取最多 N 条（默认 30）。原始评论全部保留，候选仍使用原始位置作为编号。仅接受每个候选恰好一次的有限 0–1 分数及非空理由；重复、遗漏、越界编号或非法分数触发一次重试。若评分仍失败但摘要有效，保留摘要，通过 `comment_score_error` 单独提示。
+Phase 3 已接入独立的评论采集上限：`capture.max_comments` 默认 100，范围 0–100，0 关闭评论采集。小红书提取器按页面顺序保留有效且编号不重复的评论，`CapturedContent.comment_capture_limit` 记录当次上限；缓存只在原上限足以覆盖当前上限时复用，降低上限裁剪返回副本，提高至超出原上限则重新抓取。设置在任务执行时按账号读取，已有笔记与 HTML 快照保留。
+
+评论初筛与评分在采集之后执行：按点赞、回复数降序排列，Unicode/空白规范化后去重，过滤少于 5 个文字或数字字符以及纯表情的评论，选取最多 N 条（默认 30）。已采集评论全部保留，候选仍使用原始位置作为编号。仅接受每个候选恰好一次的有限 0–1 分数及非空理由；重复、遗漏、越界编号或非法分数触发一次重试。若评分仍失败但摘要有效，保留摘要，通过 `comment_score_error` 单独提示。
 
 长正文按 token 预算保守截断（默认 8000，以 UTF-8 字节数作为上界，因此中文正文通常保留更少）。评论另限每条 1000 UTF-8 字节、整个评论 JSON 数组 8000 字节，因此实际评分条数可能小于 N；模型输出预算为 `2000 + 100 × 实际候选数`。截断只影响模型输入。评分与 `is_valuable` 落库，提取缓存仅保存原始内容，旧笔记不自动重新评分。模型与 API Key 由用户在设置中配置，按用户隔离存储并加密于数据库。
 
@@ -141,7 +143,7 @@ shared_links(id PK, note_id FK, token UNIQUE, expires_at, view_count, created_at
 capture_jobs(id PK, user_id FK, url, source_hint, payload JSONB, status,
              attempts, last_error, note_id FK NULL, created_at, updated_at)
 extraction_cache(id PK, user_id FK, url_hash, content JSONB, expires_at, UNIQUE(user_id, url_hash))
-user_settings(user_id PK FK, llm_config JSONB, platform_cookies JSONB,
+user_settings(user_id PK FK, llm_config JSONB, platform_cookies JSONB, capture_config JSONB,
               media_policy, backup_config JSONB)
 media_assets(id PK, note_id FK, kind, original_url, storage_key, width, height, bytes)
 ```

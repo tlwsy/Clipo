@@ -191,11 +191,19 @@ function Reader() {
               <h2>评论</h2>
               {note.source.platform === "xiaohongshu" && (
                 <p className="muted">
-                  {note.comments.length
-                    ? "采集到的评论可能不完整。"
-                    : "页面未提供可采集的评论，帖子内容已保存。"}
+                  {note.content.comment_capture_limit === 0
+                    ? "本次已关闭评论采集，帖子内容已保存。"
+                    : note.comments.length
+                      ? "采集到的评论可能不完整。"
+                      : "页面未提供可采集的评论，帖子内容已保存。"}
                 </p>
               )}
+              {note.content.comment_capture_limit != null &&
+                note.content.comment_capture_limit > 0 && (
+                  <p className="muted">
+                    本次评论采集上限：{note.content.comment_capture_limit} 条。
+                  </p>
+                )}
               {note.comments.length > 0 && (
                 <p className="muted">
                   已评分{" "}

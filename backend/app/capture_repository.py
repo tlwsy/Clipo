@@ -13,6 +13,7 @@ from app.extractors.base import CapturedContent
 from app.llm.orchestrator import SummaryResult
 from app.models import CaptureJob, Comment, ExtractionCache, Note, Source
 from app.repositories import UserRepository
+from app.schemas.settings import CaptureSettingsResponse
 
 
 def url_hash(url: str) -> str:
@@ -168,7 +169,10 @@ class CaptureRepository(UserRepository):
             )
         )
 
-    def cache(self, url: str) -> CapturedContent | None:
+    def capture_settings(self) -> CaptureSettingsResponse:
+        return CaptureSettingsResponse.model_validate(self.settings().capture_config)
+
+    def cache(self, url: str, *, max_comments: int | None = None) -> CapturedContent | None:
         row = self.db.scalar(
             select(ExtractionCache).where(
                 ExtractionCache.user_id == self.user_id,
@@ -176,7 +180,20 @@ class CaptureRepository(UserRepository):
                 ExtractionCache.expires_at > utcnow(),
             )
         )
-        return CapturedContent.model_validate(row.content) if row else None
+        if row is None:
+            return None
+        content = CapturedContent.model_validate(row.content)
+        if content.platform == "xiaohongshu":
+            limit = self.capture_settings().max_comments if max_comments is None else max_comments
+            # Legacy XHS cache entries were extracted with the fixed 100-comment ceiling.
+            cached_limit = content.comment_capture_limit
+            if limit > (100 if cached_limit is None else cached_limit):
+                return None
+            # Trim only the returned copy; retain the wider cache for later captures.
+            content = content.model_copy(
+                update={"comments": content.comments[:limit], "comment_capture_limit": limit}
+            )
+        return content
 
     def put_cache(self, url: str, content: CapturedContent, ttl: int):
         from sqlalchemy.dialects.postgresql import insert as pg_insert

@@ -88,7 +88,9 @@ def _initial_state(tree: lxml_html.HtmlElement) -> dict[str, Any]:
     return {}
 
 
-def _comments(detail: dict[str, Any]) -> list[CapturedComment]:
+def _comments(detail: dict[str, Any], max_comments: int) -> list[CapturedComment]:
+    if max_comments == 0:
+        return []
     rows = _object(detail.get("comments")).get("list", [])
     if not isinstance(rows, list):
         return []
@@ -111,12 +113,14 @@ def _comments(detail: dict[str, Any]) -> list[CapturedComment]:
                 replies=_count(row.get("subCommentCount", row.get("sub_comment_count"))),
             )
         )
-        if len(result) == MAX_COMMENTS:
+        if len(result) == max_comments:
             break
     return result
 
 
-def parse_xiaohongshu(html: str, url: str) -> CapturedContent:
+def parse_xiaohongshu(html: str, url: str, *, max_comments: int = MAX_COMMENTS) -> CapturedContent:
+    if type(max_comments) is not int or not 0 <= max_comments <= MAX_COMMENTS:
+        raise ValueError("Comment capture limit must be an integer between 0 and 100")
     parts = urlsplit(normalize_url(url))
     if parts.hostname not in COOKIE_HOSTS:
         raise ExtractionError("小红书短链接未跳转到帖子，请复制完整帖子链接重试", False)
@@ -171,7 +175,8 @@ def parse_xiaohongshu(html: str, url: str) -> CapturedContent:
         author_url=author_url,
         published_at=_published_at(note.get("time")),
         images=images,
-        comments=_comments(detail),
+        comments=_comments(detail, max_comments),
+        comment_capture_limit=max_comments,
         raw_html=html,
     )
 
@@ -179,8 +184,14 @@ def parse_xiaohongshu(html: str, url: str) -> CapturedContent:
 class XiaohongshuExtractor:
     name = "xiaohongshu"
 
-    def __init__(self, cookie_loader: Callable[[str], SecretStr | None] | None = None) -> None:
+    def __init__(
+        self,
+        cookie_loader: Callable[[str], SecretStr | None] | None = None,
+        *,
+        max_comments: int = MAX_COMMENTS,
+    ) -> None:
         self.cookie_loader = cookie_loader
+        self.max_comments = max_comments
 
     def matches(self, url: str) -> bool:
         parts = urlsplit(url)
@@ -194,4 +205,4 @@ class XiaohongshuExtractor:
             allowed_hosts=PAGE_HOSTS,
             check_status=check_status,
         )
-        return parse_xiaohongshu(html, final_url)
+        return parse_xiaohongshu(html, final_url, max_comments=self.max_comments)
