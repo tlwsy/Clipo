@@ -27,46 +27,48 @@
 		<string>WFStringContentItem</string>
 		<string>WFSafariWebPageContentItem</string>
 	</array>
+	<key>WFWorkflowHasShortcutInputVariables</key>
+	<true/>
 	<key>WFWorkflowOutputContentItemClasses</key>
 	<array/>
 	<key>WFWorkflowImportQuestions</key>
-	<array>
-		<dict>
-			<key>ActionIndex</key>
-			<integer>0</integer>
-			<key>Category</key>
-			<string>Parameter</string>
-			<key>ParameterKey</key>
-			<string>WFTextActionText</string>
-			<key>Text</key>
-			<string>Clipo 的 HTTPS 地址，末尾不要斜杠</string>
-			<key>DefaultValue</key>
-			<string>https://clipo.example.com</string>
-		</dict>
-		<dict>
-			<key>ActionIndex</key>
-			<integer>2</integer>
-			<key>Category</key>
-			<string>Parameter</string>
-			<key>ParameterKey</key>
-			<string>WFTextActionText</string>
-			<key>Text</key>
-			<string>在 Clipo 设置中创建的独立 API Token</string>
-			<key>DefaultValue</key>
-			<string>ct_REPLACE_IN_SHORTCUTS</string>
-		</dict>
-	</array>
+	<array/>
 	<key>WFWorkflowActions</key>
 	<array>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
+			<string>is.workflow.actions.comment</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>7B29FD50-0B92-5933-81AF-8958FCCECFF2</string>
-				<key>WFTextActionText</key>
-				<string>https://clipo.example.com</string>
+				<string>A54FD457-CD7A-52F5-8933-7DE2D418F3CE</string>
+				<key>WFCommentActionText</key>
+				<string>Clipo 自动配置版 v1。先在 Clipo 设置中配置此设备；日常接收分享或读取剪贴板。凭据仅保存在运行时的 Shortcuts/Clipo.json，不写入模板。</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>3139C63B-3046-52BD-97E3-FA54A3E60EFE</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>GroupingIdentifier</key>
+				<string>f2a679cd-81a9-51de-9c83-e69a83fc4de2</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ExtensionInput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFCondition</key>
+				<integer>100</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -75,68 +77,9 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>2531F044-4A72-59E5-92C0-D82221A20AB6</string>
+				<string>E5880B4D-2632-529C-A3E5-48A17933FFE8</string>
 				<key>WFVariableName</key>
-				<string>Clipo 服务器</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Type</key>
-						<string>ActionOutput</string>
-						<key>OutputUUID</key>
-						<string>7B29FD50-0B92-5933-81AF-8958FCCECFF2</string>
-						<key>OutputName</key>
-						<string>结果</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>90906553-31A4-5C7B-8668-E9F213134EBA</string>
-				<key>WFTextActionText</key>
-				<string>ct_REPLACE_IN_SHORTCUTS</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>8677AED4-F1EF-52F5-BCE4-9085AB648CBB</string>
-				<key>WFVariableName</key>
-				<string>Clipo Token</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Type</key>
-						<string>ActionOutput</string>
-						<key>OutputUUID</key>
-						<string>90906553-31A4-5C7B-8668-E9F213134EBA</string>
-						<key>OutputName</key>
-						<string>结果</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.detect.link</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>C9E0B5BB-4D41-5304-9D8D-7ACD9B19135F</string>
+				<string>Clipo 输入</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -151,11 +94,35 @@
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.getitemfromlist</string>
+			<string>is.workflow.actions.conditional</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>A68116B7-D970-5170-9EE6-C5179F5B3128</string>
+				<string>0481BE5E-6C62-5E41-BE8D-1119E0995701</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>GroupingIdentifier</key>
+				<string>f2a679cd-81a9-51de-9c83-e69a83fc4de2</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getclipboard</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>C378F2C4-5409-5E5C-A2FC-17EE0155DECA</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>C8EAC2D4-A61C-51D1-A180-0F1BCB148E68</string>
+				<key>WFVariableName</key>
+				<string>Clipo 输入</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -163,15 +130,13 @@
 						<key>Type</key>
 						<string>ActionOutput</string>
 						<key>OutputUUID</key>
-						<string>C9E0B5BB-4D41-5304-9D8D-7ACD9B19135F</string>
+						<string>C378F2C4-5409-5E5C-A2FC-17EE0155DECA</string>
 						<key>OutputName</key>
 						<string>结果</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
 				</dict>
-				<key>WFItemSpecifier</key>
-				<string>First Item</string>
 			</dict>
 		</dict>
 		<dict>
@@ -180,11 +145,53 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>3798BF6B-F89F-54BB-9FC5-D6DAAB49167E</string>
+				<string>7902DA51-E171-56E7-884F-E94AD6AAE044</string>
 				<key>WFControlFlowMode</key>
-				<integer>0</integer>
+				<integer>2</integer>
 				<key>GroupingIdentifier</key>
-				<string>8e9891ba-d7d2-59f0-9639-fc5038f02db8</string>
+				<string>f2a679cd-81a9-51de-9c83-e69a83fc4de2</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>6F18CEE6-AE70-5BD0-A116-BF7D231AE08F</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Clipo 输入</string>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.match</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>BF1E4447-6DED-5F74-AE61-A3C8282066D4</string>
+				<key>WFMatchTextPattern</key>
+				<string>^clipo-setup:</string>
+				<key>WFTextMatchCaseSensitive</key>
+				<true/>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -192,7 +199,34 @@
 						<key>Type</key>
 						<string>ActionOutput</string>
 						<key>OutputUUID</key>
-						<string>A68116B7-D970-5170-9EE6-C5179F5B3128</string>
+						<string>6F18CEE6-AE70-5BD0-A116-BF7D231AE08F</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>48F8D563-E57D-5AD2-8C0D-0EB30D2FA293</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>GroupingIdentifier</key>
+				<string>c355b07e-43e8-50f5-866f-5aebd20d3fcd</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>BF1E4447-6DED-5F74-AE61-A3C8282066D4</string>
 						<key>OutputName</key>
 						<string>结果</string>
 					</dict>
@@ -205,11 +239,919 @@
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.replace</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>6CF36F31-CC9F-590E-8BE4-6603F4C567EF</string>
+				<key>WFReplaceTextFind</key>
+				<string>^clipo-setup:</string>
+				<key>WFReplaceTextReplace</key>
+				<string></string>
+				<key>WFReplaceTextRegularExpression</key>
+				<true/>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>6F18CEE6-AE70-5BD0-A116-BF7D231AE08F</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getdictionaryfrominput</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>39F0F39D-782E-5D35-84E0-C3697175787A</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>6CF36F31-CC9F-590E-8BE4-6603F4C567EF</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>E6479322-6720-5986-85DF-51EC10990FAA</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>39F0F39D-782E-5D35-84E0-C3697175787A</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>server_url</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>FA20ED77-F481-5A6E-9B01-71B9CF09B32A</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>39F0F39D-782E-5D35-84E0-C3697175787A</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>code</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>DEC87136-DC45-52F5-ABAF-45AB7D5602A5</string>
+				<key>WFAlertActionTitle</key>
+				<string>连接 Clipo</string>
+				<key>WFAlertActionMessage</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>将此设备连接到：￼。继续会替换已保存的 Clipo 配置。</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{8, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>E6479322-6720-5986-85DF-51EC10990FAA</string>
+								<key>OutputName</key>
+								<string>结果</string>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
+				<key>WFAlertActionCancelButtonShown</key>
+				<true/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.downloadurl</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>71B3380B-E59C-5C69-95BC-C4E95BF54B24</string>
+				<string>BA69C2F4-A54B-5A68-B9B3-07C5F2048AD6</string>
+				<key>WFURL</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼/api/v1/shortcuts/pairings/consume</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>E6479322-6720-5986-85DF-51EC10990FAA</string>
+								<key>OutputName</key>
+								<string>结果</string>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
+				<key>WFHTTPMethod</key>
+				<string>POST</string>
+				<key>WFHTTPBodyType</key>
+				<string>JSON</string>
+				<key>WFJSONValues</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFDictionaryFieldValue</string>
+					<key>Value</key>
+					<dict>
+						<key>WFDictionaryFieldValueItems</key>
+						<array>
+							<dict>
+								<key>WFItemType</key>
+								<integer>0</integer>
+								<key>WFKey</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>code</string>
+										<key>attachmentsByRange</key>
+										<dict/>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+								<key>WFValue</key>
+								<dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>￼</string>
+										<key>attachmentsByRange</key>
+										<dict>
+											<key>{0, 1}</key>
+											<dict>
+												<key>Type</key>
+												<string>ActionOutput</string>
+												<key>OutputUUID</key>
+												<string>FA20ED77-F481-5A6E-9B01-71B9CF09B32A</string>
+												<key>OutputName</key>
+												<string>结果</string>
+											</dict>
+										</dict>
+									</dict>
+								</dict>
+							</dict>
+						</array>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>3A75A231-3590-5CC0-B259-6F479DED1390</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>BA69C2F4-A54B-5A68-B9B3-07C5F2048AD6</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>token</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>352FD1EF-C4AE-5EA7-A76A-C3E12E55ECAA</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>GroupingIdentifier</key>
+				<string>bd965772-2e1a-5547-9328-295d31c2c91f</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>3A75A231-3590-5CC0-B259-6F479DED1390</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFCondition</key>
+				<integer>100</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>99C16AC6-02CB-5B9C-A92D-2C7F8A228878</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>BA69C2F4-A54B-5A68-B9B3-07C5F2048AD6</string>
+								<key>OutputName</key>
+								<string>结果</string>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.documentpicker.save</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>4A1A0140-759C-520F-AAA0-B8EA2A07EA00</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>99C16AC6-02CB-5B9C-A92D-2C7F8A228878</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFFileStorageService</key>
+				<string>iCloud Drive</string>
+				<key>WFAskWhereToSave</key>
+				<false/>
+				<key>WFFileDestinationPath</key>
+				<string>Clipo.json</string>
+				<key>WFSaveFileOverwrite</key>
+				<true/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>08830424-4CD2-5041-BBA5-F7527D1D7661</string>
+				<key>WFNotificationActionTitle</key>
+				<string>Clipo</string>
+				<key>WFNotificationActionBody</key>
+				<string>Clipo 配置已保存。复制帖子链接后运行此指令即可保存。</string>
+				<key>WFNotificationActionSound</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>1F3D3DFF-2F0E-5677-AF0F-04E66E5E1A0C</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>GroupingIdentifier</key>
+				<string>bd965772-2e1a-5547-9328-295d31c2c91f</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>8F225BC8-D89D-5FE2-98E6-590962F48F0C</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>BA69C2F4-A54B-5A68-B9B3-07C5F2048AD6</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>error</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>EC23087E-98A5-5F92-9569-D2649D6D2103</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>8F225BC8-D89D-5FE2-98E6-590962F48F0C</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>message</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5CF9D0F0-97BD-5703-A91F-FA40EAE60DEF</string>
+				<key>WFAlertActionTitle</key>
+				<string>Clipo 配置失败</string>
+				<key>WFAlertActionMessage</key>
+				<dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼ 请回到 Clipo 重新配置设备。</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>EC23087E-98A5-5F92-9569-D2649D6D2103</string>
+								<key>OutputName</key>
+								<string>结果</string>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
+				<key>WFAlertActionCancelButtonShown</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>34868C52-21E6-5850-B427-24B3BE5F4CF9</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>GroupingIdentifier</key>
+				<string>bd965772-2e1a-5547-9328-295d31c2c91f</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.exit</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>3D13F83E-1677-5BCD-B44A-CE25EF68EEEB</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>CB9DBF98-C22F-58E8-AEFA-12C693A21914</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>GroupingIdentifier</key>
+				<string>c355b07e-43e8-50f5-866f-5aebd20d3fcd</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.detect.link</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>76F9B638-005B-500A-9EBD-D53F5EE9B91B</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Clipo 输入</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>A3ED7811-FAD7-540E-AB11-C74029632802</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>GroupingIdentifier</key>
+				<string>5dcbb443-99f7-5b74-9247-c8a6b6b3cc02</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>76F9B638-005B-500A-9EBD-D53F5EE9B91B</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFCondition</key>
+				<integer>100</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>DB53794A-E4FB-5213-B961-52172185C9D3</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>GroupingIdentifier</key>
+				<string>5dcbb443-99f7-5b74-9247-c8a6b6b3cc02</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>7C466105-771F-5943-8CCB-4284050FCE9F</string>
+				<key>WFNotificationActionTitle</key>
+				<string>Clipo</string>
+				<key>WFNotificationActionBody</key>
+				<string>未找到链接。请先在小红书、小黑盒或浏览器中复制帖子链接，再运行此指令。</string>
+				<key>WFNotificationActionSound</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.exit</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>398E2E7F-0D4F-51E7-9058-A3AA0651D563</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>8FB8D970-88DB-5012-AF00-B6838C46E019</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>GroupingIdentifier</key>
+				<string>5dcbb443-99f7-5b74-9247-c8a6b6b3cc02</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getitemfromlist</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>776B0E40-3008-58DC-BAE8-0C2BB57D338A</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>76F9B638-005B-500A-9EBD-D53F5EE9B91B</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getfile</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>B229D906-8297-5FE0-B117-835EBE808BAB</string>
+				<key>WFFileStorageService</key>
+				<string>iCloud Drive</string>
+				<key>WFShowFilePicker</key>
+				<false/>
+				<key>WFGetFilePath</key>
+				<string>Clipo.json</string>
+				<key>WFFileErrorIfNotFound</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>D9C5DB1E-24AE-585E-85A5-FFFAB0542929</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>GroupingIdentifier</key>
+				<string>9dbef87d-b162-5c6a-8680-0fd243c0f5d8</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>B229D906-8297-5FE0-B117-835EBE808BAB</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFCondition</key>
+				<integer>100</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>3A602843-D7EA-5D9D-9A9B-05C4C8F18B02</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>GroupingIdentifier</key>
+				<string>9dbef87d-b162-5c6a-8680-0fd243c0f5d8</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>F66B809C-3C59-50BF-BCBC-1564B8B0F702</string>
+				<key>WFNotificationActionTitle</key>
+				<string>Clipo</string>
+				<key>WFNotificationActionBody</key>
+				<string>尚未配置 Clipo。请打开 Clipo 设置，选择“配置此设备”。</string>
+				<key>WFNotificationActionSound</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.exit</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>53DFCDA2-822A-5DD1-B8FB-BFCAE2D59AA3</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>C63BB3C0-5A4F-5D5F-87B0-644699452845</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>GroupingIdentifier</key>
+				<string>9dbef87d-b162-5c6a-8680-0fd243c0f5d8</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getdictionaryfrominput</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5B519CAE-C160-5A7B-A472-33525A0CF1D1</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>B229D906-8297-5FE0-B117-835EBE808BAB</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>FF653380-13E9-5E61-AA80-AB55F42625AF</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>5B519CAE-C160-5A7B-A472-33525A0CF1D1</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>server_url</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>65FDE05C-8B16-5723-9830-A344171641FF</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>5B519CAE-C160-5A7B-A472-33525A0CF1D1</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryKey</key>
+				<string>token</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>E4BAE4A5-CD5B-522B-A53C-69ECDF75C220</string>
+				<key>WFVariableName</key>
+				<string>Clipo 服务器</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>FF653380-13E9-5E61-AA80-AB55F42625AF</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>91298A27-AFA4-5BBA-937A-DDAA1310656F</string>
+				<key>WFVariableName</key>
+				<string>Clipo Token</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>65FDE05C-8B16-5723-9830-A344171641FF</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>DF70DDCE-002D-527D-BED2-D98246B3C8B4</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>GroupingIdentifier</key>
+				<string>b6959f0a-33c9-5787-9521-50068104e185</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>65FDE05C-8B16-5723-9830-A344171641FF</string>
+						<key>OutputName</key>
+						<string>结果</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFCondition</key>
+				<integer>100</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>F5A38591-CA89-5216-BAFF-D9E3EDC07243</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>GroupingIdentifier</key>
+				<string>b6959f0a-33c9-5787-9521-50068104e185</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>27CB3E4F-6561-5123-8012-EADC5CF6CA6D</string>
+				<key>WFNotificationActionTitle</key>
+				<string>Clipo</string>
+				<key>WFNotificationActionBody</key>
+				<string>Clipo 配置缺少 Token，请在设置中重新配置此设备。</string>
+				<key>WFNotificationActionSound</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.exit</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>17622453-E4D6-5B90-9DE4-9CE7390434BA</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>383223EC-FCBC-5769-8568-A2EF47F7EF6C</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>GroupingIdentifier</key>
+				<string>b6959f0a-33c9-5787-9521-50068104e185</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.downloadurl</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>696D35DC-1B06-59AC-9161-77967F4AE925</string>
 				<key>WFURL</key>
 				<dict>
 					<key>WFSerializationType</key>
@@ -319,7 +1261,7 @@
 												<key>Type</key>
 												<string>ActionOutput</string>
 												<key>OutputUUID</key>
-												<string>A68116B7-D970-5170-9EE6-C5179F5B3128</string>
+												<string>776B0E40-3008-58DC-BAE8-0C2BB57D338A</string>
 												<key>OutputName</key>
 												<string>结果</string>
 											</dict>
@@ -338,7 +1280,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>8C405847-3105-5480-9DB8-AE20A1197567</string>
+				<string>9669E9F1-1B88-5AC7-9BEC-803F1B59888D</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -346,7 +1288,7 @@
 						<key>Type</key>
 						<string>ActionOutput</string>
 						<key>OutputUUID</key>
-						<string>71B3380B-E59C-5C69-95BC-C4E95BF54B24</string>
+						<string>696D35DC-1B06-59AC-9161-77967F4AE925</string>
 						<key>OutputName</key>
 						<string>结果</string>
 					</dict>
@@ -363,11 +1305,11 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>5607850D-FB2D-5580-9B2E-CD2833ACD55C</string>
+				<string>A9B2D75A-1BA6-5F18-860D-7B1BE24B1FD5</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>GroupingIdentifier</key>
-				<string>1cf23745-dc5e-5b2a-b318-b28c54ee37cc</string>
+				<string>bf806eb5-dedf-5d5c-bb95-b0811b543371</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -375,7 +1317,7 @@
 						<key>Type</key>
 						<string>ActionOutput</string>
 						<key>OutputUUID</key>
-						<string>8C405847-3105-5480-9DB8-AE20A1197567</string>
+						<string>9669E9F1-1B88-5AC7-9BEC-803F1B59888D</string>
 						<key>OutputName</key>
 						<string>结果</string>
 					</dict>
@@ -392,7 +1334,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>5DA4CB68-505D-5B44-B8C6-878577E7382A</string>
+				<string>0B955829-6F31-58D5-9F4A-3383E1E23C2B</string>
 				<key>WFNotificationActionTitle</key>
 				<string>Clipo</string>
 				<key>WFNotificationActionBody</key>
@@ -407,11 +1349,11 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>D899F21F-4D0B-5810-87B0-C7F2EA6441DB</string>
+				<string>C678EDEE-4333-58C3-9A11-B8CFFD7B1FFF</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>GroupingIdentifier</key>
-				<string>1cf23745-dc5e-5b2a-b318-b28c54ee37cc</string>
+				<string>bf806eb5-dedf-5d5c-bb95-b0811b543371</string>
 			</dict>
 		</dict>
 		<dict>
@@ -420,7 +1362,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>EB518B60-C140-50C8-9953-21138A1BBCC3</string>
+				<string>036147D8-956B-5C79-BF01-8213C2AD13DC</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -428,7 +1370,7 @@
 						<key>Type</key>
 						<string>ActionOutput</string>
 						<key>OutputUUID</key>
-						<string>71B3380B-E59C-5C69-95BC-C4E95BF54B24</string>
+						<string>696D35DC-1B06-59AC-9161-77967F4AE925</string>
 						<key>OutputName</key>
 						<string>结果</string>
 					</dict>
@@ -445,7 +1387,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>0A2D1595-6D3F-5F42-B53E-3B2FFF88C160</string>
+				<string>168623AC-179E-53FC-ADFA-63C2AEC01040</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -453,7 +1395,7 @@
 						<key>Type</key>
 						<string>ActionOutput</string>
 						<key>OutputUUID</key>
-						<string>EB518B60-C140-50C8-9953-21138A1BBCC3</string>
+						<string>036147D8-956B-5C79-BF01-8213C2AD13DC</string>
 						<key>OutputName</key>
 						<string>结果</string>
 					</dict>
@@ -466,46 +1408,11 @@
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.notification</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>5B566259-4EFE-5B80-BE4F-97668575C0F7</string>
-				<key>WFNotificationActionTitle</key>
-				<string>Clipo 保存失败</string>
-				<key>WFNotificationActionBody</key>
-				<dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>原因：￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{3, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>ActionOutput</string>
-								<key>OutputUUID</key>
-								<string>0A2D1595-6D3F-5F42-B53E-3B2FFF88C160</string>
-								<key>OutputName</key>
-								<string>结果</string>
-							</dict>
-						</dict>
-					</dict>
-				</dict>
-				<key>WFNotificationActionSound</key>
-				<false/>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.alert</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>E8B09339-C4B2-5500-A461-41D3076A94DE</string>
+				<string>27B57A0A-B56E-5089-A2E4-F2145CE1FF6F</string>
 				<key>WFAlertActionTitle</key>
 				<string>Clipo 保存失败</string>
 				<key>WFAlertActionMessage</key>
@@ -515,8 +1422,7 @@
 					<key>Value</key>
 					<dict>
 						<key>string</key>
-						<string>￼
-点按完成打开 Clipo 检查登录、Token 或保存队列。</string>
+						<string>￼。继续可打开保存队列；Token 失效时请在设置中重新配置。</string>
 						<key>attachmentsByRange</key>
 						<dict>
 							<key>{0, 1}</key>
@@ -524,7 +1430,7 @@
 								<key>Type</key>
 								<string>ActionOutput</string>
 								<key>OutputUUID</key>
-								<string>0A2D1595-6D3F-5F42-B53E-3B2FFF88C160</string>
+								<string>168623AC-179E-53FC-ADFA-63C2AEC01040</string>
 								<key>OutputName</key>
 								<string>结果</string>
 							</dict>
@@ -541,7 +1447,7 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>44227964-7DB7-5D06-8FFE-59F7854B999D</string>
+				<string>3EC95A38-F1CD-559D-8D2C-DEF4EB7CEA7A</string>
 				<key>WFInput</key>
 				<dict>
 					<key>WFSerializationType</key>
@@ -570,52 +1476,11 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>A7D89613-D80D-5B6F-94E7-2AC59D0FB765</string>
+				<string>762900F9-3301-5C46-8210-A2E492A382A4</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 				<key>GroupingIdentifier</key>
-				<string>1cf23745-dc5e-5b2a-b318-b28c54ee37cc</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>3A3AE375-D8E1-52D3-BC70-9999C136DE0B</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-				<key>GroupingIdentifier</key>
-				<string>8e9891ba-d7d2-59f0-9639-fc5038f02db8</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.notification</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>4CBA27ED-0981-5573-9D4D-B5BA1BA04812</string>
-				<key>WFNotificationActionTitle</key>
-				<string>Clipo 未收到链接</string>
-				<key>WFNotificationActionBody</key>
-				<string>请在网页的分享面板中选择“保存到 Clipo”。</string>
-				<key>WFNotificationActionSound</key>
-				<false/>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>87D4A828-982F-5C23-830C-4BF4BCAF249B</string>
-				<key>WFControlFlowMode</key>
-				<integer>2</integer>
-				<key>GroupingIdentifier</key>
-				<string>8e9891ba-d7d2-59f0-9639-fc5038f02db8</string>
+				<string>bf806eb5-dedf-5d5c-bb95-b0811b543371</string>
 			</dict>
 		</dict>
 	</array>

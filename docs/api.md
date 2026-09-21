@@ -193,3 +193,16 @@ Cookie 通过当前账号的仓储加密保存；保存设置不向平台发起�
 ## 后续接口规划
 
 Phase 4 的 `q` 搜索、标签与收藏接口已提供，Shortcut 复用现有 `POST /captures`。后续 Phase 5 计划扩展 `POST /captures` 的内容直传；Phase 6 计划接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。
+
+## iOS Shortcut 自动配置
+
+- `GET /shortcuts/info`：公开返回通用指令名称 `保存到 Clipo`、协议版本 `1`、未签名模板地址和可选的 iCloud 安装链接。未配置安装链接时为 `null`，不使用包含个人凭据的分享链接。
+- `GET /shortcuts/template`：公开下载可复现、无凭据的未签名 `.shortcut`。仍需 Apple 签名/导入与文件动作实机验证。
+- `POST /shortcuts/pairings`：需登录，请求 `{"name":"我的 iPhone","server_url":"https://clipo.example.com"}`。返回 201，含 `id`、`expires_at`、`status`、`token_id`、`setup_input` 和 `launch_url`。地址由用户当前浏览器 origin 提供，不信任 Host/代理头，也不会由后端请求；不允许路径、查询、片段或 URL 凭据。公网须 HTTPS，HTTP 只允许本机/内网 IP 测试（可带端口）。不创建 Token，5 分钟内领取才签发。
+- `GET /shortcuts/pairings/{id}`：仅本账号可查，状态为 `pending`、`expired`、`claimed` 或 `revoked`，不返回配置码、启动链接或 Token。`claimed` 仅表示已签发凭据，不证明手机已保存配置文件。
+- `DELETE /shortcuts/pairings/{id}`：取消本账号未领取的配置；已领取时返回 409，应通过已有 Token 接口撤销设备访问。
+- `POST /shortcuts/pairings/consume`：以 JSON `{"code":"cp_…"}` 提交一次性配置码，无需浏览器登录；返回 `{version:1,server_url,token,token_id}`。无效、过期、已使用或已替换均返回 400 `pairing_unavailable`，响应不会回显配置码。
+
+每账号只保留一条最新配置记录，生成新码会原子替换旧码，已签发设备 Token 保留，须单独撤销。配置码为 256 位随机值，仅存 SHA-256；领取以账号和摘要限定的条件 UPDATE 实现，消费与 Token 创建同一事务，支持 SQLite/PostgreSQL。竞争领取只成功一次，响应丢失后应重新生成配置并在 Token 列表撤销不用的令牌。所有响应使用 `Cache-Control: no-store`。
+
+`launch_url` 使用 Apple `shortcuts://run-shortcut` 的文本输入协议，输入为 `clipo-setup:` 加 JSON（`version`、`server_url`、`code`）。公共模板将成功领取的 JSON 保存为 iCloud Drive 的 `Shortcuts/Clipo.json`；平常优先提取分享输入的首个 URL，无分享输入时读取剪贴板，然后使用文件中的地址和 Token 提交采集。配置文件可能随 iCloud 同步，不应分享文件内容。

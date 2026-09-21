@@ -5,7 +5,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.db.base import utcnow
-from app.models import ApiToken, InstanceState, RefreshToken, User, UserSettings
+from app.models import ApiToken, InstanceState, RefreshToken, ShortcutPairing, User, UserSettings
 
 
 class IdentityRepository:
@@ -70,6 +70,12 @@ class IdentityRepository:
             return None
         token.last_used_at = utcnow()
         return self.by_id(token.user_id)
+
+    def shortcut_pairing_owner(self, code_hash: str) -> int | None:
+        # Credential lookup, like API Token authentication; all subsequent access is user-scoped.
+        return self.db.scalar(
+            select(ShortcutPairing.user_id).where(ShortcutPairing.code_hash == code_hash)
+        )
 
 
 class UserRepository:

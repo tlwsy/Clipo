@@ -4,6 +4,7 @@ from sqlalchemy import text
 from app import __version__
 from app.api.dependencies import Config, CurrentUser, Db, UserRepo
 from app.api.v1.captures import router as captures_router
+from app.api.v1.shortcuts import router as shortcuts_router
 from app.models import User
 from app.platform_repository import PlatformCheckRepository
 from app.repositories import IdentityRepository
@@ -45,6 +46,7 @@ router = APIRouter(
 )
 COOKIE_NAME = "clipo_refresh"
 router.include_router(captures_router)
+router.include_router(shortcuts_router)
 COOKIE_PATH = "/api/v1/auth"
 
 

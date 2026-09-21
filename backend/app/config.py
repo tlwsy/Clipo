@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -30,6 +31,16 @@ class Settings(BaseSettings):
     static_path: Path = BACKEND_ROOT / "app" / "static"
     queue_path: Path = BACKEND_ROOT.parent / "data" / "huey.db"
     extraction_cache_ttl_seconds: int = Field(default=86400, ge=0, le=2592000)
+    shortcut_install_url: str | None = None
+
+    @field_validator("shortcut_install_url")
+    @classmethod
+    def validate_shortcut_install_url(cls, value: str | None) -> str | None:
+        if not value:
+            return None
+        if not re.fullmatch(r"https://www\.icloud\.com/shortcuts/[a-fA-F0-9]{32}", value):
+            raise ValueError("请填写已验证且不含个人凭据的 iCloud 快捷指令分享链接")
+        return value
 
     @field_validator("secret_key")
     @classmethod
