@@ -1,6 +1,6 @@
 # 构建进度
 
-2026-09-21：进入 Phase 4，标签与收藏节点已实现，后续推进检索、Shortcut 与离线访问。Phase 3 计划内开发已实现，M3 的小红书真实帖子/评论/模型链路验收通过，小黑盒真实链路也通过。YouTube 线上验收仍因当前环境 DNS 失败而阻塞；B 站字幕成功路径仅做离线验证。当前能力见下方清单，阶段结论与限制见文末。
+2026-09-21：Phase 4 的标签、收藏、中文检索、PWA 离线阅读与写队列已实现并通过本地验收；Shortcut 已提供未签名模板并通过本地 API 契约验证。按用户选择，先完成本地验证，记录 Apple 签名、iOS 导入与系统分享等实机待验收项，M4 尚未全部验收。Docker Compose 构建、启动、空 PostgreSQL 迁移与健康检查已通过，PostgreSQL 16 专项测试已通过。Phase 3 的小红书、小黑盒真实帖子与模型链路已通过；YouTube 线上验收仍因 DNS 失败阻塞，B 站字幕成功路径仅做离线验证。具体范围与限制见下文。
 
 以下节点记录保留其各自执行时的状态，不代表最终能力；每条验证只对应注明的节点。
 
@@ -32,7 +32,10 @@
 - 笔记、来源和评论落库；按账号与 URL 隔离的 24 小时提取缓存；幂等提交；游标分页；笔记删除级联清理来源与评论，保留任务历史。
 - `POST /captures`、`GET /jobs`、`GET /jobs/{id}`、`POST /jobs/{id}/retry`、`GET /notes`、`GET /notes/{id}`、`DELETE /notes/{id}`；同步生成 OpenAPI 与 TypeScript 类型。
 - Web 笔记列表、链接保存、实时队列、详情、Markdown 摘要、要点、建议标签、原文、图片链接与删除确认；模型设置新增正文预算。
-- PWA Manifest、192 / 512 图标、Service Worker 注册和 GET 分享入口。未登录时暂存分享内容，登录后自动继续，以幂等键防止重复提交。当前阅读需要联网。
+- 标签与收藏：AI 建议自动转为可管理标签，支持手动增删、收藏开关和组合筛选；旧建议由迁移回填，数据按账号隔离。
+- 中文检索：标题、正文、摘要多关键词匹配，可组合标签与收藏筛选；SQLite FTS5 与 PostgreSQL tsvector/GIN 按后端分派，短词和中文扩展缺失时回退字面匹配。
+- PWA Manifest、192 / 512 图标、Service Worker 和 GET 分享入口。未登录时暂存分享内容，登录后自动继续，以幂等键防止重复提交。生产构建支持最近 50 篇笔记离线缓存、搜索与阅读，离线收藏、删除和链接暂存可在联网后恢复同步；提供更新提示，退出或切换账号时清理缓存。使用条件见 [离线阅读与同步](offline.md)。
+- iOS Shortcut 未签名模板、生成器和配置文档；本地验证请求契约，Apple 签名与 iOS 运行仍待验收，见 [Shortcut 配置与验收](../shortcuts/README.md)。
 - `make dev` 启动 API、前端和 worker；`make serve` 与 Docker 入口监督 API / worker 两个进程；队列路径在容器数据卷中持久化。
 
 ## Phase 1–2 验证记录（2026-09-20）
@@ -117,18 +120,29 @@
 
 2026-09-21 补充：MuMu Android 15 的 ADB 连接与 shell 设备信息读取已验证，使用 Windows 自带 ADB 的本地映射 `127.0.0.1:16384`，内部 IP 为 `10.0.2.15`。可复用连接步骤见 [Android 模拟器连接与验收](android-testing.md)。本次没有执行 PWA 安装或系统分享功能验收，以下相关限制仍保留。
 
-- 当前 WSL 未启用 Docker Desktop 集成，容器和 PostgreSQL 实机验收仍待完成。
+- Docker Desktop/Compose 已可用，应用镜像构建、空 PostgreSQL 初始化与全部迁移、API/worker 启动、健康检查及静态首页已验证；PostgreSQL 16 已运行组织管理、检索、迁移与采集链路专项测试。尚未在 Compose 部署中执行浏览器设置向导、创建账号和完整采集验收；可选 `pg_bigm` 未安装实测。
 - Android 真机上的 PWA 安装与系统分享面板尚未验证；已验证同一分享 URL 的浏览器链路和 Manifest。
+- Shortcut 的本地测试不运行 Apple 快捷指令引擎。签名、导入问题、系统分享、首次授权、通知和错误分支仍需 Mac/iPhone 实机；M4 的 iOS 一次点击保存验收仍未通过。
+- 离线仅覆盖当前账号已缓存的最近 50 篇笔记，图片仍为外链；标签编辑和设置需联网，关闭应用后不保证后台同步。Chromium 验证不能替代 iOS 的存储与系统行为验收。
 - 用户配置的真实模型已在小红书和小黑盒样本通过摘要和评分入库；其他供应商兼容性与评分质量尚未全面评审。固定返回和 HTTP 协议夹具覆盖失败重试与降级。
 - 通用抓取只支持公开的静态 HTML，不支持需要登录或 JavaScript 渲染的站点。图片只保留外链，不下载媒体；HTML 快照用于后续重新提取，当前没有相应 API。
-- 建议标签尚未变成可管理标签；通用网页不抓评论。小红书最多保存 100 条顶层评论，完整 Cookie 和访问参数齐备时补抓分页，不抓楼中楼。初筛与模型预算可能使评分条数少于采集条数，未评分不代表低价值；真实模型已成功返回并保存评分，但没有人工评审评分质量。
+- 通用网页不抓评论。小红书最多保存 100 条顶层评论，完整 Cookie 和访问参数齐备时补抓分页，不抓楼中楼。初筛与模型预算可能使评分条数少于采集条数，未评分不代表低价值；真实模型已成功返回并保存评分，但没有人工评审评分质量。
 - 小红书夹具为人工构造的最小回归样本，不能证明当前线上结构或反爬兼容性；真实 Cookie 身份接口与用户提供的小红书样本已通过线上采集和模型链路，单个样本不能证明所有帖子类型或未来反爬兼容性。HTTP 401/明确登录页才提示登录失效，403/验证码归为访问限制；公开帖子采集成功不代表 Cookie 已通过验证。
 
 - YouTube 真实站点在当前环境无法解析域名，线上兼容性未验收；B 站样本没有公开字幕，字幕成功路径目前仅由离线夹具验证。视频平台不配置 Cookie，不下载视频/音频，不保证需要登录的字幕或评论可读。
 
 ## 当前阶段与后续节点
 
-**Phase 3：计划内开发完成，M3 关键平台样本验收通过；YouTube 线上验收阻塞。** 节点提交均是检查点，持续推进至全部独立可完成的功能与检查完成。
+**Phase 4：本地功能与 Shortcut 请求契约已验证，iOS 实机待验收，M4 尚未全部通过。** 用户已选择先完成本地验证并记录 iOS 待验收；没有将未签名模板标记为可直接安装的成品。
+
+| Phase 4 计划项 | 实现与验证 |
+| --- | --- |
+| 标签与收藏 | 自动/手动标签、收藏和组合筛选；SQLite、PostgreSQL 16 与 Chromium 验证通过 |
+| 中文检索 | 标题/正文/摘要、多词与组合筛选；两种数据库与 Chromium 验证通过，可选 `pg_bigm` 未实测 |
+| PWA 离线 | 最近 50 篇缓存、离线读写、持久化队列恢复、版本提示与账号清理；本地测试和 Chromium 验证通过 |
+| iOS Shortcut | 未签名模板与教程、本地生成一致性和 API Token 请求契约通过；签名、导入和 iOS 系统行为待苹果设备验收 |
+
+Phase 3 计划内开发已完成，M3 关键平台样本验收通过；以下保留平台验收结论：
 
 | 计划项 | 实现与验证 |
 | --- | --- |
@@ -139,9 +153,9 @@
 | 评论初筛与评分阈值 | 点赞/回复排序、去重、过短/纯表情过滤、候选上限、评分/理由/高价值标记与降级均已接入 |
 | 请求健壮性 | UA 每任务随机选择且任务内固定、请求间隔、明确失败诊断、SSRF 与响应限制均保留；节流是每个采集内的间隔，不是跨进程全局限流 |
 
-YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复验；没有将离线夹具当作线上通过。Docker/PostgreSQL 与 Android 系统分享仍属于既有跨阶段待验收项。
+YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复验；没有将离线夹具当作线上通过。Android 系统分享与 Compose 内完整浏览器业务链路仍待验收，Docker 健康启动和 PostgreSQL 专项测试已完成。
 
-检索、标签管理、iOS Shortcut 与离线访问在 Phase 4；扩展及内容直传在 Phase 5；导出、自动备份、CI 与发布在 Phase 6。限流、公开分享、重新摘要等额外接口仍未实现。
+后续计划为 Phase 5 扩展及内容直传、Phase 6 导出/自动备份/CI/发布，本次未启动这些阶段。限流、公开分享、重新摘要等额外接口仍未实现。
 
 
 ## Phase 4 标签与收藏节点（2026-09-21）
@@ -173,4 +187,11 @@ YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复
 
 - 新增未签名 iOS Shortcut 模板 `shortcuts/clipo-save.unsigned.shortcut`、可复现生成器 `scripts/generate_shortcut.py` 和配置教程；模板契约测试通过 Token 提交、非法 URL、撤销 Token 与生成结果一致性验证。后端本次全量 332 项、前端 22 项测试通过，`make lint` 和 `make build` 通过。
 - iOS 签名、导入、系统分享面板、首次授权与通知仍需 Mac/iPhone；未将这些外部验收标记为已完成。模板不含真实服务器地址或 Token。
-- Docker Desktop/Compose 实机验收完成：`docker compose config --quiet`、`docker compose build app`、`docker compose up -d` 成功；应用和 PostgreSQL 16 均 healthy，应用入口 HTTP 200，`/api/v1/health` 返回 `{"status":"ok"}`，空 PostgreSQL 升级到 `0008_stable_note_ids` 全部成功，Huey worker 在应用容器内运行。验证后容器继续运行，可用 `make down` 停止。
+- Docker Desktop/Compose 构建与启动验证完成：`docker compose config --quiet`、`docker compose build app`、`docker compose up -d` 成功；应用和 PostgreSQL 16 均 healthy，应用入口 HTTP 200，`/api/v1/health` 返回 `{"status":"ok"}`，空 PostgreSQL 升级到 `0008_stable_note_ids` 全部成功，Huey worker 在应用容器内运行。未在 Compose 中执行浏览器设置向导、创建账号和完整采集验收。验证后容器继续运行，可用 `make down` 停止。
+
+## Phase 4 本地验证收尾与 iOS 待验收记录（2026-09-21）
+
+- 用户选择先完成本地验证，明确记录 iOS 实机待验收。本次重跑 `.venv/bin/pytest backend/tests/integration/test_shortcut_capture.py -q`，**2 项通过**：模板可解析且与生成器一致，模板中的方法、路径、请求头和 JSON 字段通过临时 API Token 提交得到 202，非法 URL 返回 422，撤销 Token 后返回 401。没有运行快捷指令引擎或访问真实采集站点。
+- 本次 `docker compose ps` 确认应用和 PostgreSQL 容器仍为 healthy；这是运行状态检查，不替代上一个节点的构建/迁移记录，也不代表完整业务验收。
+- 统一进度、实施计划、README 和 Shortcut 入口文档，移除“Docker 不可用”“搜索/离线仍待实现”等过期现状描述。收尾仅修改文档；核对本地链接、文件路径和命令并运行 `git diff --check`，未重跑全量 lint、测试或构建，上一个节点的 332/22 项结果保留为该节点记录。
+- [Shortcut 配置与验收](../shortcuts/README.md) 列明待 Mac/iPhone 完成的签名、导入、分享、首次授权、成功通知和错误路径；在苹果设备验收前不标记 M4 全部通过。

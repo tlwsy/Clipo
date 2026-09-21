@@ -2,7 +2,7 @@
 
 ## 仓库结构（目标）
 
-当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已提供平台 Cookie 配置、小红书 HTML 帖子与内嵌评论适配器、可配置评论采集上限、评论初筛与 AI 评分，其他平台、存储和扩展随后续节点创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已接入小红书、小黑盒、B 站与 YouTube，提供平台 Cookie 配置与后台检测、评论采集上限、初筛与 AI 评分。Phase 4 已实现标签/收藏、中文检索、离线阅读与同步，并提供通过本地契约测试的未签名 Shortcut 模板；iOS 实机验收仍待完成。备份存储和扩展属于后续阶段，下方为目标目录，实际能力与验收限制见 [构建进度](docs/progress.md)。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
 
 ```
 clipo/
@@ -147,7 +147,7 @@ make migrate m="描述"      # 生成
 1. 在 `backend/app/extractors/` 新建文件，实现 `matches` 与 `extract`，返回 `CapturedContent`。
 2. 在 `registry.py` 注册，注意匹配顺序：专用适配器先于通用适配器。
 3. 放入离线夹具并写单元测试，覆盖正文、作者、时间、图片、评论字段。
-4. 小红书、小黑盒的 Cookie 配置与获取教程已提供（`platform_cookies.xiaohongshu` / `xiaoheihe`）；小红书适配器通过每次任务独立的 `cookie_loader` 读取当前账号凭据。新增适配器复用 `load_platform_cookie` 与 `ScopedCookie`，由当前账号的仓储读取、解密，限定凭据发送的目标域名和 HTTPS，跨域重定向不得泄露 Cookie；有效性探测需基于可验证的登录状态。小黑盒尚未接入抓取，新增其他平台时同步补充配置与教程。
+4. 小红书、小黑盒的 Cookie 配置与获取教程已提供（`platform_cookies.xiaohongshu` / `xiaoheihe`）；两平台适配器通过每次任务独立的 `cookie_loader` 读取当前账号凭据。新增适配器复用 `load_platform_cookie` 与 `ScopedCookie`，由当前账号的仓储读取、解密，限定凭据发送的目标域名和 HTTPS，跨域重定向不得泄露 Cookie；有效性探测需基于可验证的登录状态。新增其他平台时同步补充配置与教程。
 5. 如需绕过反爬，在 `extension/content/` 补一个同名适配器，输出与后端一致的 payload 结构。
 
 ## 调试建议

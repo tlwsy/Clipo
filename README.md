@@ -12,7 +12,9 @@ Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网�
 
 **Phase 3 平台专项的计划内开发已完成。** 小红书与小黑盒支持正文、图片、作者、时间及顶层评论分页；Cookie 按账号加密保存，设置页可检测登录有效性。评论采集上限独立可配（0–100，0 关闭）；模型另有候选上限和高价值阈值，详情显示评分、理由及高价值标记。用户提供的两平台真实帖子与模型均已通过完整链路验收。
 
-B 站和 YouTube 支持视频简介、公开可取得的字幕和顶层热评，字幕或评论不可取得会明确提示。B 站真实元数据与评论已验证；YouTube 已通过离线与浏览器验证，但当前环境无法解析其域名，线上验收待网络就绪。搜索、PWA 离线、扩展和备份按后续阶段推进。完整状态与验收限制见 [构建进度](docs/progress.md)。
+B 站和 YouTube 支持视频简介、公开可取得的字幕和顶层热评，字幕或评论不可取得会明确提示。B 站真实元数据与评论已验证；YouTube 已通过离线与浏览器验证，但当前环境无法解析其域名，线上验收待网络就绪。
+
+**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 提供未签名模板，已通过本地请求契约验证；Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收，M4 尚未全部通过。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。浏览器扩展和备份属于后续阶段。完整状态与验收限制见 [构建进度](docs/progress.md)。
 
 ## ✨ 目标特性（按阶段建设）
 
@@ -59,36 +61,27 @@ make dev
 - 2GB+ 可用内存
 - 10GB+ 磁盘空间（取决于保存的内容量）
 
-## 📱 客户端规划
+## 📱 客户端
 
-PWA 首版已提供；浏览器扩展和 Shortcut 仍为后续规划。
+PWA 已提供；Shortcut 未签名模板已提供，iOS 实机待验收；浏览器扩展为后续规划。
 
 ### PWA（Web App）
 
 通过 HTTPS 访问服务（本机 localhost 可用 HTTP），在浏览器安装 Clipo：
+
 - Android Chrome：安装后，从浏览器分享菜单选择 Clipo，自动保存公开网页。
-- 桌面 / iOS：在首页粘贴链接保存；iOS Shortcut 将在 Phase 4 提供。
-- 分享时未登录会先登录，再继续保存。当前阅读需要联网，离线能力将在 Phase 4 提供。
+- 桌面 / iOS：在首页粘贴链接保存；iOS 分享入口可按下方 Shortcut 教程配置，系统行为待实机验收。
+- 分享时未登录会先登录，再继续保存。生产构建支持离线阅读最近 50 篇已缓存笔记和暂存操作，使用条件见 [离线阅读与同步](docs/offline.md)。
 
 网页链接须使用 HTTP(S) 和 80/443 端口，拒绝内网地址。通用网页只支持公开静态 HTML；小红书支持 `/explore/帖子ID`、`/discovery/item/帖子ID` 和 `xhslink.com` / `xhslink.cn` 短链接，可在设置中填写 Cookie 后采集。小黑盒支持 `/app/bbs/link/帖子ID` 和官方 API 分享链接，最多采集 100 条顶层评论；小红书保留页面已有评论；配置完整 Cookie 并使用带访问参数的帖子链接时，按采集上限补抓顶层评论分页，不执行页面 JavaScript；设置仅对后续执行的任务生效，已有笔记不变。Android 系统分享面板仍需真机验收。
 
 ### 浏览器扩展
 
-支持 Chrome、Edge 等 Chromium 浏览器：
-1. 下载 `clipo-extension.zip`
-2. 解压到本地目录
-3. Chrome 设置 → 扩展程序 → 开发者模式 → 加载已解压的扩展程序
-4. 在扩展设置中配置服务器地址和 API Token
-
-详见 [浏览器扩展文档](docs/extension.md)
+计划在 Phase 5 支持 Chrome、Edge 等 Chromium 浏览器；`extension/` 当前只有说明文档，尚无可安装包。目标方案见 [浏览器扩展文档](docs/extension.md)。
 
 ### iOS Shortcut
 
-1. 导入后续发布的 `Clipo Shortcut` 文件
-2. 编辑 Shortcut，填入服务器地址和 API Token
-3. 在分享菜单中使用 Clipo Shortcut
-
-详见 [iOS Shortcut 文档](docs/ios-shortcut.md)
+提供 [未签名快捷指令模板与配置教程](shortcuts/README.md)，可在 Mac 签名后导入，或按步骤在 iPhone 手动创建；在自己的设备填入服务器地址与独立 API Token，将分享链接提交后台队列。当前 Linux 环境已验证模板请求契约，Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收；未签名文件不能视为可直接安装的成品。
 
 ## 📖 文档
 
@@ -158,10 +151,6 @@ PWA 首版已提供；浏览器扩展和 Shortcut 仍为后续规划。
 
 生产构建会预缓存最近 50 篇笔记，顶部显示实际缓存数量。离线可搜索和阅读已缓存笔记、收藏、删除和暂存链接；恢复网络后保持应用打开即可同步。标签编辑和设置需联网。图片仍为外链，新版本可点击提示条刷新。账号隔离、清理规则与限制见 [离线阅读与同步](docs/offline.md)。
 
-### iOS Shortcut
-
-提供 [未签名快捷指令模板与配置教程](shortcuts/README.md)，可在 Mac 签名后导入，或按步骤在 iPhone 手动创建；使用独立 API Token 将分享链接直接提交后台队列。当前 Linux 环境已验证模板请求契约，Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收。
-
 ### Docker 验证
 
-当前 Compose 已在 Docker Desktop 实机通过空 PostgreSQL 初始化、全部迁移、应用健康检查与静态首页检查：`docker compose up -d` 后访问 `http://localhost:8000`，停止使用 `make down`。首次运行需在 `.env` 设置 `POSTGRES_PASSWORD` 与 `CLIPO_SECRET_KEY`。
+当前 Compose 已在 Docker Desktop 实机通过镜像构建、空 PostgreSQL 初始化、全部迁移、应用健康检查与静态首页检查：`docker compose up -d` 后访问 `http://localhost:8000`，停止使用 `make down`。首次运行需在 `.env` 设置 `POSTGRES_PASSWORD` 与 `CLIPO_SECRET_KEY`。Compose 内的浏览器设置向导、创建账号及完整采集流程尚未验收。

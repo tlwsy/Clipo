@@ -14,7 +14,7 @@
 
 **目标**：空仓库到可登录、可部署的骨架。
 
-**当前状态（2026-09-20）**：Phase 1 代码已实现，本地 SQLite 的认证、设置、迁移和前端静态构建已验证。Docker Compose 配置已提供；当前 WSL 未启用 Docker 集成，容器与 PostgreSQL 实机验收待完成。详见 [构建进度](docs/progress.md)。
+**当前状态（2026-09-21）**：Phase 1 代码已实现，本地 SQLite 的认证、设置、迁移和前端静态构建已验证。Docker Desktop/Compose 已通过镜像构建、空 PostgreSQL 初始化、全部迁移、API/worker 启动、健康检查与静态首页检查；PostgreSQL 16 专项测试已通过。尚未在 Compose 中执行浏览器设置向导、创建账号及完整采集验收，不能将健康启动等同于全部验收。详见 [构建进度](docs/progress.md)。
 
 任务：
 1. 仓库结构与工程化：backend / frontend / extension / docs 四目录，Makefile，pre-commit（ruff + black + eslint）。
@@ -25,7 +25,7 @@
 6. Web 设置向导：首次启动检测无管理员时引导创建账号并填写基础配置。
 
 验收：
-- `docker-compose up` 后可访问设置向导，创建管理员，登录成功并拿到 JWT。
+- `docker compose up` 后可访问设置向导，创建管理员，登录成功并拿到 JWT。
 - Access Token 过期后前端能静默续期。
 - `alembic upgrade head` 在空库与已有库上都可重复执行。
 
@@ -85,6 +85,8 @@
 ## Phase 4 · 检索与移动入口（1.5 周）
 
 **目标**：笔记可被找到，iOS 可录入。
+
+**当前状态（2026-09-21）**：标签/收藏、中文检索、最近 50 篇笔记离线缓存、写队列恢复与版本提示已实现，本地测试、Chromium 和 PostgreSQL 16 专项验证通过。Shortcut 已提供未签名模板、可复现生成器及配置教程，本地验证了 API Token 请求契约。按用户选择，先完成本地验证并记录 iOS 实机待验收；Apple 签名、导入、系统分享、首次授权、通知与错误路径仍需 Mac/iPhone，**M4 尚未全部验收**。详细记录见 [构建进度](docs/progress.md)，苹果设备步骤见 [Shortcut 配置与验收](shortcuts/README.md)。
 
 任务：
 1. 标签：自动标签（LLM 建议）+ 手动增删，列表页按标签筛选，收藏标记。
