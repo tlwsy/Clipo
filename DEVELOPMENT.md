@@ -2,7 +2,7 @@
 
 ## 仓库结构（目标）
 
-当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已提供平台 Cookie 配置，平台适配器、存储和扩展随后续节点创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已提供平台 Cookie 配置及小红书 HTML 帖子与内嵌评论适配器，其他平台、评论分页/评分、存储和扩展随后续节点创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
 
 ```
 clipo/
@@ -147,12 +147,12 @@ make migrate m="描述"      # 生成
 1. 在 `backend/app/extractors/` 新建文件，实现 `matches` 与 `extract`，返回 `CapturedContent`。
 2. 在 `registry.py` 注册，注意匹配顺序：专用适配器先于通用适配器。
 3. 放入离线夹具并写单元测试，覆盖正文、作者、时间、图片、评论字段。
-4. 小红书、小黑盒的 Cookie 配置与获取教程已提供（`platform_cookies.xiaohongshu` / `xiaoheihe`），尚未被抓取器使用。接入时须由当前账号的仓储读取、解密，限定凭据发送的目标域名和 HTTPS，跨域重定向不得泄露 Cookie；有效性探测需基于可验证的登录状态。新增其他平台时同步补充配置与教程。
+4. 小红书、小黑盒的 Cookie 配置与获取教程已提供（`platform_cookies.xiaohongshu` / `xiaoheihe`）；小红书适配器通过每次任务独立的 `cookie_loader` 读取当前账号凭据。新增适配器复用 `load_platform_cookie` 与 `ScopedCookie`，由当前账号的仓储读取、解密，限定凭据发送的目标域名和 HTTPS，跨域重定向不得泄露 Cookie；有效性探测需基于可验证的登录状态。小黑盒尚未接入抓取，新增其他平台时同步补充配置与教程。
 5. 如需绕过反爬，在 `extension/content/` 补一个同名适配器，输出与后端一致的 payload 结构。
 
 ## 调试建议
 
-- 抓取问题：Phase 2 使用 HTTP 抓取与 trafilatura/readability；检查网页是否为公开的静态 HTML，适配器测试使用离线夹具。
+- 抓取问题：通用网页使用 HTTP 抓取与 trafilatura/readability；小红书适配器解析 HTML 内的 `window.__INITIAL_STATE__`，仅接受目标帖子 ID 对应的数据，最多保存 100 条内嵌顶层评论，不执行脚本、不请求签名接口或评论分页。适配器测试使用离线夹具，其来源与限制见 `backend/tests/fixtures/README.md`。
 - LLM 问题：先检查模型地址、密钥和额度，再用假客户端重现结构解析问题。运行日志不打印 API Key、模型返回体或笔记正文。
 - 队列问题：直接查 `capture_jobs` 表的 `status`、`attempts`、`last_error`。
 - 前端离线问题：Chrome DevTools → Application → Service Workers，配合 Network 的 Offline 模式。

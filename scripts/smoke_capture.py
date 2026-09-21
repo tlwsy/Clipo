@@ -77,6 +77,36 @@ def check_platform_settings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 1000})
 
 
+def check_xiaohongshu_capture(page: Page, base: str) -> None:
+    page.goto(base + "/")
+    page.get_by_label("网页链接").fill("https://www.xiaohongshu.com/explore/64abc123")
+    page.get_by_role("button", name="保存网页").click()
+    job = page.locator(".job-card").filter(has_text="www.xiaohongshu.com/explore/64abc123")
+    expect(job.locator(".job-status.failed")).to_be_visible(timeout=20000)
+    expect(job).to_contain_text("登录态失效")
+    page.goto(base + "/settings/")
+    page.get_by_label("小红书 Cookie", exact=True).fill("web_session=offline-capture")
+    page.get_by_role("button", name="保存平台配置").click()
+    expect(page.locator("#platforms").get_by_role("status")).to_be_visible()
+    page.goto(base + "/jobs/")
+    job.get_by_role("button", name="重新保存", exact=True).click()
+    expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+    job.get_by_role("link", name="阅读笔记").click()
+    expect(page.get_by_role("heading", name="离线采集笔记")).to_be_visible()
+    expect(page.locator(".reader-meta")).to_contain_text("离线作者")
+    expect(page.locator(".original-text")).to_contain_text("保留正文与来源")
+    expect(page.locator(".comment")).to_have_count(10)
+    expect(page.locator(".comment").first).to_contain_text("12 赞 · 2 回复")
+    expect(page.get_by_text("采集到的评论可能不完整，尚未进行价值评分。")).to_be_visible()
+    expect(page.get_by_role("link", name="查看图片")).to_have_count(2)
+    screenshots = ROOT / "frontend/test-results"
+    page.screenshot(path=str(screenshots / "xiaohongshu-desktop.png"), full_page=True)
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.screenshot(path=str(screenshots / "xiaohongshu-mobile.png"), full_page=True)
+    page.set_viewport_size({"width": 1440, "height": 1000})
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
@@ -197,6 +227,7 @@ def main() -> None:
                     page.locator(".note-card").first.click()
                     expect(page.locator(".key-points")).to_be_visible()
                     page.screenshot(path=str(screenshots / "note-detail.png"), full_page=True)
+                    check_xiaohongshu_capture(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -213,6 +244,7 @@ def main() -> None:
                                     "original-only note",
                                     "AI summary",
                                     "platform Cookie save, replace, clear and retry",
+                                    "Xiaohongshu login failure, Cookie retry and comments",
                                     "delete",
                                     "manual retry",
                                     "share through login",

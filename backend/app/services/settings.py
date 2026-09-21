@@ -1,6 +1,9 @@
 from typing import Any
 
+from pydantic import SecretStr
+
 from app.config import Settings
+from app.extractors.base import ExtractionError
 from app.repositories import UserRepository
 from app.schemas.settings import (
     LlmResponse,
@@ -10,7 +13,7 @@ from app.schemas.settings import (
     PlatformCookiesUpdate,
     SettingsResponse,
 )
-from app.security.credentials import encrypt_secret
+from app.security.credentials import decrypt_secret, encrypt_secret
 
 LLM_DEFAULTS: dict[str, Any] = {
     "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -81,3 +84,15 @@ def update_platform_cookies(
         else:
             cookies.pop(platform, None)
     repository.set_platform_cookies(cookies)
+
+
+def load_platform_cookie(
+    repository: UserRepository, platform: str, settings: Settings
+) -> SecretStr | None:
+    stored = repository.settings().platform_cookies.get(platform)
+    if not stored:
+        return None
+    try:
+        return SecretStr(decrypt_secret(stored, settings))
+    except Exception:
+        raise ExtractionError("平台 Cookie 无法解密，请在设置中重新保存后重试", False) from None

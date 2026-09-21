@@ -89,7 +89,7 @@ function Reader() {
         <article className="reader">
           <header>
             <span className="eyebrow">KEEP THE GOOD IDEAS</span>
-            <h1>{note.title}</h1>
+            <h1>{note.title || "无标题笔记"}</h1>
             <div className="reader-meta">
               <span>{note.source.author || "网页收藏"}</span>
               <time>
@@ -161,7 +161,9 @@ function Reader() {
           )}
           <section className="original-section">
             <h2>原始正文</h2>
-            <div className="original-text">{note.content.text}</div>
+            <div className="original-text">
+              {note.content.text || "这篇内容没有文字正文。"}
+            </div>
           </section>
           {(note.content.images ?? []).length > 0 && (
             <section className="original-section">
@@ -183,9 +185,17 @@ function Reader() {
               </ul>
             </section>
           )}
-          {note.comments.length > 0 && (
+          {(note.comments.length > 0 ||
+            note.source.platform === "xiaohongshu") && (
             <section className="original-section">
               <h2>评论</h2>
+              {note.source.platform === "xiaohongshu" && (
+                <p className="muted">
+                  {note.comments.length
+                    ? "采集到的评论可能不完整，尚未进行价值评分。"
+                    : "页面未提供可采集的评论，帖子内容已保存。"}
+                </p>
+              )}
               {note.comments.map((comment) => (
                 <div className="comment" key={comment.id}>
                   <strong>{comment.author || "匿名"}</strong>

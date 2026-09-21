@@ -91,7 +91,7 @@ function Notes() {
                 {note.status === "ready" ? "AI 已整理" : "未生成摘要"}
               </span>
             </div>
-            <h2>{note.title}</h2>
+            <h2>{note.title || "无标题笔记"}</h2>
             <p>{note.summary_excerpt}</p>
             <div className="note-card-footer">
               <span>{note.author || "网页收藏"}</span>

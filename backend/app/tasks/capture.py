@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from huey import SqliteHuey, crontab
+from pydantic import SecretStr
 from sqlalchemy import and_, or_, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -13,6 +14,7 @@ from app.extractors.registry import ExtractorRegistry
 from app.llm.client import CompatibleClient
 from app.llm.orchestrator import SummaryResult, load_config, summarize
 from app.models import CaptureJob
+from app.services.settings import load_platform_cookie
 
 logger = logging.getLogger("clipo.capture")
 RETRY_DELAYS = (30, 120, 480)
@@ -25,11 +27,15 @@ class CapturePipeline:
         settings: Settings,
         registry: ExtractorRegistry | None = None,
         llm: CompatibleClient | None = None,
-    ):
+    ) -> None:
         self.sessions = sessions
         self.settings = settings
-        self.registry = registry or ExtractorRegistry()
+        self.registry = registry
         self.llm = llm or CompatibleClient()
+
+    def _cookie(self, user_id: int, platform: str) -> SecretStr | None:
+        with self.sessions() as db:
+            return load_platform_cookie(CaptureRepository(db, user_id), platform, self.settings)
 
     def run(self, user_id: int, job_id: str) -> int | None:
         execution_id = uuid.uuid4().hex
@@ -44,7 +50,10 @@ class CapturePipeline:
                 content = CaptureRepository(db, user_id).cache(url)
             cached = content is not None
             if content is None:
-                content = self.registry.get(url).extract(url)
+                registry = self.registry or ExtractorRegistry(
+                    cookie_loader=lambda platform: self._cookie(user_id, platform)
+                )
+                content = registry.get(url).extract(url)
                 with self.sessions.begin() as db:
                     CaptureRepository(db, user_id).put_cache(
                         url, content, self.settings.extraction_cache_ttl_seconds

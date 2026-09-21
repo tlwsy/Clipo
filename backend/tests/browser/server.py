@@ -8,8 +8,9 @@ from pathlib import Path
 import uvicorn
 from app.config import Settings
 from app.db.session import create_db_engine, session_factory
-from app.extractors import generic
+from app.extractors import generic, xiaohongshu
 from app.extractors.base import ExtractionError
+from app.extractors.generic import ScopedCookie
 from app.main import create_app
 from app.tasks.capture import CaptureQueue
 from huey.consumer import Consumer
@@ -23,6 +24,17 @@ def fetch(url: str) -> tuple[str, str]:
     if "/retry" in url and attempts[url] == 1:
         raise ExtractionError("测试网页暂时限制访问，请点击重新保存", False)
     return html, url
+
+
+def fetch_xiaohongshu(
+    url: str, *, cookie: ScopedCookie | None = None, **kwargs: object
+) -> tuple[str, str]:
+    fixture = (
+        "xiaohongshu.html"
+        if cookie and cookie.value.get_secret_value() == "web_session=offline-capture"
+        else "xiaohongshu-login.html"
+    )
+    return (Path(__file__).parents[1] / "fixtures" / fixture).read_text(), url
 
 
 class OfflineModel:
@@ -40,6 +52,7 @@ if __name__ == "__main__":
     settings = Settings(_env_file=None)
     if sys.argv[1] == "worker":
         generic.fetch_html = fetch
+        xiaohongshu.fetch_html = fetch_xiaohongshu
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()

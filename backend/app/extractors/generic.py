@@ -1,10 +1,13 @@
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from urllib.parse import urljoin, urlsplit
 
 import httpx
 import trafilatura
 from lxml import html as lxml_html
+from pydantic import SecretStr
 from readability import Document
 
 from app.extractors.base import CapturedContent, ExtractionError
@@ -13,16 +16,40 @@ from app.security.urls import normalize_url, public_addresses
 MAX_BYTES = 5 * 1024 * 1024
 
 
-def fetch_html(url: str) -> tuple[str, str]:
+@dataclass(frozen=True)
+class ScopedCookie:
+    value: SecretStr
+    hosts: frozenset[str]
+
+    def headers(self, url: str) -> dict[str, str]:
+        parts = urlsplit(url)
+        if parts.scheme == "https" and parts.port in (None, 443) and parts.hostname in self.hosts:
+            return {"Cookie": self.value.get_secret_value()}
+        return {}
+
+
+def fetch_html(
+    url: str,
+    *,
+    cookie: ScopedCookie | None = None,
+    allowed_hosts: frozenset[str] | None = None,
+    check_status: Callable[[int], None] | None = None,
+) -> tuple[str, str]:
     """Validate every hop, pin DNS results, preserve TLS SNI and never use ambient proxies."""
     current = normalize_url(url)
     started = time.monotonic()
     try:
         with httpx.Client(timeout=20, trust_env=False, follow_redirects=False) as client:
             for _ in range(6):
-                address = public_addresses(current)[0]
+                if time.monotonic() - started > 60:
+                    raise ExtractionError("网页读取超时，请稍后重试")
                 parts = urlsplit(current)
+                if allowed_hosts is not None and parts.hostname not in allowed_hosts:
+                    raise ExtractionError("平台链接跳转到不支持的网站，请使用原始帖子链接", False)
+                address = public_addresses(current)[0]
                 pinned = httpx.URL(current).copy_with(host=address)
+                # Pinned URLs can share an IP. Never replay server cookies across hosts/hops.
+                client.cookies.clear()
                 with client.stream(
                     "GET",
                     pinned,
@@ -30,6 +57,7 @@ def fetch_html(url: str) -> tuple[str, str]:
                         "Host": parts.netloc,
                         "User-Agent": "Clipo/0.1 (+self-hosted reader)",
                         "Accept": "text/html,application/xhtml+xml",
+                        **(cookie.headers(current) if cookie else {}),
                     },
                     extensions={"sni_hostname": parts.hostname},
                 ) as response:
@@ -39,6 +67,8 @@ def fetch_html(url: str) -> tuple[str, str]:
                             raise ExtractionError("网页重定向缺少地址，请检查原始链接", False)
                         current = normalize_url(urljoin(current, location))
                         continue
+                    if check_status is not None:
+                        check_status(response.status_code)
                     if response.status_code in (401, 403):
                         raise ExtractionError(
                             "网页限制访问或需要登录，请尝试公开网页；平台登录支持将在后续版本提供",

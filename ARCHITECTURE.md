@@ -64,7 +64,7 @@ PostgreSQL 承担全文检索（`tsvector`）与 JSONB 存储；SQLite 面向单
 Phase 2 直接使用 httpx 与 Pydantic 完成提示词、JSON 结构校验和一次兼容重试，无需引入完整 LangChain 依赖。One API 仍可作为可选外置网关。模型失败只降级摘要，保留完整原文；正文预算按 UTF-8 字节保守截断。后续复杂编排可替换客户端实现。
 
 ### 抓取：HTTP 正文提取，后续补充浏览器与扩展 DOM 直取
-Phase 2 通过 HTTP 抓取静态 HTML，使用 trafilatura 提取正文、readability 兜底。DNS 解析与每次重定向均检查公开 IP，连接固定到已验证 IP 并保留 TLS SNI；限制端口、响应体大小和读取时限。不执行网页 JavaScript。
+Phase 2 通过 HTTP 抓取静态 HTML，使用 trafilatura 提取正文、readability 兜底。Phase 3 小红书适配器优先匹配官方域名与短链接，解析 HTML 内嵌状态中的目标帖子及已有评论；Cookie 按任务所属账号读取，仅发送到明确允许的官方 HTTPS 主机，短链接不接收 Cookie，站外跳转直接拒绝。DNS 解析与每次重定向均检查公开 IP，连接固定到已验证 IP 并保留 TLS SNI；限制端口、响应体大小和读取时限，清空 HTTP 客户端的响应 Cookie，避免固定 IP 导致跨主机复用。不执行网页 JavaScript。
 
 DrissionPage 对国内站点的反爬处理更贴合，且可在无头与有头模式间切换。但小红书/小黑盒的登录态最稳妥来源是用户自己的浏览器，因此浏览器扩展的 DOM 直取是首选路径，服务端抓取是移动端场景的兜底。
 

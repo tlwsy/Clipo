@@ -67,8 +67,9 @@ export function PlatformSettings({
         </div>
       </div>
       <div className="notice">
-        当前支持保存
-        Cookie。平台采集与登录有效性检测尚未开放，保存后暂不会用于抓取。
+        小红书采集会使用已保存的
+        Cookie，可保存帖子正文、图片链接和页面已有评论。
+        保存配置不会验证登录有效性；小黑盒采集尚未开放。
       </div>
       <form onSubmit={save}>
         <fieldset className="platform-fields" disabled={busy}>
