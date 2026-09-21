@@ -1,3 +1,4 @@
+import { captureKey } from "./share";
 import type { Schema } from "./api";
 
 type Account = {
@@ -95,11 +96,11 @@ export async function rememberAccount(
       return updated;
     }
     if (typeof window !== "undefined")
-      localStorage.setItem("clipo:session", crypto.randomUUID());
+      localStorage.setItem("clipo:session", captureKey());
     tx.objectStore("notes").clear();
     tx.objectStore("operations").clear();
     tx.objectStore("meta").clear();
-    const next = { user, generation: crypto.randomUUID(), revision: 0 };
+    const next = { user, generation: captureKey(), revision: 0 };
     tx.objectStore("meta").put(next, "account");
     return next;
   });

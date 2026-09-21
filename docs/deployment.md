@@ -26,7 +26,7 @@ Compose 用 PostgreSQL 连接覆盖 `.env` 中的 `CLIPO_DATABASE_URL`。本地�
 
 数据使用 Docker 命名卷 `pgdata` 和 `appdata` 持久化。`docker compose down` 保留数据，带 `--volumes` 则会删除卷；保存好 `.env` 中的 `CLIPO_SECRET_KEY`，恢复数据库时需要相同密钥解密已保存的 API Key。
 
-当前开发机尚未启用 Docker Desktop 的 WSL 集成，因此仓库提供了构建和运行配置，但尚未完成容器及 PostgreSQL 实机验收。本地 SQLite、API 和静态托管使用相同应用代码。
+当前开发机已通过 Docker Desktop/Compose 的镜像构建、启动、空 PostgreSQL 迁移、健康检查和静态首页检查，PostgreSQL 16 专项测试已通过；这些结果不替代 Compose 内完整业务流程验收。最新范围见 [构建进度](progress.md)。
 
 ## 不使用 Docker
 
@@ -43,7 +43,7 @@ make serve
 
 ## HTTPS 与反向代理
 
-对外访问应配置 HTTPS，并将 `CLIPO_BASE_URL` 改为实际的 `https://` 地址；此时浏览器刷新令牌会使用 Secure Cookie。PWA 安装和系统分享依赖 HTTPS（localhost 除外）；离线阅读尚未实现。
+对外访问应配置 HTTPS，并将 `CLIPO_BASE_URL` 改为实际的 `https://` 地址；此时浏览器刷新令牌会使用 Secure Cookie。PWA Service Worker 和离线缓存依赖 HTTPS（localhost 除外）；普通 HTTP 页面可添加主屏幕图标，但这不代表 Service Worker 已启用。离线能力与限制见 [离线阅读与同步](offline.md)。
 
 可将容器映射的 8000 端口接入现有 Caddy / Nginx，示例：
 

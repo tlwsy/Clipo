@@ -1,3 +1,4 @@
+import { captureKey } from "./share";
 import type { components } from "./api-types";
 
 export type Schema = components["schemas"];
@@ -134,7 +135,7 @@ export async function logout(): Promise<void> {
   if (typeof window !== "undefined") {
     const { clearOffline } = await import("./offline-store");
     await clearOffline().catch(() => undefined);
-    localStorage.setItem("clipo:session", crypto.randomUUID());
+    localStorage.setItem("clipo:session", captureKey());
   }
 }
 

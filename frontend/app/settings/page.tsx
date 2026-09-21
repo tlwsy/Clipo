@@ -6,6 +6,7 @@ import { AppShell, useAccount } from "@/components/app-shell";
 import { CaptureSettings } from "@/components/capture-settings";
 import { Icon } from "@/components/icon";
 import { PlatformSettings } from "@/components/platform-settings";
+import { ShortcutSettings } from "@/components/shortcut-settings";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
@@ -209,6 +210,24 @@ function TokenSettings({ initial }: { initial: Schema["TokenResponse"][] }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+    const refresh = () => {
+      void api<Schema["TokenResponse"][]>("/tokens")
+        .then((result) => {
+          if (active) setTokens(result);
+        })
+        .catch(() => undefined);
+    };
+    window.addEventListener("focus", refresh);
+    window.addEventListener("clipo:tokens-changed", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("clipo:tokens-changed", refresh);
+    };
+  }, []);
+
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -237,6 +256,7 @@ function TokenSettings({ initial }: { initial: Schema["TokenResponse"][] }) {
       setTokens(tokens.filter((token) => token.id !== id));
       if (issued?.id === id) setIssued(null);
       setConfirm(null);
+      window.dispatchEvent(new Event("clipo:tokens-changed"));
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -424,6 +444,7 @@ function SettingsContent() {
               <ModelSettings initial={data.settings.llm} />
               <CaptureSettings initial={data.settings.capture} />
               <PlatformSettings initial={data.settings.platform_cookies} />
+              <ShortcutSettings />
               <TokenSettings initial={data.tokens} />
             </>
           ) : (

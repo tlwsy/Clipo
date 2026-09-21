@@ -348,6 +348,108 @@ def check_note_organization(page: Page, base: str) -> None:
     expect(page.get_by_role("button", name="★ 已收藏")).to_be_visible()
 
 
+def check_shortcut_settings(page: Page, base: str) -> None:
+    from urllib.parse import parse_qs, urlsplit
+
+    page.goto(base + "/settings/")
+    card = page.locator("#shortcut")
+    expect(card.get_by_role("heading", name="iPhone 快捷指令")).to_be_visible()
+    expect(card.get_by_text("通用版安装链接尚未发布。", exact=False)).to_be_visible()
+    expect(card.get_by_role("link", name="安装快捷指令", exact=True)).to_have_count(0)
+    card.get_by_label("设备名称").fill("浏览器验收 iPhone")
+
+    def generate() -> dict:
+        with page.expect_response(
+            lambda response: response.url.endswith("/shortcuts/pairings")
+            and response.request.method == "POST"
+        ) as pending:
+            card.get_by_role("button", name=re.compile("生成.*配置")).click()
+        assert pending.value.status == 201
+        pairing = pending.value.json()
+        launch = card.get_by_role("link", name="打开快捷指令并配置")
+        expect(launch).to_be_visible()
+        assert launch.get_attribute("href") == pairing["launch_url"]
+        payload = json.loads(
+            parse_qs(urlsplit(pairing["launch_url"]).query)["text"][0].removeprefix("clipo-setup:")
+        )
+        assert payload["server_url"] == base
+        return {"pairing": pairing, "payload": payload}
+
+    first = generate()
+    card.get_by_role("button", name="取消配置", exact=True).click()
+    expect(card.get_by_text("配置已取消", exact=False)).to_be_visible()
+    assert (
+        page.context.request.post(
+            base + "/api/v1/shortcuts/pairings/consume", data={"code": first["payload"]["code"]}
+        ).status
+        == 400
+    )
+    current = generate()
+    card.locator("summary").click()
+    expect(card.get_by_label("配置文本")).to_have_value(current["pairing"]["setup_input"])
+    # Exercise the fallback used by HTTP hotspot browsers without clipboard.writeText.
+    page.evaluate(
+        "Object.defineProperty(navigator, 'clipboard', {value: undefined, configurable: true})"
+    )
+    card.get_by_role("button", name="复制配置文本").click()
+    expect(card.get_by_role("button", name="已复制配置")).to_be_visible()
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    # Claim with the actual configured code without opening Apple Shortcuts on Chromium.
+    claimed = page.context.request.post(
+        base + "/api/v1/shortcuts/pairings/consume", data={"code": current["payload"]["code"]}
+    )
+    assert claimed.status == 200
+    token = claimed.json()["token"]
+    assert (
+        page.context.request.get(base + "/api/v1/auth/me", headers={"X-Clipo-Token": token}).status
+        == 200
+    )
+    expect(card.get_by_text("设备已领取配置", exact=False)).to_be_visible(timeout=10000)
+    expect(card.get_by_label("配置文本")).to_have_count(0)
+    tokens = page.locator("#tokens")
+    device = tokens.locator("li").filter(has_text="浏览器验收 iPhone")
+    expect(device).to_be_visible()
+    device.get_by_role("button", name="撤销", exact=True).click()
+    device.get_by_role("button", name="确认撤销").click()
+    expect(card.get_by_text("这个设备的 Token 已撤销", exact=False)).to_be_visible(timeout=10000)
+    assert (
+        page.context.request.get(base + "/api/v1/auth/me", headers={"X-Clipo-Token": token}).status
+        == 401
+    )
+    expired = generate()
+    status_url = base + "/api/v1/shortcuts/pairings/" + expired["pairing"]["id"]
+    page.route(
+        status_url,
+        lambda route: route.fulfill(
+            json={
+                "id": expired["pairing"]["id"],
+                "name": "浏览器验收 iPhone",
+                "status": "expired",
+                "expires_at": "2020-01-01T00:00:00Z",
+                "token_id": None,
+            }
+        ),
+    )
+    expect(card.get_by_text("配置已过期", exact=False)).to_be_visible(timeout=10000)
+    expect(card.get_by_role("link", name="打开快捷指令并配置")).to_have_count(0)
+    page.unroute(status_url)
+    card.get_by_role("link", name="安装与使用指南").click()
+    expect(page.get_by_role("heading", name="开始使用")).to_be_visible()
+    page.get_by_text("在 iPhone 手动搭建新版（只需制作一次）", exact=True).click()
+    expect(page.get_by_text("Clipo.json", exact=True).first).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.screenshot(
+        path=str(ROOT / "frontend/test-results/shortcut-guide-mobile.png"), full_page=True
+    )
+    page.goto(base + "/settings/")
+    expect(page.locator("#shortcut")).to_be_visible()
+    page.locator("#shortcut").screenshot(
+        path=str(ROOT / "frontend/test-results/shortcut-settings-mobile.png")
+    )
+    page.goto(base + "/")
+
+
 def check_offline_notes(page: Page, base: str, static: Path) -> None:
     context = page.context
     page.goto(base + "/")
@@ -453,6 +555,7 @@ def main() -> None:
         env.pop("CLIPO_LLM_API_KEY", None)
         env.pop("CLIPO_LLM_MODEL", None)
         env.pop("CLIPO_LLM_BASE_URL", None)
+        env.pop("CLIPO_SHORTCUT_INSTALL_URL", None)
         subprocess.run(
             [str(ROOT / ".venv/bin/alembic"), "-c", "backend/alembic.ini", "upgrade", "head"],
             cwd=ROOT,
@@ -562,6 +665,7 @@ def main() -> None:
                     check_bilibili_capture(page, base)
                     check_youtube_capture(page, base)
                     check_note_organization(page, base)
+                    check_shortcut_settings(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -592,6 +696,7 @@ def main() -> None:
                                     "mobile layout",
                                     "manifest and service worker",
                                     "tags, favorites and Chinese search",
+                                    "Shortcut pairing, cancel, claim, revoke, expiry and guide",
                                     "offline reload, queued writes, replay and cancel failure",
                                     "service worker update prompt and logout cache cleanup",
                                 ],

@@ -283,3 +283,19 @@ describe("durable offline replay", () => {
     expect(applyOperations([original], [...ops, deletion()])).toEqual([]);
   });
 });
+
+describe("HTTP hotspot compatibility", () => {
+  it("retains account isolation and can log out without secure-context randomUUID", async () => {
+    const getRandomValues = crypto.getRandomValues.bind(crypto);
+    vi.stubGlobal("crypto", { getRandomValues });
+    await clearOffline();
+    const account = await rememberAccount(user);
+    expect(account.generation).toHaveLength(32);
+    const other = await rememberAccount({ ...user, id: 2, username: "second" });
+    expect(other.generation).not.toBe(account.generation);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(null, 204)));
+    const { logout } = await import("./api");
+    await expect(logout()).resolves.toBeUndefined();
+    expect(await readAccount()).toBeUndefined();
+  });
+});

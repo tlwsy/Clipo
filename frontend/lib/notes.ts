@@ -1,3 +1,4 @@
+import { captureKey } from "./share";
 import { api, ApiError, type Schema } from "./api";
 import {
   applyOperations,
@@ -178,7 +179,7 @@ export async function changeNote(
   }
   // Persist before transmission: a closed tab or lost response can safely replay this operation.
   await enqueue({
-    id: crypto.randomUUID(),
+    id: captureKey(),
     owner: owner.generation,
     created: Date.now(),
     path: `/notes/${id}`,
