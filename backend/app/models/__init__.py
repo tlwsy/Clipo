@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, ForeignKey, String
+from sqlalchemy import JSON, Boolean, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -47,6 +47,24 @@ class ApiToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     last_used_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class PlatformCheck(Base):
+    __tablename__ = "platform_checks"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    platform: Mapped[str] = mapped_column(String(32), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(32))
+    credential_hash: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16))
+    attempts: Mapped[int] = mapped_column(default=0)
+    message: Mapped[str | None] = mapped_column(Text)
+    requested_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    checked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    execution_id: Mapped[str | None] = mapped_column(String(32))
 
 
 class UserSettings(Base):

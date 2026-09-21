@@ -15,6 +15,7 @@ from app.llm.client import CompatibleClient
 from app.llm.orchestrator import SummaryResult, load_config, summarize
 from app.models import CaptureJob
 from app.services.settings import load_platform_cookie
+from app.tasks.platform_checks import PlatformCheckQueue
 
 logger = logging.getLogger("clipo.capture")
 RETRY_DELAYS = (30, 120, 480)
@@ -102,6 +103,7 @@ class CaptureQueue:
         self.huey = SqliteHuey("clipo-captures", filename=str(settings.queue_path), results=False)
         self.sessions = sessions
         self.pipeline = CapturePipeline(sessions, settings)
+        self.platform_checks = PlatformCheckQueue(self.huey, sessions, settings)
 
         @self.huey.task(name="clipo.capture")
         def capture(user_id: int, job_id: str):
@@ -159,3 +161,4 @@ class CaptureQueue:
             )
         for user_id, job_id in pending:
             self.enqueue(user_id, job_id)
+        self.platform_checks.recover()

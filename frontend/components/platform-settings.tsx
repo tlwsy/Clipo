@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Icon } from "@/components/icon";
 import { api, errorMessage, type Schema } from "@/lib/api";
@@ -22,6 +22,17 @@ const platforms = [
   },
 ] as const;
 
+type Platform = (typeof platforms)[number]["key"];
+const checkLabels: Record<Schema["PlatformCheckResponse"]["status"], string> = {
+  unconfigured: "尚未配置",
+  unverified: "已保存，未验证",
+  queued: "等待检测…",
+  running: "正在检测…",
+  valid: "登录有效",
+  invalid: "登录态失效",
+  error: "未能确认登录状态",
+};
+
 export function PlatformSettings({
   initial,
 }: {
@@ -33,7 +44,61 @@ export function PlatformSettings({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [checks, setChecks] = useState<Schema["PlatformChecksResponse"] | null>(
+    null,
+  );
+  const [checkError, setCheckError] = useState("");
+  const [checking, setChecking] = useState<Platform | null>(null);
+  const [refresh, setRefresh] = useState(0);
   const changed = platforms.some(({ key }) => clear[key] || cookies[key]);
+
+  useEffect(() => {
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const result = await api<Schema["PlatformChecksResponse"]>(
+          "/settings/platform-checks",
+        );
+        if (!active) return;
+        setChecks(result);
+        setCheckError("");
+        if (
+          platforms.some(({ key }) =>
+            ["queued", "running"].includes(result[key].status),
+          )
+        ) {
+          timer = setTimeout(poll, 2000);
+        }
+      } catch (cause) {
+        if (!active) return;
+        setCheckError(errorMessage(cause));
+        timer = setTimeout(poll, 5000);
+      }
+    }
+    void poll();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [refresh]);
+
+  async function check(platform: Platform) {
+    setChecking(platform);
+    setCheckError("");
+    setMessage("");
+    try {
+      await api<Schema["PlatformCheckResponse"]>(
+        `/settings/platform-checks/${platform}`,
+        { method: "POST" },
+      );
+      setRefresh((value) => value + 1);
+    } catch (cause) {
+      setCheckError(errorMessage(cause));
+    } finally {
+      setChecking(null);
+    }
+  }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +121,8 @@ export function PlatformSettings({
       setCookies({ xiaohongshu: "", xiaoheihe: "" });
       setClear({ xiaohongshu: false, xiaoheihe: false });
       setMessage("平台 Cookie 配置已保存，尚未验证登录有效性");
+      setChecks(null);
+      setRefresh((value) => value + 1);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -77,7 +144,7 @@ export function PlatformSettings({
       <div className="notice">
         小红书与小黑盒采集会使用已保存的
         Cookie，可保存帖子正文、图片链接和顶层评论。
-        保存配置不会自动验证登录有效性。
+        保存后可点击“检测登录状态”，检测结果仅代表检测当时的状态。
       </div>
       <form onSubmit={save}>
         <fieldset className="platform-fields" disabled={busy}>
@@ -106,8 +173,41 @@ export function PlatformSettings({
                   }
                 />
                 <p className="cookie-status" id={`${key}-cookie-status`}>
-                  {current[key].cookie_set ? "已保存，未验证" : "尚未配置"}
+                  {checks
+                    ? checkLabels[checks[key].status]
+                    : current[key].cookie_set
+                      ? "已保存，未验证"
+                      : "尚未配置"}
                 </p>
+                {checks?.[key].message && (
+                  <p className="section-description">{checks[key].message}</p>
+                )}
+                {checks?.[key].checked_at && (
+                  <p className="section-description">
+                    检测时间：
+                    {new Date(checks[key].checked_at!).toLocaleString("zh-CN")}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className="button secondary"
+                  aria-label={`检测${name}登录状态`}
+                  disabled={
+                    !current[key].cookie_set ||
+                    !!cookies[key] ||
+                    clear[key] ||
+                    checking !== null ||
+                    ["queued", "running"].includes(checks?.[key].status ?? "")
+                  }
+                  onClick={() => void check(key)}
+                >
+                  检测登录状态
+                </button>
+                {(!!cookies[key] || clear[key]) && (
+                  <p className="section-description">
+                    请先保存修改，再检测登录状态。
+                  </p>
+                )}
                 {current[key].cookie_set && (
                   <label className="checkbox-label">
                     <input
@@ -162,6 +262,11 @@ export function PlatformSettings({
           {error && (
             <div className="notice error" role="alert">
               {error}
+            </div>
+          )}
+          {checkError && (
+            <div className="notice error" role="alert">
+              登录检测：{checkError}
             </div>
           )}
           {message && (

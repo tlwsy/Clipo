@@ -77,6 +77,43 @@ def check_platform_settings(page: Page) -> None:
     page.set_viewport_size({"width": 1440, "height": 1000})
 
 
+def check_platform_probes(page: Page) -> None:
+    card = page.locator("#platforms")
+    xhs = card.locator("#xiaohongshu-cookie-status")
+    heybox = card.locator("#xiaoheihe-cookie-status")
+    card.get_by_label("小红书 Cookie", exact=True).fill("session=offline-expired")
+    card.get_by_label("小黑盒 Cookie", exact=True).fill("session=offline-heybox")
+    expect(card.get_by_role("button", name="检测小红书登录状态")).to_be_disabled()
+    card.get_by_role("button", name="保存平台配置").click()
+    expect(card.get_by_role("status")).to_be_visible()
+    card.get_by_role("button", name="检测小红书登录状态").click()
+    expect(xhs).to_have_text("登录态失效", timeout=20000)
+    card.get_by_role("button", name="检测小黑盒登录状态").click()
+    expect(heybox).to_have_text("登录有效", timeout=20000)
+    page.reload()
+    expect(xhs).to_have_text("登录态失效")
+    expect(heybox).to_have_text("登录有效")
+    card.get_by_label("小红书 Cookie", exact=True).fill("web_session=offline-capture")
+    card.get_by_label("小黑盒 Cookie", exact=True).fill("session=offline-restricted")
+    card.get_by_role("button", name="保存平台配置").click()
+    expect(xhs).to_have_text("已保存，未验证")
+    expect(heybox).to_have_text("已保存，未验证")
+    card.get_by_role("button", name="检测小红书登录状态").click()
+    expect(xhs).to_have_text("登录有效", timeout=20000)
+    card.get_by_role("button", name="检测小黑盒登录状态").click()
+    expect(heybox).to_have_text("未能确认登录状态", timeout=20000)
+    expect(card.get_by_text("小黑盒限制访问", exact=False)).to_be_visible()
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    card.screenshot(path=str(ROOT / "frontend/test-results/platform-checks-mobile.png"))
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    card.get_by_label("清除小红书 Cookie").check()
+    card.get_by_label("清除小黑盒 Cookie").check()
+    card.get_by_role("button", name="保存平台配置").click()
+    expect(xhs).to_have_text("尚未配置")
+    expect(heybox).to_have_text("尚未配置")
+
+
 def check_capture_settings(page: Page) -> None:
     card = page.locator("#capture")
     limit = card.get_by_label("评论采集上限")
@@ -338,6 +375,7 @@ def main() -> None:
                     page.get_by_role("button", name="保存配置").click()
                     expect(page.locator(".notice.success")).to_be_visible()
                     check_platform_settings(page)
+                    check_platform_probes(page)
                     check_capture_settings(page)
                     page.goto(base + "/")
                     page.get_by_label("网页链接").fill("https://example.com/summary")
@@ -397,6 +435,7 @@ def main() -> None:
                                     "original-only note",
                                     "AI summary",
                                     "platform Cookie save, replace, clear and retry",
+                                    "platform login checks, expired and restricted states",
                                     "Xiaohongshu login failure, Cookie retry and comment scores",
                                     "comment limits, disable, cache and larger recapture",
                                     "XHS .cn short link and two comment API pages",

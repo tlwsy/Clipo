@@ -6,7 +6,7 @@ from typing import Any
 from pydantic import SecretStr
 from xhshow import Xhshow
 
-from app.extractors.base import ExtractionError
+from app.extractors.base import ExtractionError, LoginExpiredError
 from app.extractors.generic import PlatformRequests, ScopedCookie, fetch_json
 
 API_HOSTS = frozenset({"edith.xiaohongshu.com"})
@@ -16,7 +16,7 @@ LOGIN_ERROR = "小红书登录态失效，请在设置中更新 Cookie 后重试
 
 def check_status(status: int) -> None:
     if status == 401:
-        raise ExtractionError(LOGIN_ERROR, False)
+        raise LoginExpiredError(LOGIN_ERROR)
     if status in (403, 406, 461, 471):
         raise ExtractionError("小红书限制访问，请在浏览器完成验证并更新 Cookie 后重试", False)
     if status == 429:
@@ -62,7 +62,7 @@ class XhsClient:
             requests=self.requests,
         )
         if response.get("code") in (-100, -101, -102):
-            raise ExtractionError(LOGIN_ERROR, False)
+            raise LoginExpiredError(LOGIN_ERROR)
         if response.get("code") in (300011, 300012):
             raise ExtractionError("小红书限制访问，请在浏览器完成验证后重试", False)
         if response.get("success") is not True or not isinstance(response.get("data"), dict):

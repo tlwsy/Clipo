@@ -5,6 +5,7 @@ from app import __version__
 from app.api.dependencies import Config, CurrentUser, Db, UserRepo
 from app.api.v1.captures import router as captures_router
 from app.models import User
+from app.platform_repository import PlatformCheckRepository
 from app.repositories import IdentityRepository
 from app.schemas.auth import (
     ErrorResponse,
@@ -20,6 +21,9 @@ from app.schemas.auth import (
 )
 from app.schemas.settings import (
     CapabilitiesResponse,
+    PlatformCheckResponse,
+    PlatformChecksResponse,
+    PlatformName,
     SettingsResponse,
     SettingsUpdate,
     VersionResponse,
@@ -158,3 +162,34 @@ def put_user_settings(
     if payload.capture is not None:
         update_capture_settings(repository, payload.capture)
     return read_settings(repository, settings)
+
+
+@router.get("/settings/platform-checks", response_model=PlatformChecksResponse, tags=["settings"])
+def platform_checks(repository: UserRepo) -> PlatformChecksResponse:
+    checks = PlatformCheckRepository(repository.db, repository.user_id)
+    return PlatformChecksResponse(
+        xiaohongshu=checks.status("xiaohongshu"),
+        xiaoheihe=checks.status("xiaoheihe"),
+    )
+
+
+@router.post(
+    "/settings/platform-checks/{platform}",
+    response_model=PlatformCheckResponse,
+    status_code=202,
+    tags=["settings"],
+)
+def request_platform_check(
+    platform: PlatformName,
+    repository: UserRepo,
+    request: Request,
+) -> PlatformCheckResponse:
+    checks = PlatformCheckRepository(repository.db, repository.user_id)
+    row = checks.request(platform)
+    request_id = row.request_id
+    response = checks.status(platform)
+    repository.db.commit()
+    request.app.state.capture_queue.platform_checks.enqueue(
+        repository.user_id, platform, request_id
+    )
+    return response

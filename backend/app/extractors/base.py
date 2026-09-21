@@ -33,6 +33,11 @@ class ExtractionError(Exception):
         self.retryable = retryable
 
 
+class LoginExpiredError(ExtractionError):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, False)
+
+
 class Extractor(Protocol):
     name: str
 

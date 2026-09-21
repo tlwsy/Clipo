@@ -1,5 +1,6 @@
 import re
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Literal
 
 from pydantic import (
     BaseModel,
@@ -79,6 +80,21 @@ class PlatformCookieStatus(BaseModel):
 class PlatformCookiesResponse(BaseModel):
     xiaohongshu: PlatformCookieStatus
     xiaoheihe: PlatformCookieStatus
+
+
+PlatformName = Literal["xiaohongshu", "xiaoheihe"]
+
+
+class PlatformCheckResponse(BaseModel):
+    status: Literal["unconfigured", "unverified", "queued", "running", "valid", "invalid", "error"]
+    message: str | None = None
+    requested_at: datetime | None = None
+    checked_at: datetime | None = None
+
+
+class PlatformChecksResponse(BaseModel):
+    xiaohongshu: PlatformCheckResponse
+    xiaoheihe: PlatformCheckResponse
 
 
 class SettingsResponse(BaseModel):

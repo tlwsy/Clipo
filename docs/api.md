@@ -169,8 +169,17 @@
 
 仅支持 `xiaohongshu` 和 `xiaoheihe`，未知平台返回 422。各平台省略则保留原值，字符串替换，`null` 或空字符串清除；省略整个 `platform_cookies`、传 `null` 或 `{}` 均不修改 Cookie。Web 表单留空会省略该平台字段，勾选清除才发送 `null`。Cookie 为请求头的值，不能带 `Cookie:` 前缀或控制字符，最多 16384 个可打印 ASCII 字符，格式为 `name=value; name2=value2`。参数非法时整次请求不落库，包括同次提交的 LLM 配置。
 
-Cookie 通过当前账号的仓储加密保存；保存设置不向平台发起请求。小红书采集任务在执行时读取当前账号 Cookie，限制发送到官方 HTTPS 主机；登录页/401 会提示更新 Cookie，429 自动退避，未知结构直接失败。小黑盒采集也读取当前账号 Cookie，使用官方 API 签名分页；独立 Cookie 有效性探测入口尚未实现。采集成功不会将 `cookie_set` 解释为登录已验证，也不会更新单独的登录状态。
+Cookie 通过当前账号的仓储加密保存；保存设置不向平台发起请求。小红书采集任务在执行时读取当前账号 Cookie，限制发送到官方 HTTPS 主机；登录页/401 会提示更新 Cookie，429 自动退避，未知结构直接失败。小黑盒采集也读取当前账号 Cookie，使用官方 API 签名分页；独立检测通过下述后台检测接口发起。采集成功不会将 `cookie_set` 解释为登录已验证，也不会更新单独的登录状态。
+
+
+### 平台登录有效性检测
+
+`GET /settings/platform-checks` 返回当前账号的 `xiaohongshu` / `xiaoheihe` 状态，每项含 `status`、`message`、`requested_at`、`checked_at`。状态为 `unconfigured`（未配置）、`unverified`（未检测）、`queued`、`running`、`valid`、`invalid` 或 `error`（网络/验证/结构等原因，无法确认）。不会返回账号身份、Cookie、凭据摘要或签名。
+
+`POST /settings/platform-checks/{platform}` 返回 202 和该平台检测状态；只接受 `xiaohongshu` / `xiaoheihe`。未保存 Cookie 返回 409。请求提交事务后入队，重复检测中的请求共用检测记录；worker 恢复漏投递与过期的 3 分钟租约，连续 3 次执行中断后提示重试。任务参数仅有账号 ID、平台与随机请求 ID。明确身份成功才标记 valid；风控、验证码、频控和网络失败不误报 Cookie 失效。
+
+结果只对当前加密凭据版本有效，更换或清除 Cookie 会清除对应检测记录。任务结果同时校验账号、请求、执行标识和凭据版本，迟到结果不能覆盖新配置；valid 仅代表检测时间点有效。
 
 ## 后续接口规划
 
-Phase 3 继续接入独立 Cookie 有效性探测及其他平台适配器；Phase 4 接入 `q` 搜索、标签、收藏和 Shortcut；Phase 5 扩展 `POST /captures` 的内容直传；Phase 6 接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。
+Phase 3 继续接入视频平台适配器；Phase 4 接入 `q` 搜索、标签、收藏和 Shortcut；Phase 5 扩展 `POST /captures` 的内容直传；Phase 6 接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。

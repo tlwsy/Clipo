@@ -62,6 +62,16 @@ def heybox_page(
     return json.loads(path.read_text())["result"]
 
 
+def xhs_login(self: XhsClient) -> bool:
+    return self.cookie.value.get_secret_value() == "web_session=offline-capture"
+
+
+def heybox_login(self: xiaoheihe.HeyboxClient) -> bool:
+    if self.cookie.value.get_secret_value() == "session=offline-restricted":
+        raise ExtractionError("小黑盒限制访问，请在浏览器完成验证后重试", False)
+    return True
+
+
 class OfflineModel:
     def complete(self, **kwargs: Any) -> str:
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
@@ -90,8 +100,10 @@ if __name__ == "__main__":
         generic.fetch_html = fetch
         xiaohongshu.fetch_html = fetch_xiaohongshu
         XhsClient.comments = xhs_comments
+        XhsClient.check_login = xhs_login
         xiaoheihe.fetch_html = fetch_heybox
         xiaoheihe.HeyboxClient.page = heybox_page
+        xiaoheihe.HeyboxClient.check_login = heybox_login
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()

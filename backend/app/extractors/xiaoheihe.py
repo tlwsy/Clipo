@@ -11,7 +11,7 @@ from lxml import etree
 from lxml import html as lxml_html
 from pydantic import SecretStr
 
-from app.extractors.base import CapturedComment, CapturedContent, ExtractionError
+from app.extractors.base import CapturedComment, CapturedContent, ExtractionError, LoginExpiredError
 from app.extractors.generic import PlatformRequests, ScopedCookie, fetch_html, fetch_json
 from app.extractors.heybox_sign import sign_params
 from app.extractors.structured import count, html_text, media_url, obj, text, timestamp
@@ -39,7 +39,7 @@ def link_id(url: str) -> str:
 
 def check_status(status: int) -> None:
     if status == 401:
-        raise ExtractionError(LOGIN_ERROR, False)
+        raise LoginExpiredError(LOGIN_ERROR)
     if status in (403, 412):
         raise ExtractionError("小黑盒限制访问，请在浏览器完成验证后重试", False)
     if status == 429:
@@ -79,7 +79,7 @@ class HeyboxClient:
         )
         status = response.get("status")
         if status in ("login", "relogin"):
-            raise ExtractionError(LOGIN_ERROR, False)
+            raise LoginExpiredError(LOGIN_ERROR)
         if status in ("show_captcha", "need_google_check", "lack_token"):
             raise ExtractionError(
                 "小黑盒需要登录或设备验证，请在浏览器完成验证并更新完整 Cookie", False

@@ -4,6 +4,7 @@ from pydantic import SecretStr
 
 from app.config import Settings
 from app.extractors.base import ExtractionError
+from app.platform_repository import PlatformCheckRepository
 from app.repositories import UserRepository
 from app.schemas.settings import (
     CaptureSettingsResponse,
@@ -80,6 +81,7 @@ def update_platform_cookies(
 ) -> None:
     cookies = dict(repository.settings().platform_cookies)
     for platform in payload.model_fields_set:
+        PlatformCheckRepository(repository.db, repository.user_id).clear(platform)
         value = getattr(payload, platform)
         secret = value.get_secret_value() if value is not None else ""
         if secret:
