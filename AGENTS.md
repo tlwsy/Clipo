@@ -68,6 +68,7 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 - 提取器必须附带 `backend/tests/fixtures/` 下的离线 HTML 夹具及测试，不能请求真实站点。LLM 测试使用固定响应或假客户端；真实接口验证须有明确任务依据。
 - 复用 `backend/tests/conftest.py` 中临时数据库、临时队列和 `_env_file=None` 的测试配置，避免读取真实密钥或修改日常使用的数据。
 - 浏览器验收：先 `make build`，再运行 `uv run --no-project --with playwright python scripts/smoke_capture.py`。需先安装对应 Chromium，或用 `CLIPO_TEST_CHROMIUM` 指定浏览器；截图输出到 `frontend/test-results/`。
+- Android 模拟器：本机 MuMu 的 Windows ADB 路径和 `127.0.0.1:16384` 连接命令见 `docs/android-testing.md`；后续优先复用已验证的本地映射，显式指定设备，不依赖临时无线配对码。
 - SQLite 测试或 PostgreSQL 迁移 DDL 生成不能替代 PostgreSQL 实机验收；浏览器分享链路验证不能替代 Android 系统分享面板验收。
 
 ## 数据与安全约束

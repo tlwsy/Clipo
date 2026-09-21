@@ -173,3 +173,7 @@ uv run --no-project --with playwright python scripts/smoke_capture.py
 ```
 
 浏览器截图写入忽略目录 `frontend/test-results/`。笔记详情使用 `/notes/?id=42`，以兼容 Next.js 静态导出；API 使用 `/api/v1/notes/42`。
+
+### Android 模拟器连接
+
+Windows + WSL 下已验证 MuMu 自带 ADB 可通过 `127.0.0.1:16384` 连接 Android 15 实例。路径、可复用命令、端口来源及验收边界见 [Android 模拟器连接与验收](docs/android-testing.md)。当前仅连接验证通过，PWA 安装与系统分享仍待实际验收。
