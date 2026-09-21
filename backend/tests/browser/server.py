@@ -9,7 +9,7 @@ from typing import Any
 import uvicorn
 from app.config import Settings
 from app.db.session import create_db_engine, session_factory
-from app.extractors import generic, xiaohongshu
+from app.extractors import generic, xiaoheihe, xiaohongshu
 from app.extractors.base import ExtractionError
 from app.extractors.generic import ScopedCookie
 from app.extractors.xhs_api import XhsClient
@@ -50,6 +50,18 @@ def xhs_comments(self: XhsClient, note_id: str, token: str, cursor: str) -> dict
     return json.loads(path.read_text())["data"]
 
 
+def fetch_heybox(url: str, **kwargs: object) -> tuple[str, str]:
+    path = Path(__file__).parents[1] / "fixtures" / "xiaoheihe.html"
+    return path.read_text(), "https://www.xiaoheihe.cn/app/bbs/link/opaque123"
+
+
+def heybox_page(
+    self: xiaoheihe.HeyboxClient, identifier: str, number: int, limit: int
+) -> dict[str, Any]:
+    path = Path(__file__).parents[1] / "fixtures" / f"xiaoheihe-page{number}.json"
+    return json.loads(path.read_text())["result"]
+
+
 class OfflineModel:
     def complete(self, **kwargs: Any) -> str:
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
@@ -78,6 +90,8 @@ if __name__ == "__main__":
         generic.fetch_html = fetch
         xiaohongshu.fetch_html = fetch_xiaohongshu
         XhsClient.comments = xhs_comments
+        xiaoheihe.fetch_html = fetch_heybox
+        xiaoheihe.HeyboxClient.page = heybox_page
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()

@@ -3,6 +3,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timedelta
+from urllib.parse import urlsplit
 
 from sqlalchemy import and_, delete, or_, select, update
 from sqlalchemy.exc import IntegrityError
@@ -183,8 +184,14 @@ class CaptureRepository(UserRepository):
         if row is None:
             return None
         content = CapturedContent.model_validate(row.content)
-        if content.platform == "xiaohongshu":
-            if content.extractor_version < 2:
+        if content.platform == "web" and urlsplit(url).hostname in (
+            "api.xiaoheihe.cn",
+            "www.xiaoheihe.cn",
+            "xiaoheihe.cn",
+        ):
+            return None
+        if content.platform in ("xiaohongshu", "xiaoheihe"):
+            if content.platform == "xiaohongshu" and content.extractor_version < 2:
                 return None
             limit = self.capture_settings().max_comments if max_comments is None else max_comments
             # Legacy XHS cache entries were extracted with the fixed 100-comment ceiling.

@@ -237,6 +237,25 @@ def check_xhs_pagination(page: Page, base: str) -> None:
     expect(page.locator(".comment .pill")).to_have_count(1)
 
 
+def check_heybox_capture(page: Page, base: str) -> None:
+    url = "https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?link_id=opaque123"
+    page.goto(base + "/")
+    page.get_by_label("网页链接").fill(url)
+    page.get_by_role("button", name="保存网页").click()
+    job = page.locator(".job-card").filter(has_text=url).first
+    expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+    job.get_by_role("link", name="阅读笔记").click()
+    expect(page.get_by_role("heading", name="离线小黑盒笔记")).to_be_visible()
+    expect(page.locator(".original-text")).to_contain_text("保存游戏攻略")
+    expect(page.locator(".comment")).to_have_count(12)
+    expect(page.get_by_text("已评分 2 / 12 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment .pill")).to_have_count(1)
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.screenshot(path=str(ROOT / "frontend/test-results/heybox-mobile.png"), full_page=True)
+    page.set_viewport_size({"width": 1440, "height": 1000})
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
@@ -361,6 +380,7 @@ def main() -> None:
                     check_xiaohongshu_capture(page, base)
                     check_comment_capture_limit(page, base)
                     check_xhs_pagination(page, base)
+                    check_heybox_capture(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -380,6 +400,7 @@ def main() -> None:
                                     "Xiaohongshu login failure, Cookie retry and comment scores",
                                     "comment limits, disable, cache and larger recapture",
                                     "XHS .cn short link and two comment API pages",
+                                    "Heybox share link, pagination and comment scores",
                                     "delete",
                                     "manual retry",
                                     "share through login",

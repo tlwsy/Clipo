@@ -1,0 +1,123 @@
+{
+  "status": "ok",
+  "result": {
+    "link": {
+      "linkid": 123456,
+      "title": "离线小黑盒笔记",
+      "text": "[{\"type\": \"html\", \"text\": \"<p>\\u4fdd\\u5b58\\u6e38\\u620f\\u653b\\u7565\\u4e0e\\u8bc4\\u8bba\\u3002</p><p>\\u590d\\u4e60\\u5177\\u4f53\\u64cd\\u4f5c\\u3002</p><script>secret-script()</script><img data-original=\\\"https://images.example.com/heybox.jpg\\\">\"}, {\"type\": \"img\", \"url\": \"https://images.example.com/second.jpg\"}, {\"type\": \"img\", \"url\": \"javascript:alert(1)\"}]",
+      "user": {
+        "userid": 1001,
+        "username": "离线盒友"
+      },
+      "create_at": 1726833600,
+      "share_url": "https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?link_id=opaque123"
+    },
+    "comments": [
+      {
+        "comment": [
+          {
+            "commentid": 1,
+            "text": "<p>第 1 条有用的操作建议。</p>",
+            "up": 14,
+            "child_num": 2,
+            "user": {
+              "username": "读者1"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 2,
+            "text": "<p>第 2 条有用的操作建议。</p>",
+            "up": 13,
+            "child_num": 0,
+            "user": {
+              "username": "读者2"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 3,
+            "text": "<p>第 3 条有用的操作建议。</p>",
+            "up": 12,
+            "child_num": 0,
+            "user": {
+              "username": "读者3"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 4,
+            "text": "<p>第 4 条有用的操作建议。</p>",
+            "up": 11,
+            "child_num": 0,
+            "user": {
+              "username": "读者4"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 5,
+            "text": "<p>第 5 条有用的操作建议。</p>",
+            "up": 10,
+            "child_num": 0,
+            "user": {
+              "username": "读者5"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 6,
+            "text": "<p>第 6 条有用的操作建议。</p>",
+            "up": 9,
+            "child_num": 0,
+            "user": {
+              "username": "读者6"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 7,
+            "text": "<p>第 7 条有用的操作建议。</p>",
+            "up": 8,
+            "child_num": 0,
+            "user": {
+              "username": "读者7"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 8,
+            "text": "<p>第 8 条有用的操作建议。</p>",
+            "up": 7,
+            "child_num": 0,
+            "user": {
+              "username": "读者8"
+            }
+          }
+        ]
+      }
+    ],
+    "has_more_floors": true
+  }
+}

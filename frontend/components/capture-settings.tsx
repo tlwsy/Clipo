@@ -62,7 +62,7 @@ export function CaptureSettings({
           />
           <small>
             默认 100 条，设为 0
-            可关闭评论采集。当前适用于小红书，保留已有的顶层评论并尝试补抓分页，实际条数可能更少。
+            可关闭评论采集。当前适用于小红书和小黑盒，保留已有的顶层评论并尝试补抓分页，实际条数可能更少。
           </small>
         </label>
         <p className="section-description">

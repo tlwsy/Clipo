@@ -1,0 +1,84 @@
+{
+  "status": "ok",
+  "result": {
+    "link": {
+      "linkid": 123456,
+      "title": "离线小黑盒笔记",
+      "text": "[{\"type\": \"html\", \"text\": \"<p>\\u4fdd\\u5b58\\u6e38\\u620f\\u653b\\u7565\\u4e0e\\u8bc4\\u8bba\\u3002</p><p>\\u590d\\u4e60\\u5177\\u4f53\\u64cd\\u4f5c\\u3002</p><script>secret-script()</script><img data-original=\\\"https://images.example.com/heybox.jpg\\\">\"}, {\"type\": \"img\", \"url\": \"https://images.example.com/second.jpg\"}, {\"type\": \"img\", \"url\": \"javascript:alert(1)\"}]",
+      "user": {
+        "userid": 1001,
+        "username": "离线盒友"
+      },
+      "create_at": 1726833600,
+      "share_url": "https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?link_id=opaque123"
+    },
+    "comments": [
+      {
+        "comment": [
+          {
+            "commentid": 8,
+            "text": "<p>第 8 条有用的操作建议。</p>",
+            "up": 7,
+            "child_num": 0,
+            "user": {
+              "username": "读者8"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 9,
+            "text": "<p>第 9 条有用的操作建议。</p>",
+            "up": 6,
+            "child_num": 0,
+            "user": {
+              "username": "读者9"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 10,
+            "text": "<p>第 10 条有用的操作建议。</p>",
+            "up": 5,
+            "child_num": 0,
+            "user": {
+              "username": "读者10"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 11,
+            "text": "<p>第 11 条有用的操作建议。</p>",
+            "up": 4,
+            "child_num": 0,
+            "user": {
+              "username": "读者11"
+            }
+          }
+        ]
+      },
+      {
+        "comment": [
+          {
+            "commentid": 12,
+            "text": "<p>第 12 条有用的操作建议。</p>",
+            "up": 3,
+            "child_num": 0,
+            "user": {
+              "username": "读者12"
+            }
+          }
+        ]
+      }
+    ],
+    "has_more_floors": false
+  }
+}
