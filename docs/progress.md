@@ -2,10 +2,13 @@
 
 2026-09-20：已完成 Phase 1 基础设施与 Phase 2 核心链路的代码和本地验收。
 
+2026-09-21：进入 Phase 3，新增首个节点“平台 Cookie 配置”。设置页提供小红书、小黑盒 Cookie 的获取教程、加密保存、替换和清除，按账号隔离且不回显凭据；复用既有数据库字段，无需新迁移。保存仅代表已配置，尚未验证登录有效性，也尚未用于平台抓取。
+
 ## 当前可用
 
 - FastAPI 应用工厂、配置、统一错误体、健康检查与 OpenAPI；PostgreSQL / SQLite 模型和可回滚的 Alembic 迁移。
 - 初始化向导、账号与注册开关、Argon2id 密码、JWT 与刷新令牌轮换、HttpOnly Cookie、自动续期、API Token 管理；配置按账号隔离，模型密钥加密存储。
+- 小红书、小黑盒 Cookie 设置：加密保存、独立替换与清除，设置页附获取教程；读接口只返回保存状态，平台抓取与有效性探测仍待接入。
 - 公开网页采集：统一 `CapturedContent`、可扩展的 Extractor 注册表、trafilatura 正文提取与 readability 兜底；标题、作者、发布时间、图片来源链接和原始 HTML 快照。
 - 抓取安全：HTTP(S) / 80、443 端口限制；检查全部 DNS 结果和每次重定向，连接固定到验证后的 IP 并保留 TLS SNI；不使用环境代理；响应类型、体积及时间上限。抓取器不执行页面脚本。
 - 持久化 Huey SQLite 队列与独立 worker；任务状态机、30 / 120 / 480 秒重试、失败后手动重试；任务表分发恢复、10 分钟运行租约、执行标识防止重复落库。API 先提交任务再入队，漏投递由 worker 恢复。
@@ -16,7 +19,7 @@
 - PWA Manifest、192 / 512 图标、Service Worker 注册和 GET 分享入口。未登录时暂存分享内容，登录后自动继续，以幂等键防止重复提交。当前阅读需要联网。
 - `make dev` 启动 API、前端和 worker；`make serve` 与 Docker 入口监督 API / worker 两个进程；队列路径在容器数据卷中持久化。
 
-## 验证结果
+## Phase 1–2 验证记录（2026-09-20）
 
 - 后端 **69 项**测试通过，涵盖原有认证、设置与安全测试，以及完整 URL → Huey → 提取 → 摘要/降级 → 笔记链路、离线 HTML 元数据/兜底、SSRF 与响应限制、幂等并发、缓存过期、用户隔离、重试耗尽、持久化重试、队列恢复、过期租约、旧 worker 防重、删除级联和迁移一致性。
 - 前端 **10 项**测试通过：原有会话续期等 7 项，加上分享 URL 提取与无效分享输入 3 项。
@@ -25,16 +28,24 @@
 - 浏览器验收可复现：构建后运行 `uv run --no-project --with playwright python scripts/smoke_capture.py`；需要已安装对应 Chromium，可通过 `CLIPO_TEST_CHROMIUM` 指定现有浏览器路径。截图在忽略目录 `frontend/test-results/`。
 - 测试不请求真实网页或真实 LLM，不修改正式数据库中的账号与笔记。
 
+## Phase 3 首节点验证（2026-09-21）
+
+- 本次运行 `make lint`、`make test`、`make build` 全部通过；后端 **86 项**、前端 **10 项**测试通过。新增 17 项平台设置测试覆盖凭据加密与不回显、认证与账号隔离、两平台独立更新、留空保留、替换/清除，以及非法 Cookie 不产生部分更新；测试仍有既有的 Starlette/httpx 与 AnyIO 弃用提示。
+- 已运行 `make gen-api`，同步 OpenAPI 与 TypeScript 类型。复用 `user_settings.platform_cookies`，未新增模型或迁移。
+- 本次 Chromium 浏览器验收通过：平台 Cookie 保存、刷新保留、替换、单独/同时清除、请求失败后保留输入并重试，以及教程展开；检查了 1440px 桌面和 390px 手机布局，无横向溢出或脚本错误。原有初始化、采集、摘要、删除、重试及分享登录链路也通过。
+- 默认 Playwright 依赖的 Chromium 版本尚未安装，本次通过 `CLIPO_TEST_CHROMIUM=/home/tlwsy/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome uv run --no-project --with playwright python scripts/smoke_capture.py` 使用已有浏览器完成验收；他机请替换为实际路径或安装对应 Chromium。
+- 全部验证使用临时数据库、离线网页/模型夹具和虚构 Cookie，未访问真实平台、验证真实 Cookie 或真实模型；未重跑 Docker、PostgreSQL 与 Android 真机验收。
+
 ## 验收限制
 
 - 当前 WSL 未启用 Docker Desktop 集成，容器和 PostgreSQL 实机验收仍待完成。
 - Android 真机上的 PWA 安装与系统分享面板尚未验证；已验证同一分享 URL 的浏览器链路和 Manifest。
 - 尚未使用真实模型密钥验证供应商兼容性；已用固定返回和 HTTP 协议夹具验证摘要、失败重试与降级。
 - 通用抓取只支持公开的静态 HTML，不支持需要登录或 JavaScript 渲染的站点。图片只保留外链，不下载媒体；HTML 快照用于后续重新提取，当前没有相应 API。
-- 建议标签尚未变成可管理标签；通用网页不抓评论，平台评论提取与评分在下一阶段实现。
+- 建议标签尚未变成可管理标签；通用网页不抓评论，平台评论提取与评分在 Phase 3 后续节点实现。
 
-## 下一阶段
+## 当前阶段与后续节点
 
-**Phase 3：平台专项。** 按计划实现小红书、小黑盒的 Cookie 配置与加密、平台适配器、评论抓取与初筛、LLM 评论评分，以及登录失效、频控和结构变更的诊断。视频平台适配器亦属于该阶段。
+**Phase 3：平台专项，进行中。** 已实现小红书、小黑盒的 Cookie 配置与加密。接下来结合离线平台夹具实现 Cookie 有效性探测和平台适配器，再接入评论抓取与初筛、LLM 评论评分，以及登录失效、频控和结构变更的诊断。视频平台适配器亦属于该阶段；当前尚不满足 M3“关键平台可用”的验收标准。
 
 检索、标签管理、iOS Shortcut 与离线访问在 Phase 4；扩展及内容直传在 Phase 5；导出、自动备份、CI 与发布在 Phase 6。限流、公开分享、重新摘要等额外接口仍未实现。

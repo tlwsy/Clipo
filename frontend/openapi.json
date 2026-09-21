@@ -3327,6 +3327,70 @@
         ],
         "title": "NoteResponse"
       },
+      "PlatformCookieStatus": {
+        "properties": {
+          "cookie_set": {
+            "type": "boolean",
+            "title": "Cookie Set"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cookie_set"
+        ],
+        "title": "PlatformCookieStatus"
+      },
+      "PlatformCookiesResponse": {
+        "properties": {
+          "xiaohongshu": {
+            "$ref": "#/components/schemas/PlatformCookieStatus"
+          },
+          "xiaoheihe": {
+            "$ref": "#/components/schemas/PlatformCookieStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "xiaohongshu",
+          "xiaoheihe"
+        ],
+        "title": "PlatformCookiesResponse"
+      },
+      "PlatformCookiesUpdate": {
+        "properties": {
+          "xiaohongshu": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16384,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xiaohongshu"
+          },
+          "xiaoheihe": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16384,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xiaoheihe"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PlatformCookiesUpdate"
+      },
       "RefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -3404,11 +3468,15 @@
         "properties": {
           "llm": {
             "$ref": "#/components/schemas/LlmResponse"
+          },
+          "platform_cookies": {
+            "$ref": "#/components/schemas/PlatformCookiesResponse"
           }
         },
         "type": "object",
         "required": [
-          "llm"
+          "llm",
+          "platform_cookies"
         ],
         "title": "SettingsResponse"
       },
@@ -3418,6 +3486,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/LlmUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "platform_cookies": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlatformCookiesUpdate"
               },
               {
                 "type": "null"

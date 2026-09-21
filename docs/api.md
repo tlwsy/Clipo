@@ -2,7 +2,7 @@
 
 基址 `/api/v1`。除注明外均需认证，请求与响应皆为 JSON，时间为 ISO 8601 UTC。可执行契约以 `/docs`、`/openapi.json` 和仓库的 `frontend/openapi.json` 为准。
 
-当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除。平台内容直传、标签、检索、分享链接、导出和备份尚未提供。
+当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置。平台采集、内容直传、标签、检索、分享链接、导出和备份尚未提供。
 
 ## 认证与错误
 
@@ -133,7 +133,13 @@
 
 ## 设置
 
-`GET /settings` 返回 `llm`：`base_url`、`model`、`api_key_set`、`comment_score_threshold`、`max_comments`、`text_token_budget`、`overridden_fields`。
+`GET /settings` 返回 `llm` 与 `platform_cookies`。`llm` 包含 `base_url`、`model`、`api_key_set`、`comment_score_threshold`、`max_comments`、`text_token_budget`、`overridden_fields`；`platform_cookies` 只返回保存状态：
+
+```json
+{"xiaohongshu":{"cookie_set":false},"xiaoheihe":{"cookie_set":false}}
+```
+
+`cookie_set: true` 仅表示存在已加密的配置，不代表平台登录有效。接口不返回 Cookie 明文或密文。
 
 `PUT /settings` 请求示例：
 
@@ -143,6 +149,16 @@
 
 省略字段保留原值；传 `null` 恢复默认或清除密钥。模型配置按环境变量 > 用户数据库 > 默认值生效，读接口不返回密钥。正文预算按 UTF-8 字节保守估算，仅截断送给模型的内容。评论评分相关配置已保存，在 Phase 3 生效。连通性测试接口尚未实现。
 
+平台 Cookie 使用同一 `PUT /settings` 接口：
+
+```json
+{"platform_cookies":{"xiaohongshu":"name=value; name2=value2","xiaoheihe":null}}
+```
+
+仅支持 `xiaohongshu` 和 `xiaoheihe`，未知平台返回 422。各平台省略则保留原值，字符串替换，`null` 或空字符串清除；省略整个 `platform_cookies`、传 `null` 或 `{}` 均不修改 Cookie。Web 表单留空会省略该平台字段，勾选清除才发送 `null`。Cookie 为请求头的值，不能带 `Cookie:` 前缀或控制字符，最多 16384 个可打印 ASCII 字符，格式为 `name=value; name2=value2`。参数非法时整次请求不落库，包括同次提交的 LLM 配置。
+
+Cookie 通过当前账号的仓储加密保存；该节点不向平台发起请求，平台抓取和有效性探测尚未实现。
+
 ## 后续接口规划
 
-Phase 3 接入平台 Cookie 与评论评分；Phase 4 接入 `q` 搜索、标签、收藏和 Shortcut；Phase 5 扩展 `POST /captures` 的内容直传；Phase 6 接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。
+Phase 3 继续接入平台 Cookie 有效性探测、平台采集与评论评分；Phase 4 接入 `q` 搜索、标签、收藏和 Shortcut；Phase 5 扩展 `POST /captures` 的内容直传；Phase 6 接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。

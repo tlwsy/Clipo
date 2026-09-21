@@ -603,6 +603,23 @@ export interface components {
              */
             updated_at: string;
         };
+        /** PlatformCookieStatus */
+        PlatformCookieStatus: {
+            /** Cookie Set */
+            cookie_set: boolean;
+        };
+        /** PlatformCookiesResponse */
+        PlatformCookiesResponse: {
+            xiaohongshu: components["schemas"]["PlatformCookieStatus"];
+            xiaoheihe: components["schemas"]["PlatformCookieStatus"];
+        };
+        /** PlatformCookiesUpdate */
+        PlatformCookiesUpdate: {
+            /** Xiaohongshu */
+            xiaohongshu?: string | null;
+            /** Xiaoheihe */
+            xiaoheihe?: string | null;
+        };
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
@@ -633,10 +650,12 @@ export interface components {
         /** SettingsResponse */
         SettingsResponse: {
             llm: components["schemas"]["LlmResponse"];
+            platform_cookies: components["schemas"]["PlatformCookiesResponse"];
         };
         /** SettingsUpdate */
         SettingsUpdate: {
             llm?: components["schemas"]["LlmUpdate"] | null;
+            platform_cookies?: components["schemas"]["PlatformCookiesUpdate"] | null;
         };
         /** SetupRequest */
         SetupRequest: {

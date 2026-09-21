@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { AppShell, useAccount } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
+import { PlatformSettings } from "@/components/platform-settings";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
@@ -379,6 +380,7 @@ function SettingsContent() {
           {data ? (
             <>
               <ModelSettings initial={data.settings.llm} />
+              <PlatformSettings initial={data.settings.platform_cookies} />
               <TokenSettings initial={data.tokens} />
             </>
           ) : (
@@ -399,7 +401,7 @@ function SettingsContent() {
           <div className="settings-tip">
             <Icon name="lock" size={22} />
             <h3>属于你的空间</h3>
-            <p>配置按账号独立保存。API Key 加密存储，访问令牌可以随时撤销。</p>
+            <p>配置按账号独立保存。API Key 与平台 Cookie 加密存储，访问令牌可以随时撤销。</p>
           </div>
         </aside>
       </div>

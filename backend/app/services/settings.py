@@ -2,7 +2,14 @@ from typing import Any
 
 from app.config import Settings
 from app.repositories import UserRepository
-from app.schemas.settings import LlmResponse, LlmUpdate, SettingsResponse
+from app.schemas.settings import (
+    LlmResponse,
+    LlmUpdate,
+    PlatformCookiesResponse,
+    PlatformCookieStatus,
+    PlatformCookiesUpdate,
+    SettingsResponse,
+)
 from app.security.credentials import encrypt_secret
 
 LLM_DEFAULTS: dict[str, Any] = {
@@ -15,7 +22,8 @@ LLM_DEFAULTS: dict[str, Any] = {
 
 
 def read_settings(repository: UserRepository, settings: Settings) -> SettingsResponse:
-    stored = repository.settings().llm_config
+    user_settings = repository.settings()
+    stored = user_settings.llm_config
     effective = {
         **LLM_DEFAULTS,
         **{key: value for key, value in stored.items() if key != "api_key"},
@@ -32,7 +40,15 @@ def read_settings(repository: UserRepository, settings: Settings) -> SettingsRes
     else:
         api_key_set = bool(stored.get("api_key"))
     return SettingsResponse(
-        llm=LlmResponse(**effective, api_key_set=api_key_set, overridden_fields=overrides)
+        llm=LlmResponse(**effective, api_key_set=api_key_set, overridden_fields=overrides),
+        platform_cookies=PlatformCookiesResponse(
+            xiaohongshu=PlatformCookieStatus(
+                cookie_set=bool(user_settings.platform_cookies.get("xiaohongshu"))
+            ),
+            xiaoheihe=PlatformCookieStatus(
+                cookie_set=bool(user_settings.platform_cookies.get("xiaoheihe"))
+            ),
+        ),
     )
 
 
@@ -51,3 +67,17 @@ def update_llm(repository: UserRepository, payload: LlmUpdate, settings: Setting
         else:
             config[key] = str(value) if key == "base_url" else value
     repository.set_llm(config)
+
+
+def update_platform_cookies(
+    repository: UserRepository, payload: PlatformCookiesUpdate, settings: Settings
+) -> None:
+    cookies = dict(repository.settings().platform_cookies)
+    for platform in payload.model_fields_set:
+        value = getattr(payload, platform)
+        secret = value.get_secret_value() if value is not None else ""
+        if secret:
+            cookies[platform] = encrypt_secret(secret, settings)
+        else:
+            cookies.pop(platform, None)
+    repository.set_platform_cookies(cookies)

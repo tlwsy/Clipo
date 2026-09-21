@@ -1,6 +1,15 @@
+import re
 from typing import Annotated
 
-from pydantic import BaseModel, Field, HttpUrl, SecretStr, StringConstraints
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    SecretStr,
+    StringConstraints,
+    field_validator,
+)
 
 
 class LlmUpdate(BaseModel):
@@ -15,8 +24,31 @@ class LlmUpdate(BaseModel):
     text_token_budget: int | None = Field(default=None, ge=100, le=100000)
 
 
+class PlatformCookiesUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    xiaohongshu: SecretStr | None = Field(default=None, max_length=16384)
+    xiaoheihe: SecretStr | None = Field(default=None, max_length=16384)
+
+    @field_validator("xiaohongshu", "xiaoheihe")
+    @classmethod
+    def validate_cookie(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is None or value.get_secret_value() == "":
+            return value
+        cookie = value.get_secret_value()
+        if any(ord(char) < 32 or ord(char) > 126 for char in cookie):
+            raise ValueError("Cookie must contain only printable ASCII characters")
+        cookie = cookie.strip()
+        for pair in cookie.split(";"):
+            name, separator, _ = pair.strip().partition("=")
+            if not separator or not re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", name):
+                raise ValueError("Expected a Cookie request header value")
+        return SecretStr(cookie)
+
+
 class SettingsUpdate(BaseModel):
     llm: LlmUpdate | None = None
+    platform_cookies: PlatformCookiesUpdate | None = None
 
 
 class LlmResponse(BaseModel):
@@ -29,8 +61,18 @@ class LlmResponse(BaseModel):
     overridden_fields: list[str]
 
 
+class PlatformCookieStatus(BaseModel):
+    cookie_set: bool
+
+
+class PlatformCookiesResponse(BaseModel):
+    xiaohongshu: PlatformCookieStatus
+    xiaoheihe: PlatformCookieStatus
+
+
 class SettingsResponse(BaseModel):
     llm: LlmResponse
+    platform_cookies: PlatformCookiesResponse
 
 
 class VersionResponse(BaseModel):

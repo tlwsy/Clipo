@@ -88,6 +88,9 @@ class UserRepository:
     def set_llm(self, config: dict[str, Any]) -> None:
         self.settings().llm_config = config
 
+    def set_platform_cookies(self, cookies: dict[str, str]) -> None:
+        self.settings().platform_cookies = cookies
+
     def list_tokens(self) -> list[ApiToken]:
         return list(
             self.db.scalars(

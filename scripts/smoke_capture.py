@@ -14,9 +14,67 @@ import time
 import urllib.request
 from pathlib import Path
 
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import Page, expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def check_platform_settings(page: Page) -> None:
+    card = page.locator("#platforms")
+    xhs = card.get_by_label("小红书 Cookie", exact=True)
+    heybox = card.get_by_label("小黑盒 Cookie", exact=True)
+    save = card.get_by_role("button", name="保存平台配置")
+    expect(save).to_be_disabled()
+    xhs.fill("web_session=offline-xhs-session")
+    heybox.fill("session=offline-heybox-session")
+    save.click()
+    expect(card.get_by_role("status")).to_contain_text("尚未验证登录有效性")
+    expect(xhs).to_have_value("")
+    expect(heybox).to_have_value("")
+    page.reload()
+    expect(card.get_by_text("已保存，未验证", exact=True)).to_have_count(2)
+    xhs.fill("web_session=replaced-offline-session")
+    save.click()
+    expect(card.get_by_role("status")).to_be_visible()
+    expect(card.get_by_text("已保存，未验证", exact=True)).to_have_count(2)
+    page.reload()
+    card.get_by_label("清除小红书 Cookie").check()
+    expect(xhs).to_be_disabled()
+    save.click()
+    expect(card.get_by_text("尚未配置", exact=True)).to_have_count(1)
+    expect(card.get_by_text("已保存，未验证", exact=True)).to_have_count(1)
+    xhs.fill("web_session=retry-offline-session")
+    page.route(
+        "**/api/v1/settings",
+        lambda route: route.fulfill(
+            status=503,
+            content_type="application/json",
+            body=json.dumps({"error": {"message": "测试保存失败，请重试"}}),
+        ),
+    )
+    save.click()
+    expect(card.get_by_role("alert")).to_have_text("测试保存失败，请重试")
+    expect(xhs).to_have_value("web_session=retry-offline-session")
+    page.unroute("**/api/v1/settings")
+    save.click()
+    expect(card.get_by_role("status")).to_be_visible()
+    expect(xhs).to_have_value("")
+    card.get_by_label("清除小红书 Cookie").check()
+    card.get_by_label("清除小黑盒 Cookie").check()
+    save.click()
+    expect(card.get_by_text("尚未配置", exact=True)).to_have_count(2)
+    page.reload()
+    expect(card.get_by_text("尚未配置", exact=True)).to_have_count(2)
+    expect(page.locator("#llm")).to_contain_text("已配置密钥")
+    card.get_by_text("如何获取小红书 Cookie", exact=True).click()
+    expect(card.get_by_role("link", name="小红书官网")).to_be_visible()
+    screenshots = ROOT / "frontend/test-results"
+    screenshots.mkdir(exist_ok=True)
+    card.screenshot(path=str(screenshots / "platform-settings-desktop.png"))
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    card.screenshot(path=str(screenshots / "platform-settings-mobile.png"))
+    page.set_viewport_size({"width": 1440, "height": 1000})
 
 
 def main() -> None:
@@ -100,6 +158,7 @@ def main() -> None:
                     page.get_by_label("API Key").fill("offline-test-key")
                     page.get_by_role("button", name="保存配置").click()
                     expect(page.locator(".notice.success")).to_be_visible()
+                    check_platform_settings(page)
                     page.goto(base + "/")
                     page.get_by_label("网页链接").fill("https://example.com/summary")
                     page.get_by_role("button", name="保存网页").click()
@@ -153,6 +212,7 @@ def main() -> None:
                                     "URL capture",
                                     "original-only note",
                                     "AI summary",
+                                    "platform Cookie save, replace, clear and retry",
                                     "delete",
                                     "manual retry",
                                     "share through login",

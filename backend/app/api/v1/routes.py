@@ -26,7 +26,7 @@ from app.schemas.settings import (
 )
 from app.services import tokens as token_service
 from app.services.auth import AuthService
-from app.services.settings import read_settings, update_llm
+from app.services.settings import read_settings, update_llm, update_platform_cookies
 
 router = APIRouter(
     prefix="/api/v1",
@@ -148,4 +148,6 @@ def put_user_settings(
 ) -> SettingsResponse:
     if payload.llm is not None:
         update_llm(repository, payload.llm, settings)
+    if payload.platform_cookies is not None:
+        update_platform_cookies(repository, payload.platform_cookies, settings)
     return read_settings(repository, settings)

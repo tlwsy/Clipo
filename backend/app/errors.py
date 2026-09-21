@@ -26,4 +26,9 @@ def validation_message(field: str, error_type: str) -> str:
     }
     if error_type == "json_invalid":
         return "请求格式有误，请发送有效的 JSON 内容"
+    if field.startswith("body.platform_cookies"):
+        return (
+            "平台仅支持小红书和小黑盒；请粘贴 Cookie 请求头的值（name=value; name2=value2），"
+            "不要包含 Cookie: 前缀、换行或非 ASCII 字符，最多 16384 个字符"
+        )
     return messages.get(field, "填写内容有误，请检查对应字段的格式和长度")

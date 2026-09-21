@@ -2,7 +2,7 @@
 
 ## 仓库结构（目标）
 
-当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；平台适配器、存储和扩展随后续阶段创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已提供平台 Cookie 配置，平台适配器、存储和扩展随后续节点创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
 
 ```
 clipo/
@@ -90,7 +90,7 @@ make build
 make serve                         # http://localhost:8000
 ```
 
-Huey worker 将在 Phase 2 接入，浏览器扩展在 Phase 5 接入，当前无需启动或构建这些组件。
+`make serve` 会启动 API 与 Huey worker；浏览器扩展在 Phase 5 接入，当前无需构建扩展。
 
 ## 常用命令
 
@@ -147,7 +147,7 @@ make migrate m="描述"      # 生成
 1. 在 `backend/app/extractors/` 新建文件，实现 `matches` 与 `extract`，返回 `CapturedContent`。
 2. 在 `registry.py` 注册，注意匹配顺序：专用适配器先于通用适配器。
 3. 放入离线夹具并写单元测试，覆盖正文、作者、时间、图片、评论字段。
-4. 若该平台需要登录态，在设置页补充 Cookie 项与获取教程。
+4. 小红书、小黑盒的 Cookie 配置与获取教程已提供（`platform_cookies.xiaohongshu` / `xiaoheihe`），尚未被抓取器使用。接入时须由当前账号的仓储读取、解密，限定凭据发送的目标域名和 HTTPS，跨域重定向不得泄露 Cookie；有效性探测需基于可验证的登录状态。新增其他平台时同步补充配置与教程。
 5. 如需绕过反爬，在 `extension/content/` 补一个同名适配器，输出与后端一致的 payload 结构。
 
 ## 调试建议

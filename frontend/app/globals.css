@@ -909,6 +909,38 @@ input[aria-invalid="true"] {
 .settings-card label small {
   font-size: 10px;
 }
+.platform-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.platform-field {
+  margin-bottom: 24px;
+}
+.cookie-status {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 6px 0 12px;
+}
+.cookie-help {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.cookie-help summary {
+  color: var(--green);
+  cursor: pointer;
+}
+.cookie-help ol {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+.cookie-help a {
+  color: var(--green);
+  text-decoration: underline;
+}
 .form-bottom {
   display: flex;
   align-items: center;
