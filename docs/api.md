@@ -2,7 +2,7 @@
 
 基址 `/api/v1`。除注明外均需认证，请求与响应皆为 JSON，时间为 ISO 8601 UTC。可执行契约以 `/docs`、`/openapi.json` 和仓库的 `frontend/openapi.json` 为准。
 
-当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置及小红书 HTML 帖子与内嵌评论采集，复用现有采集和笔记接口。小黑盒帖子与顶层评论分页也已接入；B 站与 YouTube 视频适配也已接入；内容直传、标签、检索、分享链接、导出和备份尚未提供。
+当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置及小红书 HTML 帖子与内嵌评论采集，复用现有采集和笔记接口。小黑盒帖子与顶层评论分页也已接入；B 站与 YouTube 视频适配也已接入；内容直传、检索、分享链接、导出和备份尚未提供。
 
 ## 认证与错误
 
@@ -95,7 +95,7 @@
 
 ### GET /notes
 
-按创建时间倒序，支持 `?cursor=<opaque>&limit=50`，`limit` 为 1–100。当前不支持搜索、标签、收藏和排序参数。
+按创建时间倒序，支持 `?cursor=<opaque>&limit=50`，`limit` 为 1–100。支持 `tag_id` 与 `favorite=true/false` 组合筛选；列表和详情均含 `tags: [{id,name}]` 与 `is_favorite`。
 
 ```json
 {
@@ -127,11 +127,21 @@
 - `comment_score_error`：评论评分失败原因；无评分错误或历史笔记为 `null`。有效摘要不会因评分失败而丢失。
 - `content.capture_warnings`：采集未完整完成的可读提示，例如分页缺少 Cookie/访问参数、分页预算耗尽；不会回显平台返回体。`extractor_version` 供缓存版本判定使用。
 
-图片目前只保留来源链接，不下载媒体。建议标签只用于展示，尚未提供标签管理。
+图片目前只保留来源链接，不下载媒体。AI 建议会自动添加为标签；`suggested_tags` 保留模型原始建议，`tags` 为当前可管理标签。
 
 ### DELETE /notes/{id}
 
 返回 204，删除笔记、来源和评论。任务记录保留，`note_id` 变为 `null`；已删除或不属于当前账号的笔记返回 404。
+
+### 标签与收藏
+
+- `PATCH /notes/{id}`：`{"is_favorite":true}`，返回更新后详情。
+- `GET /tags`：当前账号全部标签。
+- `POST /notes/{id}/tags`：`{"name":"知识管理"}`，返回标签。名称 1–50 字符、折叠空白；相同名称和重复关联幂等。
+- `DELETE /notes/{id}/tags/{tag_id}`：仅移除该笔记关联，可重复调用。
+- `DELETE /tags/{tag_id}`：删除当前账号标签及其所有关联，保留笔记。
+
+迁移 `0006_note_organization` 为已有笔记的 AI 建议补建标签，回滚保留笔记和原始建议，移除收藏及可管理标签。
 
 ## 设置
 

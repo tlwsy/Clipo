@@ -327,6 +327,23 @@ def check_youtube_capture(page: Page, base: str) -> None:
     page.set_viewport_size({"width": 1440, "height": 1000})
 
 
+def check_note_organization(page: Page, base: str) -> None:
+    page.get_by_role("button", name="☆ 标记收藏").click()
+    expect(page.get_by_role("button", name="★ 已收藏")).to_be_visible()
+    page.get_by_label("添加标签", exact=True).fill("阶段四验收")
+    page.get_by_role("button", name="添加", exact=True).click()
+    expect(page.get_by_role("button", name="移除标签 阶段四验收")).to_be_visible()
+    page.goto(base + "/")
+    page.get_by_label("按标签筛选").select_option(label="阶段四验收")
+    page.get_by_label("只看收藏").check()
+    expect(page.locator(".note-card")).to_have_count(1)
+    page.locator(".note-card").click()
+    page.get_by_role("button", name="移除标签 阶段四验收").click()
+    expect(page.get_by_role("button", name="移除标签 阶段四验收")).to_have_count(0)
+    page.reload()
+    expect(page.get_by_role("button", name="★ 已收藏")).to_be_visible()
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
@@ -455,6 +472,7 @@ def main() -> None:
                     check_heybox_capture(page, base)
                     check_bilibili_capture(page, base)
                     check_youtube_capture(page, base)
+                    check_note_organization(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:

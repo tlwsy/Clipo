@@ -286,6 +286,12 @@ class CaptureRepository(UserRepository):
         )
         self.db.add(note)
         self.db.flush()
+        from app.note_repository import NoteRepository
+
+        notes = NoteRepository(self.db, self.user_id)
+        for name in dict.fromkeys(" ".join(name.split())[:50] for name in note.suggested_tags):
+            if name:
+                notes.add_tag(note.id, name)
         scores = {score.index: score for score in result.comment_scores}
         for position, comment in enumerate(content.comments):
             score = scores.get(position)

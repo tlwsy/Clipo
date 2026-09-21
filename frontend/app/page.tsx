@@ -10,24 +10,35 @@ function Notes() {
   const user = useAccount();
   const [items, setItems] = useState<Schema["NoteItem"][]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
+  const [tags, setTags] = useState<Schema["TagResponse"][]>([]);
+  const [tag, setTag] = useState("");
+  const [favorite, setFavorite] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
-  const load = useCallback(async (next?: string) => {
-    setBusy(true);
-    setError("");
-    try {
-      const page = await api<Schema["NotePage"]>(
-        `/notes?limit=24${next ? `&cursor=${encodeURIComponent(next)}` : ""}`,
-      );
-      setItems((previous) =>
-        next ? [...previous, ...page.items] : page.items,
-      );
-      setCursor(page.next_cursor);
-    } catch (cause) {
-      setError(errorMessage(cause));
-    } finally {
-      setBusy(false);
-    }
+  const load = useCallback(
+    async (next?: string) => {
+      setBusy(true);
+      setError("");
+      try {
+        const page = await api<Schema["NotePage"]>(
+          `/notes?limit=24${tag ? `&tag_id=${tag}` : ""}${favorite ? "&favorite=true" : ""}${next ? `&cursor=${encodeURIComponent(next)}` : ""}`,
+        );
+        setItems((previous) =>
+          next ? [...previous, ...page.items] : page.items,
+        );
+        setCursor(page.next_cursor);
+      } catch (cause) {
+        setError(errorMessage(cause));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [tag, favorite],
+  );
+  useEffect(() => {
+    api<Schema["TagResponse"][]>("/tags")
+      .then(setTags)
+      .catch((cause) => setError(errorMessage(cause)));
   }, []);
   useEffect(() => {
     void load();
@@ -47,8 +58,55 @@ function Notes() {
         </Link>
       </div>
       <CaptureForm />
+      <div className="note-filters">
+        <label>
+          标签
+          <select
+            aria-label="按标签筛选"
+            value={tag}
+            onChange={(event) => setTag(event.target.value)}
+          >
+            <option value="">全部标签</option>
+            {tags.map((item) => (
+              <option value={item.id} key={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={favorite}
+            onChange={(event) => setFavorite(event.target.checked)}
+          />
+          只看收藏
+        </label>
+        {tag && (
+          <button
+            className="inline-button danger"
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  "删除此标签？所有笔记上的这个标签都会移除，笔记会保留。",
+                )
+              )
+                return;
+              try {
+                await api(`/tags/${tag}`, { method: "DELETE" });
+                setTags(tags.filter((item) => String(item.id) !== tag));
+                setTag("");
+              } catch (cause) {
+                setError(errorMessage(cause));
+              }
+            }}
+          >
+            删除此标签
+          </button>
+        )}
+      </div>
       <div className="section-heading">
-        <h2>最近收藏</h2>
+        <h2>最近笔记</h2>
         <button
           className="inline-button"
           disabled={busy}
@@ -71,7 +129,7 @@ function Notes() {
       {!busy && !error && items.length === 0 && (
         <section className="empty-state">
           <Icon name="bookmark" size={40} />
-          <h2>第一篇好内容，从一个链接开始</h2>
+          <h2>还没有符合条件的笔记</h2>
           <p>保存公开网页后，你可以在这里阅读正文、摘要和要点。</p>
           <Link className="text-link" href="/settings/#llm">
             配置 AI 摘要 <Icon name="arrow" size={15} />
@@ -91,7 +149,17 @@ function Notes() {
                 {note.status === "ready" ? "AI 已整理" : "未生成摘要"}
               </span>
             </div>
-            <h2>{note.title || "无标题笔记"}</h2>
+            <h2>
+              {note.is_favorite ? "★ " : ""}
+              {note.title || "无标题笔记"}
+            </h2>
+            <div className="tag-list">
+              {note.tags.map((item) => (
+                <span className="subtle-badge" key={item.id}>
+                  {item.name}
+                </span>
+              ))}
+            </div>
             <p>{note.summary_excerpt}</p>
             <div className="note-card-footer">
               <span>{note.author || "网页收藏"}</span>

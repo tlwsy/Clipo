@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import { NoteOrganization } from "@/components/note-organization";
 import { AppShell } from "@/components/app-shell";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
@@ -108,6 +109,7 @@ function Reader() {
               </a>
             </div>
           </header>
+          <NoteOrganization note={note} onChange={setNote} />
           {(note.content.capture_warnings ?? []).map((warning, index) => (
             <p className="notice" role="status" key={index}>
               {warning}
@@ -151,16 +153,6 @@ function Reader() {
                     ))}
                   </ul>
                 </>
-              )}
-              {note.suggested_tags.length > 0 && (
-                <div className="suggested-tags">
-                  <span>建议标签</span>
-                  {note.suggested_tags.map((tag, index) => (
-                    <span className="subtle-badge" key={index}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
               )}
             </section>
           )}

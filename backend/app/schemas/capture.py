@@ -63,6 +63,30 @@ class CommentResponse(BaseModel):
     is_valuable: bool
 
 
+class TagResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+
+class TagRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=50)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("标签不能为空")
+        return value
+
+
+class NoteUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    is_favorite: bool = Field(strict=True)
+
+
 class NoteItem(BaseModel):
     id: int
     title: str
@@ -72,6 +96,8 @@ class NoteItem(BaseModel):
     summary_excerpt: str
     status: Literal["ready", "original_only"]
     created_at: datetime
+    is_favorite: bool
+    tags: list[TagResponse]
 
 
 class NotePage(BaseModel):
@@ -90,6 +116,8 @@ class NoteResponse(BaseModel):
     summary_markdown: str | None
     key_points: list[str]
     suggested_tags: list[str]
+    tags: list[TagResponse]
+    is_favorite: bool
     status: Literal["ready", "original_only"]
     summary_error: str | None
     comment_score_error: str | None

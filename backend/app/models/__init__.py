@@ -88,5 +88,7 @@ from app.models.capture import (  # noqa: E402, F401
     Comment,
     ExtractionCache,
     Note,
+    NoteTag,
     Source,
+    Tag,
 )

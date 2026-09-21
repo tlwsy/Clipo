@@ -1699,3 +1699,43 @@ input[aria-invalid="true"] {
     font-size: 10px;
   }
 }
+
+.note-filters,
+.note-organization,
+.tag-list,
+.tag-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.note-filters,
+.note-organization {
+  margin: 24px 0;
+}
+.note-filters label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.note-filters select,
+.tag-form input {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+}
+.tag-list {
+  gap: 6px;
+}
+.tag-list .subtle-badge {
+  overflow-wrap: anywhere;
+}
+.tag-form input {
+  width: min(220px, 50vw);
+}
+.checkbox-label input {
+  width: auto;
+}

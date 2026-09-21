@@ -90,6 +90,7 @@ def test_llm_summary_uses_decrypted_settings_and_saves_key_points(client, app, a
     note = client.get(f"/api/v1/notes/{job['note_id']}", headers=auth).json()
     assert note["status"] == "ready"
     assert note["key_points"] == ["保留来源", "定期回顾"]
+    assert [tag["name"] for tag in note["tags"]] == ["知识管理"]
     assert calls[0]["api_key"] == "encrypted-model-secret"
     assert calls[0]["model"] == "test-model"
 

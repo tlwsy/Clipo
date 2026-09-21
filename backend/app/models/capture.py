@@ -20,6 +20,24 @@ class Source(Base):
     published_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
 
+class Tag(Base):
+    __tablename__ = "tags"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(50))
+
+
+class NoteTag(Base):
+    __tablename__ = "notes_tags"
+
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+
+
 class Note(Base):
     __tablename__ = "notes"
 
@@ -33,6 +51,7 @@ class Note(Base):
     key_points: Mapped[list[str]] = mapped_column(json_type, default=list)
     suggested_tags: Mapped[list[str]] = mapped_column(json_type, default=list)
     status: Mapped[str] = mapped_column(String(32))
+    is_favorite: Mapped[bool] = mapped_column(default=False, server_default=false())
     summary_error: Mapped[str | None] = mapped_column(Text)
     comment_score_error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
