@@ -18,3 +18,7 @@
 
 `xiaohongshu-collections.html` 模拟真实页面发现的空 Map/Set 状态序列化语法，
 其余帖子文字和数据均为虚构。验证有限字面量解析及字符串保留，不执行任何页面脚本。
+
+`bilibili.html`、`bilibili-player.json`、`bilibili-captions.json` 与
+`bilibili-comments1.json` / `comments2.json` 均为人工构造的回归数据，
+覆盖分 P、语言选择、字幕文本和两页 23 条唯一顶层热评。未包含真实视频正文、作者或评论。

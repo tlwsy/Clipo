@@ -5,11 +5,12 @@ import os
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 
 import uvicorn
 from app.config import Settings
 from app.db.session import create_db_engine, session_factory
-from app.extractors import generic, xiaoheihe, xiaohongshu
+from app.extractors import bilibili, generic, xiaoheihe, xiaohongshu
 from app.extractors.base import ExtractionError
 from app.extractors.generic import ScopedCookie
 from app.extractors.xhs_api import XhsClient
@@ -72,6 +73,23 @@ def heybox_login(self: xiaoheihe.HeyboxClient) -> bool:
     return True
 
 
+def fetch_bilibili(url: str, **kwargs: object) -> tuple[str, str]:
+    return (Path(__file__).parents[1] / "fixtures" / "bilibili.html").read_text(), url
+
+
+def bili_json(url: str, **kwargs: object) -> dict[str, Any]:
+    parts = urlsplit(url)
+    if parts.path == "/x/player/wbi/v2":
+        name = "bilibili-player.json"
+    elif parts.path == "/x/v2/reply":
+        name = f"bilibili-comments{parse_qs(parts.query)['pn'][0]}.json"
+    elif parts.path.startswith("/bfs/subtitle/"):
+        name = "bilibili-captions.json"
+    else:
+        raise AssertionError("Unexpected offline video request")
+    return json.loads((Path(__file__).parents[1] / "fixtures" / name).read_text())
+
+
 class OfflineModel:
     def complete(self, **kwargs: Any) -> str:
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
@@ -104,6 +122,8 @@ if __name__ == "__main__":
         xiaoheihe.fetch_html = fetch_heybox
         xiaoheihe.HeyboxClient.page = heybox_page
         xiaoheihe.HeyboxClient.check_login = heybox_login
+        bilibili.fetch_html = fetch_bilibili
+        bilibili.fetch_json = bili_json
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()

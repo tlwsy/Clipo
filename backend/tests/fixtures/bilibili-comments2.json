@@ -1,0 +1,54 @@
+{
+  "code": 0,
+  "data": {
+    "page": {
+      "count": 23
+    },
+    "replies": [
+      {
+        "rpid": 20,
+        "content": {
+          "message": "离线热评 20：请保留关键操作步骤。"
+        },
+        "member": {
+          "uname": "读者20"
+        },
+        "like": 80,
+        "rcount": 2
+      },
+      {
+        "rpid": 21,
+        "content": {
+          "message": "离线热评 21：请保留关键操作步骤。"
+        },
+        "member": {
+          "uname": "读者21"
+        },
+        "like": 79,
+        "rcount": 2
+      },
+      {
+        "rpid": 22,
+        "content": {
+          "message": "离线热评 22：请保留关键操作步骤。"
+        },
+        "member": {
+          "uname": "读者22"
+        },
+        "like": 78,
+        "rcount": 2
+      },
+      {
+        "rpid": 23,
+        "content": {
+          "message": "离线热评 23：请保留关键操作步骤。"
+        },
+        "member": {
+          "uname": "读者23"
+        },
+        "like": 77,
+        "rcount": 2
+      }
+    ]
+  }
+}

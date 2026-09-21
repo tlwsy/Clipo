@@ -191,10 +191,14 @@ function Reader() {
             </section>
           )}
           {(note.comments.length > 0 ||
-            ["xiaohongshu", "xiaoheihe"].includes(note.source.platform)) && (
+            ["xiaohongshu", "xiaoheihe", "bilibili"].includes(
+              note.source.platform,
+            )) && (
             <section className="original-section">
               <h2>评论</h2>
-              {["xiaohongshu", "xiaoheihe"].includes(note.source.platform) && (
+              {["xiaohongshu", "xiaoheihe", "bilibili"].includes(
+                note.source.platform,
+              ) && (
                 <p className="muted">
                   {note.content.comment_capture_limit === 0
                     ? "本次已关闭评论采集，帖子内容已保存。"

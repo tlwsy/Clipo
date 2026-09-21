@@ -293,6 +293,20 @@ def check_heybox_capture(page: Page, base: str) -> None:
     page.set_viewport_size({"width": 1440, "height": 1000})
 
 
+def check_bilibili_capture(page: Page, base: str) -> None:
+    url = "https://www.bilibili.com/video/BV1xx411c7mD?p=2"
+    page.goto(base + "/")
+    page.get_by_label("网页链接").fill(url)
+    page.get_by_role("button", name="保存网页").click()
+    job = page.locator(".job-card").filter(has_text=url).first
+    expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+    job.get_by_role("link", name="阅读笔记").click()
+    expect(page.get_by_role("heading", name="离线视频笔记")).to_be_visible()
+    expect(page.locator(".original-text")).to_contain_text("字幕（中文）")
+    expect(page.locator(".comment")).to_have_count(23)
+    expect(page.get_by_text("已评分 2 / 23 条", exact=False)).to_be_visible()
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
@@ -419,6 +433,7 @@ def main() -> None:
                     check_comment_capture_limit(page, base)
                     check_xhs_pagination(page, base)
                     check_heybox_capture(page, base)
+                    check_bilibili_capture(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -440,6 +455,7 @@ def main() -> None:
                                     "comment limits, disable, cache and larger recapture",
                                     "XHS .cn short link and two comment API pages",
                                     "Heybox share link, pagination and comment scores",
+                                    "Bilibili video, captions and paginated hot comments",
                                     "delete",
                                     "manual retry",
                                     "share through login",
