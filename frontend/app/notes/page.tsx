@@ -108,6 +108,11 @@ function Reader() {
               </a>
             </div>
           </header>
+          {(note.content.capture_warnings ?? []).map((warning, index) => (
+            <p className="notice" role="status" key={index}>
+              {warning}
+            </p>
+          ))}
           {note.status === "original_only" ? (
             <div className="notice">
               {note.summary_error || "未生成摘要，原文已保存。"}{" "}

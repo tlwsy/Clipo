@@ -1,22 +1,24 @@
-"""Parse note data embedded in HTML without executing JavaScript or calling signed APIs."""
+"""Parse HTML note data and collect bounded top-level comments via the read-only web API."""
 
 import json
 import re
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from lxml import etree
 from lxml import html as lxml_html
 from pydantic import SecretStr
 
 from app.extractors.base import CapturedComment, CapturedContent, ExtractionError
-from app.extractors.generic import ScopedCookie, fetch_html
+from app.extractors.generic import PlatformRequests, ScopedCookie, fetch_html
+from app.extractors.xhs_api import XhsClient
 from app.security.urls import UnsafeURL, normalize_url
 
 COOKIE_HOSTS = frozenset({"www.xiaohongshu.com", "xiaohongshu.com"})
-PAGE_HOSTS = COOKIE_HOSTS | {"xhslink.com", "www.xhslink.com"}
+PAGE_HOSTS = COOKIE_HOSTS | {"xhslink.com", "www.xhslink.com", "xhslink.cn", "www.xhslink.cn"}
 MAX_COMMENTS = 100
 LOGIN_ERROR = "小红书登录态失效或未配置，请在设置中更新 Cookie 后重试"
 STRUCTURE_ERROR = "未找到小红书帖子数据，页面结构可能已变化；请确认原始链接可访问并反馈适配问题"
@@ -177,6 +179,7 @@ def parse_xiaohongshu(html: str, url: str, *, max_comments: int = MAX_COMMENTS) 
         images=images,
         comments=_comments(detail, max_comments),
         comment_capture_limit=max_comments,
+        extractor_version=2,
         raw_html=html,
     )
 
@@ -199,10 +202,51 @@ class XiaohongshuExtractor:
 
     def extract(self, url: str, payload: dict | None = None) -> CapturedContent:
         secret = self.cookie_loader(self.name) if self.cookie_loader else None
+        requests = PlatformRequests()
         html, final_url = fetch_html(
             url,
             cookie=ScopedCookie(secret, COOKIE_HOSTS) if secret else None,
             allowed_hosts=PAGE_HOSTS,
             check_status=check_status,
+            requests=requests,
         )
-        return parse_xiaohongshu(html, final_url, max_comments=self.max_comments)
+        content = parse_xiaohongshu(html, final_url, max_comments=self.max_comments)
+        if len(content.comments) >= self.max_comments:
+            return content
+        parts = urlsplit(final_url)
+        note_id = parts.path.rstrip("/").rsplit("/", 1)[-1]
+        state = _initial_state(lxml_html.fromstring(html))
+        detail = _object(_object(_object(state.get("note")).get("noteDetailMap")).get(note_id))
+        embedded = _object(detail.get("comments"))
+        if embedded.get("hasMore") is False or embedded.get("has_more") is False:
+            return content
+        token = parse_qs(parts.query).get("xsec_token", [""])[0]
+        if not secret or not token:
+            content.capture_warnings.append(
+                "仅保存页面已有评论；补抓评论需配置完整 Cookie，并使用带访问参数的帖子链接。"
+            )
+            return content
+        client = XhsClient(secret, requests)
+        rows = embedded.get("list", [])
+        rows = [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+        cursor = _text(embedded.get("cursor"))
+        visited: set[str] = set()
+        deadline = time.monotonic() + 180
+        # API pagination may repeat rows or cursors; bound pages and elapsed time independently.
+        for _ in range(10):
+            if cursor in visited or time.monotonic() >= deadline:
+                break
+            visited.add(cursor)
+            page = client.comments(note_id, token, cursor)
+            comments = page.get("comments")
+            if not isinstance(comments, list) or type(page.get("has_more")) is not bool:
+                raise ExtractionError("小红书评论结构已变化，请反馈适配问题", False)
+            rows.extend(row for row in comments if isinstance(row, dict))
+            content.comments = _comments({"comments": {"list": rows}}, self.max_comments)
+            if len(content.comments) >= self.max_comments or page["has_more"] is False:
+                return content
+            cursor = _text(page.get("cursor"))
+            if not cursor:
+                break
+        content.capture_warnings.append("评论分页提前结束，已保留取得的评论；可稍后重新采集。")
+        return content

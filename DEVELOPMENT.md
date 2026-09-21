@@ -2,7 +2,7 @@
 
 ## 仓库结构（目标）
 
-当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已提供平台 Cookie 配置、小红书 HTML 帖子与内嵌评论适配器、可配置评论采集上限、评论初筛与 AI 评分，其他平台、评论分页、存储和扩展随后续节点创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已提供平台 Cookie 配置、小红书 HTML 帖子与内嵌评论适配器、可配置评论采集上限、评论初筛与 AI 评分，其他平台、存储和扩展随后续节点创建。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
 
 ```
 clipo/
@@ -152,8 +152,8 @@ make migrate m="描述"      # 生成
 
 ## 调试建议
 
-- 抓取问题：通用网页使用 HTTP 抓取与 trafilatura/readability；小红书适配器解析 HTML 内的 `window.__INITIAL_STATE__`，仅接受目标帖子 ID 对应的数据，按当前账号的 `capture.max_comments` 保存 0–100 条内嵌顶层评论，不执行脚本、不请求签名接口或评论分页。适配器测试使用离线夹具，其来源与限制见 `backend/tests/fixtures/README.md`。
-- 采集上限存于 `user_settings.capture_config`，使用前执行迁移 `0004_capture_settings`；默认 100，0 关闭。任务执行时读取，`CapturedContent.comment_capture_limit` 记录当次上限。降低上限只裁剪缓存的返回副本；提高到超出缓存原采集上限时重新抓取，不能将较小结果视为完整缓存。旧缓存缺少该字段时按原有 100 条上限处理，旧笔记字段为空。HTML 快照仍完整保留；不应使用 AI 候选上限代替采集上限。
+- 抓取问题：通用网页使用 HTTP 抓取与 trafilatura/readability；小红书适配器解析 HTML 内的 `window.__INITIAL_STATE__`，仅接受目标帖子 ID 对应的数据，按当前账号的 `capture.max_comments` 保存 0–100 条内嵌顶层评论，缺少评论时通过 `xhs_api.py` 调用签名分页接口，不执行页面脚本。适配器测试使用离线夹具，其来源与限制见 `backend/tests/fixtures/README.md`。
+- 采集上限存于 `user_settings.capture_config`，使用前执行迁移 `0004_capture_settings`；默认 100，0 关闭。任务执行时读取，`CapturedContent.comment_capture_limit` 记录当次上限。降低上限只裁剪缓存的返回副本；提高到超出缓存原采集上限时重新抓取，不能将较小结果视为完整缓存。分页接入前的旧缓存会失效；当前版本缓存缺少上限字段时按 100 条上限处理，旧笔记字段为空。HTML 快照仍完整保留；不应使用 AI 候选上限代替采集上限。
 - LLM 问题：先检查模型地址、密钥和额度，再用假客户端重现结构解析问题。运行日志不打印 API Key、模型返回体或笔记正文。
 - 评论评分：`services/comments.py` 只选择候选，不修改原始评论；模型输入与输出使用原始位置作为 `index`，禁止用排序后的下标落库。提取缓存保留未评分内容，每次新采集读取当前账号的上限和阈值重新评分；旧笔记不会随设置变化重算。评分异常通过 `comment_score_error` 单独展示，有效摘要仍保留。
 - 队列问题：直接查 `capture_jobs` 表的 `status`、`attempts`、`last_error`。

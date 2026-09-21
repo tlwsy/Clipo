@@ -85,6 +85,8 @@ def test_supported_note_paths_and_missing_fields(path: str) -> None:
         ("https://xiaohongshu.com/discovery/item/64abc123", "xiaohongshu"),
         ("https://xhslink.com/a/offline", "xiaohongshu"),
         ("https://www.xhslink.com/a/offline", "xiaohongshu"),
+        ("https://xhslink.cn/o/offline", "xiaohongshu"),
+        ("https://www.xhslink.cn/o/offline", "xiaohongshu"),
         ("https://www.xiaohongshu.com.attacker.example/explore/64abc123", "web"),
         ("https://fake-xiaohongshu.com/explore/64abc123", "web"),
         ("https://example.com/?url=https://www.xiaohongshu.com", "web"),
@@ -172,6 +174,10 @@ def test_page_errors_are_actionable_without_generic_fallback(
 def test_shortlink_sends_cookie_only_to_https_platform_host(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(
+        "app.extractors.xiaohongshu.XhsClient.comments",
+        lambda *args: {"comments": [], "has_more": False},
+    )
     requests: list[httpx.Request] = []
 
     def handle(request: httpx.Request) -> httpx.Response:

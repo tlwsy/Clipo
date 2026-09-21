@@ -220,6 +220,23 @@ def check_comment_capture_limit(page: Page, base: str) -> None:
     expect(page.get_by_text("本次评论采集上限：3 条。")).to_be_visible()
 
 
+def check_xhs_pagination(page: Page, base: str) -> None:
+    page.goto(base + "/settings/")
+    page.get_by_label("评论采集上限").fill("100")
+    page.get_by_role("button", name="保存采集配置").click()
+    expect(page.locator("#capture").get_by_role("status")).to_be_visible()
+    page.goto(base + "/")
+    page.get_by_label("网页链接").fill("https://xhslink.cn/o/offline")
+    page.get_by_role("button", name="保存网页").click()
+    job = page.locator(".job-card").filter(has_text="https://xhslink.cn/o/offline").first
+    expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+    job.get_by_role("link", name="阅读笔记").click()
+    expect(page.locator(".comment")).to_have_count(12)
+    expect(page.locator(".comment").nth(10)).to_contain_text("分页读者")
+    expect(page.get_by_text("已评分 2 / 12 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment .pill")).to_have_count(1)
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
@@ -343,6 +360,7 @@ def main() -> None:
                     page.screenshot(path=str(screenshots / "note-detail.png"), full_page=True)
                     check_xiaohongshu_capture(page, base)
                     check_comment_capture_limit(page, base)
+                    check_xhs_pagination(page, base)
                     manifest = context.request.get(base + "/manifest.webmanifest").json()
                     assert manifest["share_target"]["action"] == "/share/"
                     for icon in manifest["icons"]:
@@ -361,6 +379,7 @@ def main() -> None:
                                     "platform Cookie save, replace, clear and retry",
                                     "Xiaohongshu login failure, Cookie retry and comment scores",
                                     "comment limits, disable, cache and larger recapture",
+                                    "XHS .cn short link and two comment API pages",
                                     "delete",
                                     "manual retry",
                                     "share through login",

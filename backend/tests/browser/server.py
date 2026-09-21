@@ -12,6 +12,7 @@ from app.db.session import create_db_engine, session_factory
 from app.extractors import generic, xiaohongshu
 from app.extractors.base import ExtractionError
 from app.extractors.generic import ScopedCookie
+from app.extractors.xhs_api import XhsClient
 from app.main import create_app
 from app.tasks.capture import CaptureQueue
 from huey.consumer import Consumer
@@ -35,7 +36,18 @@ def fetch_xiaohongshu(
         if cookie and cookie.value.get_secret_value() == "web_session=offline-capture"
         else "xiaohongshu-login.html"
     )
-    return (Path(__file__).parents[1] / "fixtures" / fixture).read_text(), url
+    final_url = (
+        "https://www.xiaohongshu.com/explore/64abc123?xsec_token=offline"
+        if url.startswith("https://xhslink.cn/")
+        else url
+    )
+    return (Path(__file__).parents[1] / "fixtures" / fixture).read_text(), final_url
+
+
+def xhs_comments(self: XhsClient, note_id: str, token: str, cursor: str) -> dict[str, Any]:
+    page = "page2" if cursor == "page2" else "page1"
+    path = Path(__file__).parents[1] / "fixtures" / f"xiaohongshu-comments-{page}.json"
+    return json.loads(path.read_text())["data"]
 
 
 class OfflineModel:
@@ -65,6 +77,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "worker":
         generic.fetch_html = fetch
         xiaohongshu.fetch_html = fetch_xiaohongshu
+        XhsClient.comments = xhs_comments
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()

@@ -22,6 +22,8 @@ class CapturedContent(BaseModel):
     images: list[str] = Field(default_factory=list)
     comments: list[CapturedComment] = Field(default_factory=list)
     comment_capture_limit: int | None = Field(default=None, ge=0, le=100)
+    capture_warnings: list[str] = Field(default_factory=list)
+    extractor_version: int = 0
     raw_html: str | None = None
 
 

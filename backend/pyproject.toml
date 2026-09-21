@@ -22,6 +22,7 @@ dependencies = [
   "huey>=2.5,<3",
   "trafilatura>=2,<3",
   "readability-lxml>=0.8,<1",
+  "xhshow==0.2.0",
 ]
 
 [project.optional-dependencies]

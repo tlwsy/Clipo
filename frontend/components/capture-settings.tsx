@@ -62,12 +62,13 @@ export function CaptureSettings({
           />
           <small>
             默认 100 条，设为 0
-            可关闭评论采集。当前适用于小红书，按页面顺序保留已有的顶层评论，实际条数可能更少。
+            可关闭评论采集。当前适用于小红书，保留已有的顶层评论并尝试补抓分页，实际条数可能更少。
           </small>
         </label>
         <p className="section-description">
           AI
-          只会从已采集的评论中选择候选评分，可在模型设置中另设候选上限。修改不影响已有笔记；当前尚不支持评论分页。
+          只会从已采集的评论中选择候选评分，可在模型设置中另设候选上限。修改不影响已有笔记；小红书分页需要完整
+          Cookie 和带访问参数的帖子链接。
         </p>
         {error && (
           <div className="notice error" role="alert">

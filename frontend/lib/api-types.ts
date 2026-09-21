@@ -419,6 +419,13 @@ export interface components {
             comments?: components["schemas"]["CapturedComment"][];
             /** Comment Capture Limit */
             comment_capture_limit?: number | null;
+            /** Capture Warnings */
+            capture_warnings?: string[];
+            /**
+             * Extractor Version
+             * @default 0
+             */
+            extractor_version: number;
             /** Raw Html */
             raw_html?: string | null;
         };

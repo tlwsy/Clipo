@@ -6,6 +6,8 @@
 `xiaohongshu-login.html` 与 `xiaohongshu-changed.html` 分别模拟登录页和未知结构。
 `xiaohongshu-comment-limit.html` 补充空评论、重复编号和不同点赞顺序的样本，验证
 采集上限只计算有效的唯一评论、保留页面顺序，以及关闭评论采集时正文仍完整。
+`xiaohongshu-comments-page1.json` / `page2.json` 是虚构的签名评论接口响应，覆盖跨页重复、
+追加评论与终页；接口字段依据见 `docs/platform-protocols.md`。测试实际生成签名，但网络使用 MockTransport。
 
 这些夹具不来自真实账号，不证明当前线上页面仍采用相同结构。平台实机验收需要另行进行；
 发现结构变更时应添加经脱敏的最小夹具并更新适配器。测试不得访问真实站点。

@@ -2760,6 +2760,18 @@
             ],
             "title": "Comment Capture Limit"
           },
+          "capture_warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Capture Warnings"
+          },
+          "extractor_version": {
+            "type": "integer",
+            "title": "Extractor Version",
+            "default": 0
+          },
           "raw_html": {
             "anyOf": [
               {
