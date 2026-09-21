@@ -15,3 +15,6 @@
 `xiaoheihe.html` 是最小应用外壳；`xiaoheihe-page1.json` / `page2.json` 是人工构造的
 官方接口响应，含文本/HTML/图片块、作者、时间、顶层评论与跨页重复，最终得到 12 条评论。
 所有账号、帖子和图片链接均为虚构；小黑盒签名测试采用固定时间与 nonce。
+
+`xiaohongshu-collections.html` 模拟真实页面发现的空 Map/Set 状态序列化语法，
+其余帖子文字和数据均为虚构。验证有限字面量解析及字符串保留，不执行任何页面脚本。

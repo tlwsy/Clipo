@@ -288,3 +288,24 @@ def test_http_diagnostics(
         XiaohongshuExtractor().extract(URL)
     assert message in str(error.value) and error.value.retryable is retryable
     assert "private" not in str(error.value)
+
+
+def test_empty_js_collections_are_data_only_and_strings_stay_intact() -> None:
+    html = (FIXTURES / "xiaohongshu-collections.html").read_text()
+    content = parse_xiaohongshu(html, URL)
+    assert content.title == "集合语法兼容"
+    assert content.text == "new Map([])、new Set([])、undefined 字符串不应被修改。"
+    assert content.comments == []
+
+
+@pytest.mark.parametrize(
+    "expression", ["new Map(evil())", "new Map([[evil(), 1]])", "eval('secret')"]
+)
+def test_unknown_js_expressions_remain_rejected(expression: str) -> None:
+    html = (
+        (FIXTURES / "xiaohongshu-collections.html")
+        .read_text()
+        .replace("new Map([])", expression, 1)
+    )
+    with pytest.raises(ExtractionError, match="页面结构"):
+        parse_xiaohongshu(html, URL)

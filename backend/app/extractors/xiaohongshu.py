@@ -76,10 +76,15 @@ def _initial_state(tree: lxml_html.HtmlElement) -> dict[str, Any]:
         match = re.search(r"(?:^|[;\s])window\.__INITIAL_STATE__\s*=\s*", script)
         if not match:
             continue
-        # XHS state uses bare undefined values. Preserve strings (including escaped quotes).
+        # The serialized state includes undefined and empty JS collections. Accept only
+        # these literal forms; never evaluate page JavaScript or change quoted text.
         source = re.sub(
-            r'"(?:\\.|[^"\\])*"|\bundefined\b',
-            lambda token: "null" if token[0] == "undefined" else token[0],
+            r'"(?:\\.|[^"\\])*"|\bundefined\b|\bnew\s+(Map|Set)\s*\(\s*\[\s*\]\s*\)',
+            lambda token: (
+                "{}"
+                if token[1] == "Map"
+                else "[]" if token[1] == "Set" else "null" if token[0] == "undefined" else token[0]
+            ),
             script[match.end() :],
         )
         try:
