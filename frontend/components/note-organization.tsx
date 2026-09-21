@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { changeNote, loadNote } from "@/lib/notes";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 export function NoteOrganization({
@@ -16,11 +17,14 @@ export function NoteOrganization({
     setBusy(true);
     setError("");
     try {
-      await api(path, {
-        method,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      onChange(await api<Schema["NoteResponse"]>(`/notes/${note.id}`));
+      if (method === "PATCH")
+        await changeNote(note.id, "PATCH", { is_favorite: !note.is_favorite });
+      else
+        await api(path, {
+          method,
+          body: body ? JSON.stringify(body) : undefined,
+        });
+      onChange(await loadNote(note.id));
       setName("");
     } catch (cause) {
       setError(errorMessage(cause));

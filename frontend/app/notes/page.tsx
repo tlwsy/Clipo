@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
 import { NoteOrganization } from "@/components/note-organization";
 import { AppShell } from "@/components/app-shell";
-import { api, errorMessage, type Schema } from "@/lib/api";
+import { loadNote, changeNote } from "@/lib/notes";
+import { errorMessage, type Schema } from "@/lib/api";
 
 function Reader() {
   const [note, setNote] = useState<Schema["NoteResponse"] | null>(null);
@@ -20,7 +21,7 @@ function Reader() {
       setError("笔记地址不完整，请返回列表重新打开。");
       return;
     }
-    api<Schema["NoteResponse"]>(`/notes/${id}`)
+    loadNote(Number(id))
       .then((data) => {
         if (active) setNote(data);
       })
@@ -36,7 +37,7 @@ function Reader() {
     setDeleting(true);
     setError("");
     try {
-      await api<void>(`/notes/${note.id}`, { method: "DELETE" });
+      await changeNote(note.id, "DELETE");
       router.replace("/");
     } catch (cause) {
       setError(errorMessage(cause));

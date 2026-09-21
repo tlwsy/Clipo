@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell, useAccount } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { Icon } from "@/components/icon";
+import { loadNotes, loadTags } from "@/lib/notes";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 function Notes() {
@@ -24,7 +25,7 @@ function Notes() {
       setBusy(true);
       setError("");
       try {
-        const page = await api<Schema["NotePage"]>(
+        const page = await loadNotes(
           `/notes?limit=24&q=${encodeURIComponent(query)}${tag ? `&tag_id=${tag}` : ""}${favorite ? "&favorite=true" : ""}${next ? `&cursor=${encodeURIComponent(next)}` : ""}`,
         );
         if (current !== generation.current) return;
@@ -41,12 +42,17 @@ function Notes() {
     [tag, favorite, query],
   );
   useEffect(() => {
-    api<Schema["TagResponse"][]>("/tags")
+    loadTags()
       .then(setTags)
       .catch((cause) => setError(errorMessage(cause)));
   }, []);
   useEffect(() => {
     void load();
+    const refresh = () => {
+      void load();
+    };
+    window.addEventListener("clipo:synced", refresh);
+    return () => window.removeEventListener("clipo:synced", refresh);
   }, [load]);
   return (
     <>

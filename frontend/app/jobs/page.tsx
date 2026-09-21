@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
-import { api, errorMessage, type Schema } from "@/lib/api";
+import { localCaptures } from "@/lib/notes";
+import { api, ApiError, errorMessage, type Schema } from "@/lib/api";
 
 const labels: Record<Schema["JobResponse"]["status"], string> = {
   queued: "等待处理",
@@ -26,7 +27,11 @@ function Queue() {
     fetching.current = true;
     if (!poll) setBusy(true);
     try {
-      if (poll) {
+      if (
+        poll &&
+        navigator.onLine &&
+        !currentItems.current.some((job) => job.job_id.startsWith("offline:"))
+      ) {
         const active = currentItems.current.filter((job) =>
           ["queued", "running", "retrying"].includes(job.status),
         );
@@ -52,7 +57,11 @@ function Queue() {
       }
       setError("");
     } catch (cause) {
-      setError(errorMessage(cause));
+      if (!(cause instanceof ApiError)) {
+        setItems(await localCaptures().catch(() => []));
+        setCursor(null);
+        setError("离线时仅显示本机待提交链接，联网后可查看处理进度。");
+      } else setError(errorMessage(cause));
     } finally {
       fetching.current = false;
       if (!poll) setBusy(false);
@@ -66,7 +75,14 @@ function Queue() {
     const timer = window.setInterval(() => {
       if (!document.hidden) void load(undefined, true);
     }, 2500);
-    return () => window.clearInterval(timer);
+    const synced = () => {
+      void load();
+    };
+    window.addEventListener("clipo:synced", synced);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("clipo:synced", synced);
+    };
   }, [load]);
   async function retry(id: string) {
     setRetrying(id);

@@ -6,7 +6,9 @@ Install Chromium with `uv run --no-project --with playwright playwright install 
 
 import json
 import os
+import re
 import secrets
+import shutil
 import socket
 import subprocess
 import tempfile
@@ -346,9 +348,94 @@ def check_note_organization(page: Page, base: str) -> None:
     expect(page.get_by_role("button", name="★ 已收藏")).to_be_visible()
 
 
+def check_offline_notes(page: Page, base: str, static: Path) -> None:
+    context = page.context
+    page.goto(base + "/")
+    expect(page.locator(".note-card").first).to_be_visible()
+    page.locator(".note-card").first.click()
+    expect(page.locator(".original-text")).to_be_visible()
+    note_url = page.url
+    expect(page.locator(".offline-status")).to_contain_text(
+        re.compile(r"离线可读 [1-9]"), timeout=20000
+    )
+    page.evaluate("navigator.serviceWorker.ready")
+    page.wait_for_function("navigator.serviceWorker.controller !== null")
+    # Only public shells/assets may enter the service-worker cache.
+    assert page.evaluate("""async () => {
+        for (const name of await caches.keys()) {
+            for (const request of await (await caches.open(name)).keys()) {
+                if (new URL(request.url).pathname.startsWith('/api/')) return false;
+            }
+        }
+        return true;
+    }""")
+    context.set_offline(True)
+    page.reload()
+    expect(page.locator(".original-text")).to_be_visible()
+    expect(page.locator(".offline-status")).to_contain_text("离线阅读")
+    favorite = page.get_by_role("button", name="☆ 标记收藏")
+    if favorite.count():
+        favorite.click()
+        expect(page.get_by_role("button", name="★ 已收藏")).to_be_visible()
+    page.get_by_role("button", name="删除笔记").click()
+    page.get_by_role("button", name="确认删除").click()
+    expect(page.get_by_role("heading", name="你的笔记.")).to_be_visible()
+    expect(page.locator(".offline-status")).to_contain_text("操作待同步")
+    page.reload()
+    expect(page.locator(".offline-status")).to_contain_text("操作待同步")
+    page.get_by_label("网页链接").fill("https://example.com/offline-capture")
+    page.get_by_role("button", name="保存网页").click()
+    expect(page.get_by_role("heading", name="保存队列.")).to_be_visible()
+    context.set_offline(False)
+    expect(page.locator(".offline-status")).not_to_contain_text("操作待同步", timeout=30000)
+    job = page.locator(".job-card").filter(has_text="https://example.com/offline-capture")
+    expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
+    page.goto(note_url)
+    expect(page.locator(".notice.error")).to_contain_text("笔记不存在")
+    page.goto(base + "/")
+    context.set_offline(True)
+    page.get_by_label("网页链接").fill("https://127.0.0.1/private")
+    page.get_by_role("button", name="保存网页").click()
+    expect(page.get_by_role("heading", name="保存队列.")).to_be_visible()
+    context.set_offline(False)
+    expect(page.get_by_role("button", name="取消失败操作")).to_be_visible(timeout=20000)
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.get_by_role("button", name="取消失败操作").click()
+    expect(page.locator(".offline-status")).not_to_contain_text("操作待同步")
+    # A changed SW must wait until the user accepts the update.
+    script = static / "sw.js"
+    original = script.read_text()
+    try:
+        script.write_text(original + "\n// browser acceptance update\n")
+        page.evaluate("async () => (await navigator.serviceWorker.ready).update()")
+        expect(page.get_by_role("button", name="刷新应用")).to_be_visible(timeout=20000)
+        with page.expect_navigation(wait_until="networkidle"):
+            page.get_by_role("button", name="刷新应用").click()
+        expect(page.get_by_role("button", name="刷新应用")).to_have_count(0)
+    finally:
+        script.write_text(original)
+    page.goto(base + "/")
+    expect(page.locator(".note-card").first).to_be_visible()
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.screenshot(path=str(ROOT / "frontend/test-results/phase4-mobile.png"), full_page=True)
+    page.get_by_role("button", name="退出登录").last.click()
+    expect(page.get_by_role("heading", name="欢迎回到 Clipo")).to_be_visible()
+    assert page.evaluate("""() => new Promise((resolve, reject) => {
+        const request = indexedDB.open('clipo-offline', 1);
+        request.onsuccess = () => {
+            const tx = request.result.transaction(['notes','operations','meta']);
+            const query = tx.objectStore('meta').get('account');
+            query.onsuccess = () => resolve(query.result === undefined);
+        };
+        request.onerror = reject;
+    })""")
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
+        shutil.copytree(ROOT / "backend/app/static", temp / "static")
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
@@ -359,7 +446,7 @@ def main() -> None:
             CLIPO_DATABASE_URL=f"sqlite:///{temp / 'test.db'}",
             CLIPO_QUEUE_PATH=str(temp / "huey.db"),
             CLIPO_BASE_URL=base,
-            CLIPO_STATIC_PATH=str(ROOT / "backend/app/static"),
+            CLIPO_STATIC_PATH=str(temp / "static"),
             CLIPO_SMOKE_PORT=str(port),
         )
         # Let the browser configure the fixture model independently of deployment overrides.
@@ -480,6 +567,7 @@ def main() -> None:
                     for icon in manifest["icons"]:
                         assert context.request.get(base + icon["src"]).status == 200
                     page.evaluate("navigator.serviceWorker.ready")
+                    check_offline_notes(page, base, temp / "static")
                     assert not errors, errors
                     print(
                         json.dumps(
@@ -503,6 +591,9 @@ def main() -> None:
                                     "share through login",
                                     "mobile layout",
                                     "manifest and service worker",
+                                    "tags, favorites and Chinese search",
+                                    "offline reload, queued writes, replay and cancel failure",
+                                    "service worker update prompt and logout cache cleanup",
                                 ],
                                 "console_errors": errors,
                             },

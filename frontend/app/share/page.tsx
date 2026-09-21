@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { api, errorMessage, type Schema } from "@/lib/api";
+import { saveCapture } from "@/lib/notes";
+import { errorMessage } from "@/lib/api";
 import {
   clearShare,
   extractSharedUrl,
@@ -23,13 +24,7 @@ function SaveShared({
     if (!capture) return;
     let active = true;
     setError("");
-    api<Schema["JobResponse"]>("/captures", {
-      method: "POST",
-      headers: { "Idempotency-Key": capture.key },
-      body: JSON.stringify({
-        url: capture.url,
-      } satisfies Schema["CaptureRequest"]),
-    })
+    saveCapture(capture.url, capture.key)
       .then(() => {
         if (active) {
           clearShare();

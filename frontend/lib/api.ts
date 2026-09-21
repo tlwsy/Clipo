@@ -15,11 +15,13 @@ export class ApiError extends Error {
 }
 
 let accessToken: string | null = null;
+let sessionUserId: number | null = null;
 let pendingRefresh: Promise<Schema["SessionResponse"]> | null = null;
 
 export function acceptSession(session: Schema["SessionResponse"]): void {
   // Access tokens live in memory. The server keeps refresh tokens in an HttpOnly cookie.
   accessToken = session.access_token;
+  sessionUserId = session.user.id;
 }
 
 async function parse<T>(response: Response): Promise<T> {
@@ -39,15 +41,22 @@ async function parse<T>(response: Response): Promise<T> {
 export async function refreshSession(): Promise<Schema["SessionResponse"]> {
   if (!pendingRefresh) {
     const refresh = async () => {
-      const response = await fetch("/api/v1/auth/refresh", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const session = await parse<Schema["SessionResponse"]>(response);
-      acceptSession(session);
-      return session;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
+      try {
+        const response = await fetch("/api/v1/auth/refresh", {
+          signal: controller.signal,
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        const session = await parse<Schema["SessionResponse"]>(response);
+        acceptSession(session);
+        return session;
+      } finally {
+        clearTimeout(timeout);
+      }
     };
     // Cookie rotation must also be serialized across browser tabs where supported.
     pendingRefresh = (async () => {
@@ -64,12 +73,21 @@ export async function refreshSession(): Promise<Schema["SessionResponse"]> {
 
 export async function api<T>(
   path: string,
-  options: RequestInit & { authenticated?: boolean } = {},
+  options: RequestInit & {
+    authenticated?: boolean;
+    expectedUserId?: number;
+  } = {},
 ): Promise<T> {
-  const { authenticated = true, ...init } = options;
+  const { authenticated = true, expectedUserId, ...init } = options;
   try {
     if (authenticated && !accessToken) await refreshSession();
     const request = () => {
+      if (expectedUserId !== undefined && sessionUserId !== expectedUserId)
+        throw new ApiError(
+          409,
+          "account_changed",
+          "登录账号已改变，请刷新页面",
+        );
       const headers = new Headers(init.headers);
       if (init.body) headers.set("Content-Type", "application/json");
       if (authenticated && accessToken)
@@ -92,8 +110,12 @@ export async function api<T>(
   } catch (error) {
     if (authenticated && error instanceof ApiError && error.status === 401) {
       accessToken = null;
-      if (typeof window !== "undefined")
+      sessionUserId = null;
+      if (typeof window !== "undefined") {
+        const { clearOffline } = await import("./offline-store");
+        await clearOffline().catch(() => undefined);
         window.dispatchEvent(new Event("clipo:unauthorized"));
+      }
     }
     throw error;
   }
@@ -108,6 +130,12 @@ export async function logout(): Promise<void> {
     authenticated: false,
   });
   accessToken = null;
+  sessionUserId = null;
+  if (typeof window !== "undefined") {
+    const { clearOffline } = await import("./offline-store");
+    await clearOffline().catch(() => undefined);
+    localStorage.setItem("clipo:session", crypto.randomUUID());
+  }
 }
 
 export function errorMessage(error: unknown): string {

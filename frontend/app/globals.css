@@ -1753,3 +1753,23 @@ input[aria-invalid="true"] {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+
+.offline-status {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0 0 16px;
+  overflow-wrap: anywhere;
+}
+.update-notice {
+  position: fixed;
+  z-index: 50;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--mint);
+  padding: 12px 20px;
+  border: 1px solid var(--green);
+  border-radius: 12px;
+  width: max-content;
+  max-width: 95vw;
+}

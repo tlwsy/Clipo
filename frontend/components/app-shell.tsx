@@ -10,7 +10,15 @@ import {
   type ReactNode,
 } from "react";
 
-import { api, ApiError, errorMessage, logout, type Schema } from "@/lib/api";
+import { timedApi } from "@/lib/notes";
+import { ApiError, errorMessage, logout, type Schema } from "@/lib/api";
+import {
+  readAccount,
+  rememberAccount,
+  clearOffline,
+  readOffline,
+} from "@/lib/offline-store";
+import { OfflineStatus } from "./offline-status";
 import { Brand, Icon } from "./icon";
 
 const AccountContext = createContext<Schema["UserResponse"] | null>(null);
@@ -30,21 +38,40 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    const redirect = () => router.replace("/login/");
+    const redirect = () => {
+      void clearOffline()
+        .catch(() => undefined)
+        .finally(() => router.replace("/login/"));
+    };
+    const accountChanged = (event: StorageEvent) => {
+      if (event.key === "clipo:session") location.reload();
+    };
+    window.addEventListener("storage", accountChanged);
     window.addEventListener("clipo:unauthorized", redirect);
     async function load() {
       try {
-        const meta = await api<Schema["VersionResponse"]>("/meta/version", {
-          authenticated: false,
-        });
+        const meta = await timedApi<Schema["VersionResponse"]>(
+          "/meta/version",
+          {
+            authenticated: false,
+          },
+        );
         if (!active) return;
         if (!meta.setup_completed) {
           router.replace("/setup/");
           return;
         }
-        const account = await api<Schema["UserResponse"]>("/auth/me");
+        const account = await timedApi<Schema["UserResponse"]>("/auth/me");
+        await rememberAccount(account).catch(() => undefined);
         if (active) setUser(account);
       } catch (cause) {
+        if (!(cause instanceof ApiError) || cause.status >= 500) {
+          const cached = await readAccount().catch(() => undefined);
+          if (active && cached) {
+            setUser(cached.user);
+            return;
+          }
+        }
         if (active && !(cause instanceof ApiError && cause.status === 401))
           setError(errorMessage(cause));
       }
@@ -53,10 +80,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => {
       active = false;
       window.removeEventListener("clipo:unauthorized", redirect);
+      window.removeEventListener("storage", accountChanged);
     };
   }, [router]);
 
   async function signOut() {
+    const local = await readOffline().catch(() => null);
+    if (
+      local?.operations.length &&
+      !window.confirm(
+        "还有操作待同步。退出会清除本机离线笔记和待同步操作，确认退出？",
+      )
+    )
+      return;
     setLoggingOut(true);
     try {
       await logout();
@@ -178,6 +214,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {error}
               </div>
             )}
+            <OfflineStatus />
             {children}
           </main>
           <footer className="workspace-footer">

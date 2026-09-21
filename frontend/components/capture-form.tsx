@@ -1,7 +1,8 @@
 "use client";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { api, errorMessage, type Schema } from "@/lib/api";
+import { saveCapture } from "@/lib/notes";
+import { errorMessage } from "@/lib/api";
 import { Icon } from "./icon";
 import { captureKey } from "@/lib/share";
 
@@ -18,11 +19,7 @@ export function CaptureForm() {
     if (request.current.url !== url)
       request.current = { url, key: captureKey() };
     try {
-      await api<Schema["JobResponse"]>("/captures", {
-        method: "POST",
-        headers: { "Idempotency-Key": request.current.key },
-        body: JSON.stringify({ url } satisfies Schema["CaptureRequest"]),
-      });
+      await saveCapture(url, request.current.key);
       router.push("/jobs/");
     } catch (cause) {
       setError(errorMessage(cause));
