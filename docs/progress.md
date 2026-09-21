@@ -163,3 +163,14 @@ YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复
 - 离线收藏、删除与链接暂存，按顺序恢复同步；恢复前核对账号，链接重放保留幂等键，删除 404 视为完成。跨标签页用 Web Locks 协调，失败保留并可重试/取消。退出与切换账号清理缓存和队列，旧请求不能写入新账号，晚到预缓存不能恢复已删除笔记。标签/设置仍需联网，关闭应用不保证系统后台同步。
 - 浏览器验收发现 SQLite 默认主键会复用已删除的最大 ID，新增 `0008_stable_note_ids`，从升级后保证笔记 ID 不复用；重建表保留评论、标签、任务引用和搜索索引。SQLite 与 PostgreSQL 的 4 项迁移/ID 验证通过。
 - 本节点 `make lint`、`make test` 通过（后端 330 项、前端最终 22 项）；静态 `make build` 通过。完整 Chromium 回归通过，包含断网重开详情/首页、离线写入刷新保留、恢复网络后删除及链接提交、版本提示点击更新、退出清理；未发现脚本错误。390px 手机截图已检查。随后新增的失败操作取消也通过定向 Chromium 验证，包含断网暂存非法链接、联网显示失败原因、取消后继续使用，以及版本更新和退出清理。
+
+## Phase 4 Shortcut 模板节点（2026-09-21）
+
+- 新增可复现生成的 XML plist `.unsigned.shortcut`、服务器/Token 导入问题、分享首个 URL、POST JSON 提交、接收成功通知，以及结构化 API 错误通知和打开队列入口。文件仅含示例地址与凭据占位符；提供 Mac 签名命令与 iPhone 手动创建步骤。
+- 本机通过模板实际字段调用 API Token 认证的 captures，验证 202 接收、非法 URL 错误和 Token 撤销；模板与生成器完全一致。没有 Apple `shortcuts` 工具，**文件尚未签名或在 iOS 导入运行**；网络/TLS 导致系统动作中断时自定义错误分支亦待实机确认。这些属于外部验收阻塞，不将 M4 移动入口标为完成。
+
+## Phase 4 Shortcut 与 Docker 验证节点（2026-09-21）
+
+- 新增未签名 iOS Shortcut 模板 `shortcuts/clipo-save.unsigned.shortcut`、可复现生成器 `scripts/generate_shortcut.py` 和配置教程；模板契约测试通过 Token 提交、非法 URL、撤销 Token 与生成结果一致性验证。后端本次全量 332 项、前端 22 项测试通过，`make lint` 和 `make build` 通过。
+- iOS 签名、导入、系统分享面板、首次授权与通知仍需 Mac/iPhone；未将这些外部验收标记为已完成。模板不含真实服务器地址或 Token。
+- Docker Desktop/Compose 实机验收完成：`docker compose config --quiet`、`docker compose build app`、`docker compose up -d` 成功；应用和 PostgreSQL 16 均 healthy，应用入口 HTTP 200，`/api/v1/health` 返回 `{"status":"ok"}`，空 PostgreSQL 升级到 `0008_stable_note_ids` 全部成功，Huey worker 在应用容器内运行。验证后容器继续运行，可用 `make down` 停止。

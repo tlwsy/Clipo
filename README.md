@@ -157,3 +157,11 @@ PWA 首版已提供；浏览器扩展和 Shortcut 仍为后续规划。
 ### 离线阅读
 
 生产构建会预缓存最近 50 篇笔记，顶部显示实际缓存数量。离线可搜索和阅读已缓存笔记、收藏、删除和暂存链接；恢复网络后保持应用打开即可同步。标签编辑和设置需联网。图片仍为外链，新版本可点击提示条刷新。账号隔离、清理规则与限制见 [离线阅读与同步](docs/offline.md)。
+
+### iOS Shortcut
+
+提供 [未签名快捷指令模板与配置教程](shortcuts/README.md)，可在 Mac 签名后导入，或按步骤在 iPhone 手动创建；使用独立 API Token 将分享链接直接提交后台队列。当前 Linux 环境已验证模板请求契约，Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收。
+
+### Docker 验证
+
+当前 Compose 已在 Docker Desktop 实机通过空 PostgreSQL 初始化、全部迁移、应用健康检查与静态首页检查：`docker compose up -d` 后访问 `http://localhost:8000`，停止使用 `make down`。首次运行需在 `.env` 设置 `POSTGRES_PASSWORD` 与 `CLIPO_SECRET_KEY`。
