@@ -2,7 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from threading import Barrier
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import unquote, urlsplit
 
 import pytest
 from alembic import command
@@ -39,10 +39,16 @@ def test_pairing_creates_device_token_only_when_claimed_and_supports_revoke(
     assert client.get("/api/v1/tokens", headers=auth).json() == []
     launch = urlsplit(pairing["launch_url"])
     assert launch.scheme == "shortcuts" and launch.netloc == "run-shortcut"
-    assert parse_qs(launch.query) == {
-        "name": ["保存到 Clipo"],
-        "input": ["text"],
-        "text": [pairing["setup_input"]],
+    # Shortcuts decodes percent escapes, leaving form-encoded '+' characters literal.
+    launch_parameters = {
+        unquote(key): unquote(value)
+        for key, value in (parameter.split("=", 1) for parameter in launch.query.split("&"))
+    }
+    assert " " not in launch.query
+    assert launch_parameters == {
+        "name": "保存到 Clipo",
+        "input": "text",
+        "text": pairing["setup_input"],
     }
     with app.state.session_factory() as db:
         row = db.get(ShortcutPairing, 1)

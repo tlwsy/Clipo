@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
@@ -48,7 +48,7 @@ def create_pairing(repository: ShortcutRepository, payload: PairingRequest) -> I
         {"version": 1, "server_url": payload.server_url, "code": code}, separators=(",", ":")
     )
     launch_url = "shortcuts://run-shortcut?" + urlencode(
-        {"name": SHORTCUT_NAME, "input": "text", "text": setup_input}
+        {"name": SHORTCUT_NAME, "input": "text", "text": setup_input}, quote_via=quote
     )
     return IssuedPairing(
         **pairing_status(row).model_dump(), setup_input=setup_input, launch_url=launch_url
