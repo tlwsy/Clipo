@@ -16,6 +16,7 @@ from app.llm.orchestrator import SummaryResult, load_config, summarize
 from app.models import CaptureJob, CaptureUpload
 from app.services.captures import browser_content
 from app.services.settings import load_platform_cookie
+from app.tasks.backup import BackupQueue
 from app.tasks.platform_checks import PlatformCheckQueue
 from app.upload_repository import UploadRepository
 
@@ -110,6 +111,7 @@ class CaptureQueue:
         self.sessions = sessions
         self.pipeline = CapturePipeline(sessions, settings)
         self.platform_checks = PlatformCheckQueue(self.huey, sessions, settings)
+        self.backups = BackupQueue(self.huey, sessions, settings)
 
         @self.huey.task(name="clipo.capture")
         def capture(user_id: int, job_id: str):
@@ -180,3 +182,4 @@ class CaptureQueue:
             for user_id, job_id in expired:
                 UploadRepository(db, user_id).expire_upload(job_id)
         self.platform_checks.recover()
+        self.backups.recover()

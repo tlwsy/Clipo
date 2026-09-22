@@ -229,3 +229,7 @@ Phase 4 的 `q` 搜索、标签与收藏接口已提供，Shortcut 复用现有 
 所有操作均需 JWT 或 `X-Clipo-Token` 并隔离账号。上传有效期 1 小时，worker 定期清理过期分块，
 失败任务需从扩展重新保存。相同幂等键配不同 URL/内容/上传描述返回 409。
 代理需允许至少 5 MiB 的请求体（Nginx 可设 `client_max_body_size 6m`）。
+
+## Phase 6 备份接口
+
+备份接口均要求认证并按账号隔离。`POST /backups/exports` 接受 `request_key`，返回 202 及后台任务；`POST /backups/imports` 接受最大 100 MiB 的原始 `library.json` 正文，返回 202，重复文件复用任务。`GET /backups` 列出最近 50 项；`GET /backups/{id}/download` 下载成功的导出 ZIP；`POST /backups/{id}/retry` 重试失败项。完整路径均带 `/api/v1`，格式与恢复语义见[备份与恢复](backup.md)。
