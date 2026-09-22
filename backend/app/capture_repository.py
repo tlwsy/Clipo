@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 
 from sqlalchemy import and_, delete, or_, select, update
-from sqlalchemy.exc import IntegrityError
 
 from app.db.base import utcnow
 from app.errors import ClipoError
@@ -47,7 +46,15 @@ class CaptureRepository(UserRepository):
             raise ClipoError(404, "job_not_found", "任务不存在，请刷新保存队列")
         return job
 
-    def create_job(self, url: str, key: str | None) -> CaptureJob:
+    def create_job(
+        self,
+        url: str,
+        key: str | None,
+        *,
+        payload: dict | None = None,
+        request_hash: str | None = None,
+        uploading: bool = False,
+    ) -> CaptureJob:
         if key:
             existing = self.db.scalar(
                 select(CaptureJob).where(
@@ -55,29 +62,38 @@ class CaptureRepository(UserRepository):
                 )
             )
             if existing:
-                if existing.url != url:
+                if existing.url != url or existing.request_hash != request_hash:
                     raise ClipoError(
                         409,
                         "idempotency_conflict",
-                        "此幂等键已用于其他链接，请更换 Idempotency-Key",
+                        "此幂等键已用于其他内容，请更换 Idempotency-Key",
                     )
                 return existing
-        job = CaptureJob(
-            id="j_" + uuid.uuid4().hex,
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        insert = sqlite_insert if self.db.bind.dialect.name == "sqlite" else pg_insert
+        job_id = "j_" + uuid.uuid4().hex
+        statement = insert(CaptureJob).values(
+            id=job_id,
             user_id=self.user_id,
             url=url,
             idempotency_key=key,
-            cached=self.cache(url) is not None,
+            cached=False if payload is not None or uploading else self.cache(url) is not None,
+            payload=payload,
+            request_hash=request_hash,
+            status="uploading" if uploading else "queued",
         )
-        try:
-            with self.db.begin_nested():
-                self.db.add(job)
-                self.db.flush()
-        except IntegrityError:
-            if not key:
-                raise
-            return self.create_job(url, key)
-        return job
+        result = self.db.execute(
+            statement.on_conflict_do_nothing(
+                index_elements=["user_id", "idempotency_key"],
+            )
+        )
+        if not result.rowcount:
+            return self.create_job(
+                url, key, payload=payload, request_hash=request_hash, uploading=uploading
+            )
+        return self.job(job_id)
 
     def page(self, model, cursor: str | None, limit: int, statuses: list[str] | None = None):
         query = select(model).where(model.user_id == self.user_id)
@@ -103,7 +119,9 @@ class CaptureRepository(UserRepository):
         return rows[:limit], encode_cursor(rows[limit - 1]) if len(rows) > limit else None
 
     def retry(self, job_id: str) -> CaptureJob:
-        self.job(job_id)
+        job = self.job(job_id)
+        if job.request_hash and job.payload is None:
+            raise ClipoError(409, "upload_required", "页面内容尚未上传，请从扩展重新保存")
         result = self.db.execute(
             update(CaptureJob)
             .where(
@@ -289,7 +307,10 @@ class CaptureRepository(UserRepository):
         from app.note_repository import NoteRepository
 
         notes = NoteRepository(self.db, self.user_id)
-        for name in dict.fromkeys(" ".join(name.split())[:50] for name in note.suggested_tags):
+        for name in dict.fromkeys(
+            " ".join(name.split())[:50]
+            for name in [*note.suggested_tags, *(job.payload or {}).get("tags", [])]
+        ):
             if name:
                 notes.add_tag(note.id, name)
         scores = {score.index: score for score in result.comment_scores}

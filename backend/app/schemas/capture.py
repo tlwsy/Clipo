@@ -4,12 +4,13 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.extractors.base import CapturedContent
+from app.schemas.payload import MAX_UPLOAD_BYTES, CapturePayload
 from app.security.urls import UnsafeURL, normalize_url
 
-JobStatus = Literal["queued", "running", "retrying", "failed", "success"]
+JobStatus = Literal["uploading", "queued", "running", "retrying", "failed", "success"]
 
 
-class CaptureRequest(BaseModel):
+class CaptureURL(BaseModel):
     model_config = ConfigDict(extra="forbid")
     url: str = Field(min_length=1, max_length=4096)
 
@@ -20,6 +21,15 @@ class CaptureRequest(BaseModel):
             return normalize_url(value)
         except UnsafeURL as exc:
             raise ValueError(str(exc)) from exc
+
+
+class CaptureRequest(CaptureURL):
+    payload: CapturePayload | None = None
+
+
+class UploadRequest(CaptureURL):
+    total_bytes: int = Field(ge=1, le=MAX_UPLOAD_BYTES, strict=True)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class JobResponse(BaseModel):

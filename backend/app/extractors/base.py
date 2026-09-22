@@ -25,6 +25,7 @@ class CapturedContent(BaseModel):
     capture_warnings: list[str] = Field(default_factory=list)
     extractor_version: int = 0
     raw_html: str | None = None
+    selection: str | None = None
 
 
 class ExtractionError(Exception):

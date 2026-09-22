@@ -25,7 +25,7 @@ def validation_message(field: str, error_type: str) -> str:
         "body.capture.max_comments": "评论采集上限需为 0–100 之间的整数，0 表示不采集评论",
         "body.llm.comment_score_threshold": "高价值评论阈值需为 0–1 之间的数字",
         "body.url": "请提供公开网页的 HTTP(S) 链接，不支持内网地址、账号密码或非标准端口",
-        "body.payload": "当前仅支持提交网页链接，内容直传将在浏览器扩展阶段开放",
+        "body.payload": "页面内容不符合直传格式，请更新扩展后重试",
     }
     if error_type == "json_invalid":
         return "请求格式有误，请发送有效的 JSON 内容"

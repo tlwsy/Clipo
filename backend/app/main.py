@@ -12,6 +12,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from app import __version__
+from app.api.body_limit import CaptureBodyLimit
 from app.api.v1.routes import router
 from app.config import Settings, get_settings
 from app.db.session import create_db_engine, session_factory
@@ -103,6 +104,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response.headers["Cache-Control"] = "no-store"
         return response
 
+    app.add_middleware(CaptureBodyLimit)
     app.include_router(router)
 
     @app.api_route(

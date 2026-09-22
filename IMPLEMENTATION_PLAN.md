@@ -107,6 +107,8 @@
 
 **目标**：桌面录入，并为受限平台提供可靠抓取路径。
 
+**当前状态（2026-09-22）**：已进入开发，先接入后端 DOM 内容直传与持久化分块上传。扩展客户端与平台适配继续推进，M5 尚未验收；各节点验证见 [构建进度](docs/progress.md)。
+
 任务：
 1. Manifest V3 骨架：background service worker、options 页、popup。
 2. 配置项：服务器地址、API Token、连通性测试按钮。

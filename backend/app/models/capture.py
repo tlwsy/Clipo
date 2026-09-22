@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, false
+from sqlalchemy import ForeignKey, LargeBinary, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -82,6 +82,8 @@ class CaptureJob(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     url: Mapped[str] = mapped_column(Text)
     idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    payload: Mapped[dict[str, Any] | None] = mapped_column(json_type)
+    request_hash: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(16), index=True, default="queued")
     attempts: Mapped[int] = mapped_column(default=0)
     last_error: Mapped[str | None] = mapped_column(Text)
@@ -103,3 +105,25 @@ class ExtractionCache(Base):
     url_hash: Mapped[str] = mapped_column(String(64))
     content: Mapped[dict[str, Any]] = mapped_column(json_type)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class CaptureUpload(Base):
+    __tablename__ = "capture_uploads"
+
+    job_id: Mapped[str] = mapped_column(
+        ForeignKey("capture_jobs.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    total_bytes: Mapped[int]
+    sha256: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class CaptureUploadChunk(Base):
+    __tablename__ = "capture_upload_chunks"
+
+    job_id: Mapped[str] = mapped_column(
+        ForeignKey("capture_uploads.job_id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(primary_key=True)
+    data: Mapped[bytes] = mapped_column(LargeBinary)

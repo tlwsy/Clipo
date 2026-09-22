@@ -4,7 +4,7 @@ from app.config import BACKEND_ROOT
 from app.models import CaptureJob, Comment
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import select, text
 from test_note_organization import seed_note
 
 
@@ -37,7 +37,14 @@ def test_stable_ids_migration_preserves_dependents_and_search(
         note = client.get(f"/api/v1/notes/{note_id}", headers=auth).json()
         assert note["comments"][0]["content"] == "保留已有评论"
         assert note["tags"][0]["name"] == "迁移保留"
-        assert client.get(f"/api/v1/jobs/{job_id}", headers=auth).json()["note_id"] == note_id
+        # Validate the old schema directly: current ORM has columns introduced after this revision.
+        with app.state.engine.connect() as connection:
+            assert (
+                connection.scalar(
+                    text("SELECT note_id FROM capture_jobs WHERE id = :id"), {"id": job_id}
+                )
+                == note_id
+            )
         assert (
             client.get("/api/v1/notes?q=整理笔记", headers=auth).json()["items"][0]["id"] == note_id
         )

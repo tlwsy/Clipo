@@ -13,9 +13,11 @@ from app.extractors.base import ExtractionError
 from app.extractors.registry import ExtractorRegistry
 from app.llm.client import CompatibleClient
 from app.llm.orchestrator import SummaryResult, load_config, summarize
-from app.models import CaptureJob
+from app.models import CaptureJob, CaptureUpload
+from app.services.captures import browser_content
 from app.services.settings import load_platform_cookie
 from app.tasks.platform_checks import PlatformCheckQueue
+from app.upload_repository import UploadRepository
 
 logger = logging.getLogger("clipo.capture")
 RETRY_DELAYS = (30, 120, 480)
@@ -45,13 +47,17 @@ class CapturePipeline:
             job = repository.claim(job_id, execution_id)
             if job is None:
                 return None
-            url, attempts = job.url, job.attempts
+            url, attempts, payload = job.url, job.attempts, job.payload
         try:
             with self.sessions() as db:
                 repository = CaptureRepository(db, user_id)
                 max_comments = repository.capture_settings().max_comments
-                content = repository.cache(url, max_comments=max_comments)
-            cached = content is not None
+                content = (
+                    browser_content(url, payload, max_comments)
+                    if payload is not None
+                    else repository.cache(url, max_comments=max_comments)
+                )
+            cached = payload is None and content is not None
             if content is None:
                 registry = self.registry or ExtractorRegistry(
                     cookie_loader=lambda platform: self._cookie(user_id, platform),
@@ -161,4 +167,16 @@ class CaptureQueue:
             )
         for user_id, job_id in pending:
             self.enqueue(user_id, job_id)
+        with self.sessions.begin() as db:
+            expired = list(
+                db.execute(
+                    select(CaptureUpload.user_id, CaptureUpload.job_id)
+                    .where(
+                        CaptureUpload.expires_at <= now,
+                    )
+                    .limit(100)
+                )
+            )
+            for user_id, job_id in expired:
+                UploadRepository(db, user_id).expire_upload(job_id)
         self.platform_checks.recover()

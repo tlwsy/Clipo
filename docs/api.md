@@ -60,7 +60,7 @@
 
 ### POST /captures
 
-请求 `{"url":"https://example.com/article"}`，返回 202。支持公开 HTTP(S) HTML 网页及已接入的平台帖子/视频链接，平台适配器按需查询官方数据接口；端口限 80/443；拒绝账号密码、内网地址、超大内容和非 HTML。当前不接受 `payload`、`selection` 或 `source_hint`，多余字段返回 422。
+请求 `{"url":"https://example.com/article"}`，返回 202。支持公开 HTTP(S) HTML 网页及已接入的平台帖子/视频链接，平台适配器按需查询官方数据接口；端口限 80/443；拒绝账号密码、内网地址、超大内容和非 HTML。可选 `payload` 用于浏览器内容直传，`selection` 位于其内部，具体见文末协议；不接受 `source_hint` 或其他未知字段。
 
 可选请求头 `Idempotency-Key` 为 1–128 字符。相同用户、相同键和规范化 URL 返回同一任务；将同一个键用于不同 URL 返回 409。URL 规范化保留查询参数、移除 fragment。不同键可以生成多篇笔记，去重缓存用于复用提取结果。
 
@@ -206,3 +206,26 @@ Phase 4 的 `q` 搜索、标签与收藏接口已提供，Shortcut 复用现有 
 每账号只保留一条最新配置记录，生成新码会原子替换旧码，已签发设备 Token 保留，须单独撤销。配置码为 256 位随机值，仅存 SHA-256；领取以账号和摘要限定的条件 UPDATE 实现，消费与 Token 创建同一事务，支持 SQLite/PostgreSQL。竞争领取只成功一次，响应丢失后应重新生成配置并在 Token 列表撤销不用的令牌。所有响应使用 `Cache-Control: no-store`。
 
 `launch_url` 使用 Apple `shortcuts://run-shortcut` 的文本输入协议，输入为 `clipo-setup:` 加 JSON（`version`、`server_url`、`code`）。公共模板将成功领取的 JSON 保存为 iCloud Drive 的 `Shortcuts/Clipo.json`；平常优先提取分享输入的首个 URL，无分享输入时读取剪贴板，然后使用文件中的地址和 Token 提交采集。配置文件可能随 iCloud 同步，不应分享文件内容。
+
+## 浏览器内容直传（Phase 5）
+
+`POST /api/v1/captures` 仍接受 `{ "url": "https://example.com/article" }`。
+扩展可增加 `payload`：`title`、`text` 必填；可选 `author`（字符串）、`author_url`、
+`published_at`（ISO 时间）、`images`、`comments`（author/content/likes/replies）、
+`selection`、`tags`、`capture_warnings`。精确长度限制见生成的 OpenAPI。
+不接受 Cookie、任意 HTML 或模型评分。URL 仍限定公开 HTTP(S) 地址；直传分支不解析 DNS、
+不请求目标网站，不读写网页提取缓存。worker 按执行时账号配置裁剪评论后生成摘要和评分。
+
+单次请求最多 5 MiB（包含 JSON 包装）。更大的 payload 使用以下协议，总量最多 20 MiB：
+
+1. 将 **payload 对象本身**编码为 UTF-8 JSON，计算字节数与 SHA-256。
+2. `POST /api/v1/captures/uploads`，JSON 为 `url`、`total_bytes`、`sha256`，
+   附 `Idempotency-Key`；返回 `status=uploading` 的任务，此时不入队。
+3. `PUT /api/v1/captures/{job_id}/chunks/{position}`，从 0 开始顺序编号，
+   body 为二进制分块。每块 256 KiB，最后一块为剩余字节；同内容重复 PUT 安全。
+4. `POST /api/v1/captures/{job_id}/complete`，校验完整性、摘要与结构后才入队。
+   重复完成返回同一任务。读取任务仍使用 `GET /api/v1/jobs/{job_id}`。
+
+所有操作均需 JWT 或 `X-Clipo-Token` 并隔离账号。上传有效期 1 小时，worker 定期清理过期分块，
+失败任务需从扩展重新保存。相同幂等键配不同 URL/内容/上传描述返回 409。
+代理需允许至少 5 MiB 的请求体（Nginx 可设 `client_max_body_size 6m`）。

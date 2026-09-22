@@ -250,7 +250,7 @@ def test_capture_rejects_unsafe_url(client, auth, url):
     assert response.status_code == 422
 
 
-def test_capture_requires_auth_and_rejects_unimplemented_payload(client, auth):
+def test_capture_requires_auth_and_rejects_incomplete_payload(client, auth):
     assert client.post("/api/v1/captures", json={"url": "https://example.com"}).status_code == 401
     assert (
         client.post(

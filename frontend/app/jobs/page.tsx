@@ -7,6 +7,7 @@ import { localCaptures } from "@/lib/notes";
 import { api, ApiError, errorMessage, type Schema } from "@/lib/api";
 
 const labels: Record<Schema["JobResponse"]["status"], string> = {
+  uploading: "正在上传页面",
   queued: "等待处理",
   running: "正在整理",
   retrying: "等待自动重试",
@@ -33,7 +34,7 @@ function Queue() {
         !currentItems.current.some((job) => job.job_id.startsWith("offline:"))
       ) {
         const active = currentItems.current.filter((job) =>
-          ["queued", "running", "retrying"].includes(job.status),
+          ["uploading", "queued", "running", "retrying"].includes(job.status),
         );
         const updates = await Promise.all(
           active.map((job) =>

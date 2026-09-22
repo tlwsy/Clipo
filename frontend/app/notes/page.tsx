@@ -163,6 +163,12 @@ function Reader() {
               {note.content.text || "这篇内容没有文字正文。"}
             </div>
           </section>
+          {note.content.selection && (
+            <section className="original-section">
+              <h2>保存时的选区</h2>
+              <p className="original-text">{note.content.selection}</p>
+            </section>
+          )}
           {(note.content.images ?? []).length > 0 && (
             <section className="original-section">
               <h2>原文图片</h2>

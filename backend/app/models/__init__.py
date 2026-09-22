@@ -101,6 +101,8 @@ class UserSettings(Base):
 # Import every mapped table so Alembic sees the complete metadata.
 from app.models.capture import (  # noqa: E402, F401
     CaptureJob,
+    CaptureUpload,
+    CaptureUploadChunk,
     Comment,
     ExtractionCache,
     Note,

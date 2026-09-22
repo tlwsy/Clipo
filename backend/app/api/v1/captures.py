@@ -15,8 +15,11 @@ from app.schemas.capture import (
     NoteUpdate,
     TagRequest,
     TagResponse,
+    UploadRequest,
 )
+from app.services import captures as capture_service
 from app.services import notes as note_service
+from app.upload_repository import UploadRepository
 
 router = APIRouter()
 
@@ -36,9 +39,40 @@ def capture(
     repository: Repo,
     request: Request,
     idempotency_key: Annotated[str | None, Header(min_length=1, max_length=128)] = None,
-):
-    job = repository.create_job(payload.url, idempotency_key)
-    repository.db.commit()
+) -> CaptureJob:
+    job = capture_service.submit(repository, payload, idempotency_key)
+    if job.status == "queued":
+        request.app.state.capture_queue.enqueue(repository.user_id, job.id)
+    return job
+
+
+@router.post("/captures/uploads", status_code=202, response_model=JobResponse, tags=["captures"])
+def start_upload(
+    payload: UploadRequest,
+    repository: Repo,
+    idempotency_key: Annotated[str | None, Header(min_length=1, max_length=128)] = None,
+) -> CaptureJob:
+    return capture_service.start_upload(
+        UploadRepository(repository.db, repository.user_id), payload, idempotency_key
+    )
+
+
+@router.put("/captures/{job_id}/chunks/{position}", status_code=204, tags=["captures"])
+async def upload_chunk(job_id: str, position: int, repository: Repo, request: Request) -> None:
+    if position < 0:
+        raise ClipoError(422, "invalid_chunk", "分块编号不可为负数")
+    UploadRepository(repository.db, repository.user_id).put_chunk(
+        job_id, position, await request.body()
+    )
+
+
+@router.post(
+    "/captures/{job_id}/complete", status_code=202, response_model=JobResponse, tags=["captures"]
+)
+def complete_upload(job_id: str, repository: Repo, request: Request) -> CaptureJob:
+    job = capture_service.complete_upload(
+        UploadRepository(repository.db, repository.user_id), job_id
+    )
     if job.status == "queued":
         request.app.state.capture_queue.enqueue(repository.user_id, job.id)
     return job
@@ -52,7 +86,14 @@ def jobs(
     status: Annotated[str | None, Query(max_length=100)] = None,
 ):
     statuses = status.split(",") if status else None
-    if statuses and not set(statuses) <= {"queued", "running", "retrying", "failed", "success"}:
+    if statuses and not set(statuses) <= {
+        "uploading",
+        "queued",
+        "running",
+        "retrying",
+        "failed",
+        "success",
+    }:
         raise ClipoError(422, "invalid_status", "任务状态无效，请重新选择筛选条件")
     rows, next_cursor = repository.page(CaptureJob, cursor, limit, statuses)
     return JobPage(items=[JobResponse.model_validate(row) for row in rows], next_cursor=next_cursor)
