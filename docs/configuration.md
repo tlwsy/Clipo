@@ -14,6 +14,7 @@ Clipo 有两层配置：**环境变量**（部署级，优先级最高）与**�
 | `CLIPO_BASE_URL` | `http://localhost:8000` | 对外访问地址，用于生成分享链接 |
 | `CLIPO_LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING` / `ERROR` |
 | `CLIPO_REGISTRATION_OPEN` | `false` | 是否开放自助注册 |
+| `CLIPO_SHORTCUT_INSTALL_URL` | 未设置时为空；`.env.example` 已提供验收通过的链接 | 设置页的 iCloud 快捷指令安装入口；可替换为自行验证的通用版或留空隐藏安装按钮，不能包含个人凭据 |
 | `CLIPO_TIMEZONE` | `Asia/Shanghai` | 影响定时备份的执行时刻 |
 
 更换 `CLIPO_SECRET_KEY` 会导致已加密的 LLM Key 与 Cookie 无法解密，需在设置页重新填写。

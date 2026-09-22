@@ -14,7 +14,7 @@ Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网�
 
 B 站和 YouTube 支持视频简介、公开可取得的字幕和顶层热评，字幕或评论不可取得会明确提示。B 站真实元数据与评论已验证；YouTube 已通过离线与浏览器验证，但当前环境无法解析其域名，线上验收待网络就绪。
 
-**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置接口、设置页入口和支持剪贴板的未签名通用模板，已通过本地请求契约验证；Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收，M4 尚未全部通过。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。Phase 5 浏览器扩展已实现并通过本地 Chromium 验收；真实平台登录浏览器与 Edge 待验收，备份属于后续阶段。完整状态与验收限制见 [构建进度](docs/progress.md)。
+**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置、设置页安装入口和剪贴板保存；用户于 2026-09-22 确认发布的 iCloud 版本完成 iOS 实机核验。仓库未签名模板的 Mac 签名与导入未另行验证。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。Phase 5 浏览器扩展已实现并通过本地 Chromium 验收；真实平台登录浏览器与 Edge 待验收，备份属于后续阶段。完整状态与验收限制见 [构建进度](docs/progress.md)。
 
 ## ✨ 目标特性（按阶段建设）
 
@@ -63,14 +63,14 @@ make dev
 
 ## 📱 客户端
 
-PWA 与浏览器扩展已提供；Shortcut 未签名模板已提供，iOS 实机待验收。
+PWA、浏览器扩展与 iCloud Shortcut 安装入口已提供；Shortcut 发布版本已由用户完成 iOS 实机核验。
 
 ### PWA（Web App）
 
 通过 HTTPS 访问服务（本机 localhost 可用 HTTP），在浏览器安装 Clipo：
 
 - Android Chrome：安装后，从浏览器分享菜单选择 Clipo，自动保存公开网页。
-- 桌面 / iOS：在首页粘贴链接保存；iOS 分享入口可按下方 Shortcut 教程配置，系统行为待实机验收。
+- 桌面 / iOS：在首页粘贴链接保存；iOS 分享与剪贴板保存可按下方 Shortcut 教程配置。
 - 分享时未登录会先登录，再继续保存。生产构建支持离线阅读最近 50 篇已缓存笔记和暂存操作，使用条件见 [离线阅读与同步](docs/offline.md)。
 
 网页链接须使用 HTTP(S) 和 80/443 端口，拒绝内网地址。通用网页只支持公开静态 HTML；小红书支持 `/explore/帖子ID`、`/discovery/item/帖子ID` 和 `xhslink.com` / `xhslink.cn` 短链接，可在设置中填写 Cookie 后采集。小黑盒支持 `/app/bbs/link/帖子ID` 和官方 API 分享链接，最多采集 100 条顶层评论；小红书保留页面已有评论；配置完整 Cookie 并使用带访问参数的帖子链接时，按采集上限补抓顶层评论分页，不执行页面 JavaScript；设置仅对后续执行的任务生效，已有笔记不变。Android 系统分享面板仍需真机验收。
@@ -81,9 +81,9 @@ PWA 与浏览器扩展已提供；Shortcut 未签名模板已提供，iOS 实机
 
 ### iOS Shortcut
 
-设置 → iPhone 快捷指令 → 生成设备配置 → 打开快捷指令并配置。服务器生成 5 分钟一次性配置码，设备领取地址和专用 Token，无需手填凭据；无分享输入时从剪贴板提取首个链接，适用于小红书／小黑盒的“复制链接”。需先安装支持自动配置的新版。
+设置 → iPhone 快捷指令 → 安装快捷指令 → 生成设备配置 → 打开快捷指令并配置。服务器生成 5 分钟一次性配置码，设备领取地址和专用 Token，无需手填凭据；无分享输入时从剪贴板提取首个链接，适用于小红书／小黑盒的“复制链接”。需先安装支持自动配置的新版。
 
-内置 `/shortcuts/` 指南和 [未签名通用模板教程](shortcuts/README.md) 提供 Mac 签名及 iPhone 手动制作步骤；管理员可通过 `CLIPO_SHORTCUT_INSTALL_URL` 接入已验证、不含个人凭据的 iCloud 分享链接，默认留空。旧版固定地址/Token 指令不兼容。Apple 签名、iOS 导入、文件动作和通知仍待实机验收，未签名文件不能视为一键安装成品。
+[安装“保存到 Clipo”](https://www.icloud.com/shortcuts/0cfcf8c51dcc4c2f9bc6d621e5d2dd09)。`.env.example` 已配置此链接，已有部署按 [Shortcut 配置与验收](shortcuts/README.md) 设置 `CLIPO_SHORTCUT_INSTALL_URL` 并重启服务。内置 `/shortcuts/` 指南保留自定义制作步骤；用户实机确认针对此 iCloud 版本，仓库未签名模板需另行签名验证。旧版固定地址/Token 指令不兼容。
 
 ## 📖 文档
 

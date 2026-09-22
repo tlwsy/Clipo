@@ -2,7 +2,7 @@
 
 ## 仓库结构（目标）
 
-当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已接入小红书、小黑盒、B 站与 YouTube，提供平台 Cookie 配置与后台检测、评论采集上限、初筛与 AI 评分。Phase 4 已实现标签/收藏、中文检索、离线阅读与同步，并提供通过本地契约测试的未签名 Shortcut 模板；iOS 实机验收仍待完成。Phase 5 扩展与后端内容直传/分块上传已实现并通过本地 Chromium 验收，真实平台登录浏览器与 Edge 待验收；备份存储属于后续阶段，下方为目标目录，实际能力与验收限制见 [构建进度](docs/progress.md)。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已接入小红书、小黑盒、B 站与 YouTube，提供平台 Cookie 配置与后台检测、评论采集上限、初筛与 AI 评分。Phase 4 已实现标签/收藏、中文检索、离线阅读与同步，并提供 Shortcut 自动配置与 iCloud 安装入口；用户已确认发布版本完成 iOS 实机核验，仓库未签名模板的 Mac 签名与导入未另行验证。Phase 5 扩展与后端内容直传/分块上传已实现并通过本地 Chromium 验收，真实平台登录浏览器与 Edge 待验收；备份存储属于后续阶段，下方为目标目录，实际能力与验收限制见 [构建进度](docs/progress.md)。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
 
 ```
 clipo/
