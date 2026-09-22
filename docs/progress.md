@@ -1,5 +1,14 @@
 # 构建进度
 
+2026-09-22：**Phase 6 开发、验收与 v0.1.0 发布已完成。** [公开仓库](https://github.com/tlwsy/Clipo)、[版本与扩展 ZIP](https://github.com/tlwsy/Clipo/releases/tag/v0.1.0)、`ghcr.io/tlwsy/clipo:v0.1.0` 已可用。Phase 5 的真实登录平台/Edge、Android 系统分享及 YouTube 线上等此前待验收项继续保留。
+
+## Phase 6 发布完成记录（2026-09-22）
+
+- 版本标签 `v0.1.0` 指向 `b2b2fe1`；主功能节点为 `eac4a3a`（JSON/Markdown 导出与事务性恢复）、`ed508c9`（备份目标/计划/设置页）、`e66daa2`（许可/文档/CI）、`02000e7`（部署入口声明）、`b2b2fe1`（空 Compose CI 验收）。
+- [GitHub CI 35728651621](https://github.com/tlwsy/Clipo/actions/runs/35728651621) 全部成功：后端 382、前端 24、扩展 5 项；PostgreSQL 备份与迁移 22 项；契约一致性、静态构建、双实例 Chromium 恢复、镜像构建，以及独立 Ubuntu runner 的空 Compose 首次设置/内容直传/worker/检索/备份下载。首次部署检查步骤用时 50 秒，镜像构建复用了此前 CI 缓存；不保证不同网络的首次下载耗时。
+- [Release 35729252569](https://github.com/tlwsy/Clipo/actions/runs/35729252569) 成功，上传扩展 ZIP、SHA256SUMS，并发布 GHCR `v0.1.0`/`latest`。已实际下载公开附件，SHA256 校验通过；匿名读取镜像 manifest HTTP 200，digest 为 `sha256:40319c5fde46e5f006e7a11d4dff3e3aefcc8ee98ad4690a02a880d3ab888897`。
+- 本机日常测试 Compose 已更新，应用与数据库均 healthy，迁移为 `0011_backup_jobs`，API 与 worker 运行；临时 PostgreSQL/MinIO/WsgiDAV 及空 Compose 测试容器已停止清理。当前图片仍仅保存外链，恢复验收覆盖媒体引用；云供应商特有认证与真实平台边界见对应文档。
+
 ## Phase 6 发布准备节点（2026-09-22）
 
 - README 加入实际页面的虚构数据演示 GIF，配置/部署/扩展/恢复说明同步现状。补齐官方 AGPL v3 正文，保留原有“或后续版本”授权（SPDX `AGPL-3.0-or-later`），为源码添加简短文件头并保留第三方声明；扩展 ZIP 和应用镜像包含许可文件。

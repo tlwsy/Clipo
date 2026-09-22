@@ -233,3 +233,5 @@ Phase 4 的 `q` 搜索、标签与收藏接口已提供，Shortcut 复用现有 
 ## Phase 6 备份接口
 
 备份接口均要求认证并按账号隔离。`POST /backups/exports` 接受 `request_key`，返回 202 及后台任务；`POST /backups/imports` 接受最大 100 MiB 的原始 `library.json` 正文，返回 202，重复文件复用任务。`GET /backups` 列出最近 50 项；`GET /backups/{id}/download` 下载成功的导出 ZIP；`POST /backups/{id}/retry` 重试失败项。完整路径均带 `/api/v1`，格式与恢复语义见[备份与恢复](backup.md)。
+
+`GET /backups/settings` 查询目标和计划，密钥只返回配置状态；`PUT /backups/settings` 保存目标、endpoint、目录前缀、Cron 及加密凭据；`POST /backups/run` 接受 `request_key`，使用已保存目标创建手动备份任务。定时任务由 worker 每分钟检查并按账号/UTC 分钟去重。

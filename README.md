@@ -8,6 +8,8 @@ Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网�
 
 演示使用虚构账号与离线内容，展示实际页面。安装包与版本说明见 [Releases](https://github.com/tlwsy/Clipo/releases)。
 
+**v0.1.0 已发布**，提供扩展 ZIP 与 SHA256SUMS；公开容器镜像为 `ghcr.io/tlwsy/clipo:v0.1.0`（linux/amd64）。下方 Compose 命令从源码构建，首次部署和备份恢复已通过 GitHub CI。
+
 ## 当前进度
 
 已实现 [实施计划](IMPLEMENTATION_PLAN.md) 的 **Phase 2 核心链路**：保存公开网页、后台正文提取、AI 摘要与要点、笔记列表与详情、保存队列和失败重试，以及 PWA 分享入口。Phase 1 的账号、模型配置、API Token 和静态部署能力继续可用。
