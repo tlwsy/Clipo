@@ -64,6 +64,19 @@ jobs:
         with:
           context: .
           push: false
-          tags: clipo:ci
+          load: true
+          tags: clipo-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+      - name: First deployment from README
+        run: |
+          python3 scripts/init_env.py
+          docker compose up -d --no-build --wait --wait-timeout 120
+          uv run --no-project --with playwright python -m playwright install --with-deps chromium
+          uv run --no-project --with playwright python scripts/smoke_compose.py --base-url http://127.0.0.1:8000
+      - name: Stop temporary instance
+        if: always()
+        run: docker compose down --volumes
