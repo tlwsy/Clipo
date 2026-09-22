@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Offline API/worker fixture, used only by scripts/smoke_capture.py."""
 
 import json

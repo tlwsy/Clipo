@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { ApiError, errorMessage, type Schema } from "./api";
 import { timedApi } from "./notes";
 import {

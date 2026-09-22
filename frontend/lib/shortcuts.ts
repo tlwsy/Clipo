@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { api, type Schema } from "./api";
 
 export function createShortcutPairing(name: string, userId: number) {

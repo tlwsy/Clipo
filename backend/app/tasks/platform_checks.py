@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Persist, dispatch and recover credential checks without exposing secrets to Huey."""
 
 import logging

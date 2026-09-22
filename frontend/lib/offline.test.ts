@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import "fake-indexeddb/auto";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import {

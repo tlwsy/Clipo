@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Export API types without reading deployment credentials or touching the database."""
 
 import json

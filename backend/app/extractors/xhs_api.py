@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Read-only XHS web API calls; credentials and signatures never leave the API host."""
 
 import re

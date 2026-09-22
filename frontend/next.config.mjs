@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const production = process.env.NODE_ENV === "production";
 
 /** @type {import('next').NextConfig} */

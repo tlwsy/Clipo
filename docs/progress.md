@@ -1,5 +1,13 @@
 # 构建进度
 
+## Phase 6 发布准备节点（2026-09-22）
+
+- README 加入实际页面的虚构数据演示 GIF，配置/部署/扩展/恢复说明同步现状。补齐官方 AGPL v3 正文，保留原有“或后续版本”授权（SPDX `AGPL-3.0-or-later`），为源码添加简短文件头并保留第三方声明；扩展 ZIP 和应用镜像包含许可文件。
+- 新增 Issue/PR 模板，GitHub CI 覆盖 lint、全量测试、PostgreSQL 备份与迁移、生成契约检查、静态构建、浏览器恢复及 Docker 镜像构建；发布流程在 CI 成功后构建 GHCR 镜像并上传扩展 ZIP/校验和。
+- 本节点重新运行 `make lint`、`make test`、`make gen-api`、`make build`、`make extension-package`：后端 **382 项**、前端 **24 项**、扩展 **5 项**通过，生成契约无变化。工作流 YAML 结构解析通过，尚不等同于 GitHub 执行通过。
+- 本机测试 Compose 重新构建/升级成功，应用与 PostgreSQL 健康，迁移 `0011_backup_jobs`，API/worker 均运行。另用独立空数据卷启动 Compose，通过浏览器设置向导、创建账号、内容直传、后台落库、未配置模型降级、中文检索与 ZIP 下载；脚本 `scripts/smoke_compose.py` 拒绝已初始化实例。该验收使用已有依赖/镜像缓存，不能证明任意新机器的首次下载都能在 10 分钟内完成。
+- 用户授权使用 GitHub 主账号发布，已创建公开仓库 `tlwsy/Clipo` 并配置 origin。版本说明与产物已准备；远端 CI、镜像推送及 v0.1.0 发布继续执行，尚未将 M6 标记完成。
+
 ## Phase 6 备份目标、定时执行与设置页节点（2026-09-22）
 
 - 设置页提供导出/下载/JSON 追加导入、目标配置、五段 Cron、手动触发与失败重试。新增本地原子备份和保留份数、S3 SigV4 PUT、WebDAV PUT；远端凭据按账号加密且地址变更要求重新填写。默认公开 HTTPS，DNS 验证与连接固定、拒绝跳转，内网目标仅允许管理员明确列出的 origin。

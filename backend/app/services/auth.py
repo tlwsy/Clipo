@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from datetime import timedelta
 
 from sqlalchemy.exc import IntegrityError

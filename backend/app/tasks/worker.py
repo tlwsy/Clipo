@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Run one durable SQL-backed capture consumer alongside the API."""
 
 from huey.consumer import Consumer

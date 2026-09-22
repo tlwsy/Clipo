@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Pwa } from "@/components/pwa";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";

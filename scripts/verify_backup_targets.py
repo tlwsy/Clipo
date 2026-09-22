@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """对已有的本机 MinIO 与 WebDAV 测试服务执行实际上传/读取；仅用固定测试凭据。"""
 
 import io

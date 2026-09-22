@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Load the actual unpacked extension with native permission/action gestures.
 
 Requires Xvfb and python-xlib on Linux. Uses an isolated browser, DB and offline pages.

@@ -209,7 +209,7 @@ manifest v3
 - S3 兼容：阿里云 OSS、腾讯云 COS、MinIO
 - WebDAV：坚果云、Nextcloud
 
-导出任务同样走 Huey，产物落盘后提供下载链接，大库不阻塞请求。
+Phase 6 已实现 Huey 后台导出/恢复：ZIP 包含版本化 JSON 与 Markdown，单包 JSON 上限 100 MiB；下载验证账号归属，导入事务性追加并按文件摘要幂等。备份支持本地、S3 SigV4 与 WebDAV PUT，按时区和 Cron 调度，敏感凭据加密保存。当前媒体仅保存外链，媒体下载与存储抽象仍属规划。
 
 ## 12. 部署拓扑
 

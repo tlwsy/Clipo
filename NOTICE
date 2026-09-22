@@ -1,0 +1,11 @@
+Clipo
+Copyright (C) 2026 Clipo contributors
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+Clipo is distributed under the GNU Affero General Public License version 3 or (at your option) any later version.
+The complete license is in LICENSE. There is no warranty.
+
+Dependencies retain their own licenses. Third-party protocol references and
+attribution are documented in docs/platform-protocols.md.
+Generated API contracts and the demonstration GIF are part of Clipo and use
+the same license; generator-managed declarations retain their generated form.

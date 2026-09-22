@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Add optional comment scores while preserving existing notes and comments.
 
 Revision ID: 0003_comment_scoring

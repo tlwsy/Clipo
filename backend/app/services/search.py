@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from dataclasses import dataclass
 
 from sqlalchemy import Engine, and_, bindparam, column, func, literal_column, or_, select, text

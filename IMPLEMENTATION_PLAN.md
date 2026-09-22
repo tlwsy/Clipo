@@ -127,6 +127,8 @@
 
 ## Phase 6 · 备份、文档与发布（0.5 周）
 
+**当前状态（2026-09-22）**：导出/回导、本地/S3/WebDAV 手动与定时备份、设置页、文档与演示、许可正文/文件头、Issue 模板和 CI/发布工作流已实现。本地 SQLite、PostgreSQL 16、实际 MinIO/WsgiDAV、双实例 Chromium 恢复及空 Compose 业务验收已通过；远端 CI 与 v0.1.0 发布正在执行。媒体目前只恢复现有链接；Phase 5 真实平台和 Edge 待验收项不因此关闭。
+
 任务：
 1. 导出：完整 JSON 与 Markdown 目录；JSON 可回导。
 2. 自动备份目标：本地路径、S3 兼容、WebDAV；定时任务与手动触发。

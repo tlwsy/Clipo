@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Self-contained: Chromium serializes this function into an isolated content-script world.
 export async function collectPage(maxComments = 100, selectedText = "") {
   try {

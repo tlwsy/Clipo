@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Bound streaming capture requests before JSON parsing (including chunked transfer)."""
 
 from starlette.responses import JSONResponse

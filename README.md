@@ -4,6 +4,10 @@
 
 Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网站自动提取核心内容。通过 AI 智能总结和评论筛选，让你轻松保存和管理有价值的信息。
 
+![Clipo 笔记、详情与备份设置演示](docs/assets/demo.gif)
+
+演示使用虚构账号与离线内容，展示实际页面。安装包与版本说明见 [Releases](https://github.com/tlwsy/Clipo/releases)。
+
 ## 当前进度
 
 已实现 [实施计划](IMPLEMENTATION_PLAN.md) 的 **Phase 2 核心链路**：保存公开网页、后台正文提取、AI 摘要与要点、笔记列表与详情、保存队列和失败重试，以及 PWA 分享入口。Phase 1 的账号、模型配置、API Token 和静态部署能力继续可用。
@@ -14,7 +18,7 @@ Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网�
 
 B 站和 YouTube 支持视频简介、公开可取得的字幕和顶层热评，字幕或评论不可取得会明确提示。B 站真实元数据与评论已验证；YouTube 已通过离线与浏览器验证，但当前环境无法解析其域名，线上验收待网络就绪。
 
-**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置、设置页安装入口和剪贴板保存；用户于 2026-09-22 确认发布的 iCloud 版本完成 iOS 实机核验。仓库未签名模板的 Mac 签名与导入未另行验证。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。Phase 5 浏览器扩展已实现并通过本地 Chromium 验收；真实平台登录浏览器与 Edge 待验收，备份属于后续阶段。完整状态与验收限制见 [构建进度](docs/progress.md)。
+**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置、设置页安装入口和剪贴板保存；用户于 2026-09-22 确认发布的 iCloud 版本完成 iOS 实机核验。仓库未签名模板的 Mac 签名与导入未另行验证。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。Phase 5 浏览器扩展已实现并通过本地 Chromium 验收；真实平台登录浏览器与 Edge 待验收，Phase 6 已提供 JSON/Markdown 导出、JSON 恢复与本地/S3/WebDAV 备份。完整状态与验收限制见 [构建进度](docs/progress.md)。
 
 ## ✨ 目标特性（按阶段建设）
 
@@ -31,6 +35,10 @@ B 站和 YouTube 支持视频简介、公开可取得的字幕和顶层热评，
 ### 使用 Docker Compose（推荐）
 
 ```bash
+# 获取源码（已下载源码可跳过）
+git clone https://github.com/tlwsy/Clipo.git
+cd Clipo
+
 # 在仓库根目录生成 .env 和随机密钥（不会覆盖已有配置）
 python3 scripts/init_env.py
 
@@ -95,6 +103,7 @@ PWA、浏览器扩展与 iCloud Shortcut 安装入口已提供；Shortcut 发布
 - [iOS Shortcut](docs/ios-shortcut.md) - Shortcut 配置指南
 - [配置参考](docs/configuration.md) - 详细配置说明
 - [部署指南](docs/deployment.md) - 生产环境部署
+- [备份与恢复](docs/backup.md) - JSON/Markdown、本地/S3/WebDAV 与恢复步骤
 
 ## 🛠️ 技术栈
 
@@ -133,8 +142,8 @@ PWA、浏览器扩展与 iCloud Shortcut 安装入口已提供；Shortcut 发布
 
 ## 📧 联系方式
 
-- Issues: [GitHub Issues](https://github.com/yourusername/clipo/issues)
-- Discussions: [GitHub Discussions](https://github.com/yourusername/clipo/discussions)
+- Issues: [GitHub Issues](https://github.com/tlwsy/Clipo/issues)
+- Discussions: [GitHub Discussions](https://github.com/tlwsy/Clipo/discussions)
 
 ---
 
@@ -155,4 +164,10 @@ PWA、浏览器扩展与 iCloud Shortcut 安装入口已提供；Shortcut 发布
 
 ### Docker 验证
 
-当前 Compose 已在 Docker Desktop 实机通过镜像构建、空 PostgreSQL 初始化、全部迁移、应用健康检查与静态首页检查：`docker compose up -d` 后访问 `http://localhost:8000`，停止使用 `make down`。首次运行需在 `.env` 设置 `POSTGRES_PASSWORD` 与 `CLIPO_SECRET_KEY`。Compose 内的浏览器设置向导、创建账号及完整采集流程尚未验收。
+当前 Compose 已在 Docker Desktop 实机通过镜像构建、空 PostgreSQL 初始化、全部迁移、应用健康检查与静态首页检查：`docker compose up -d` 后访问 `http://localhost:8000`，停止使用 `make down`。首次运行需在 `.env` 设置 `POSTGRES_PASSWORD` 与 `CLIPO_SECRET_KEY`。Phase 6 已在独立空 Compose 中验证浏览器设置向导、创建账号、内容直传、worker 落库、摘要降级、中文检索和备份下载；真实平台网络采集不包含在该容器验收中。
+
+### 备份与恢复
+
+设置 → 备份与恢复可导出包含 `library.json` 与 Markdown 目录的 ZIP；在新实例选择解压后的 JSON 即可恢复原文、摘要、评论评分、标签、收藏、时间与媒体链接。导入追加到当前账号，相同文件重复提交不会重复添加。
+
+本地、S3 兼容和 WebDAV 均支持手动备份与 Cron 定时计划。下载副本默认保留 7 天，本地目标保留最近 10 份。凭据按账号加密保存；当前图片仅保存外链，JSON 上限 100 MiB。完整实例备份另需数据库和主密钥，见[备份与恢复](docs/backup.md)。

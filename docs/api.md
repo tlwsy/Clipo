@@ -2,7 +2,7 @@
 
 基址 `/api/v1`。除注明外均需认证，请求与响应皆为 JSON，时间为 ISO 8601 UTC。可执行契约以 `/docs`、`/openapi.json` 和仓库的 `frontend/openapi.json` 为准。
 
-当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置及后台有效性检测，接入小红书、小黑盒、B 站与 YouTube。Phase 4 新增中文检索、标签与收藏；Shortcut 模板复用 API Token 和采集接口，本地契约验证已通过，iOS 实机待验收。内容直传、分享链接、导出和备份尚未提供。
+当前 Phase 1–2 已实现元信息、初始化、认证、API Token、LLM 设置、网页采集、任务查询/重试、笔记查询/删除；Phase 3 新增平台 Cookie 配置及后台有效性检测，接入小红书、小黑盒、B 站与 YouTube。Phase 4 新增中文检索、标签与收藏；Shortcut 已支持一次性配置，发布的 iCloud 版本已获用户 iOS 实机确认。Phase 5 支持内容直传与分块上传，Phase 6 支持导出、恢复及定时备份；公开分享链接尚未实现。
 
 ## 认证与错误
 

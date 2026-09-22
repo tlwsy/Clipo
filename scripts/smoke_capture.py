@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Browser acceptance with a temporary database and offline HTML/model fixtures.
 
 Run after `make build`: uv run --no-project --with playwright python scripts/smoke_capture.py

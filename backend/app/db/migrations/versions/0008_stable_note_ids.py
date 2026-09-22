@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Never reuse SQLite note IDs: offline retries and old links must remain safe."""
 
 from alembic import op

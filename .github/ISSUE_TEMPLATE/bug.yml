@@ -1,0 +1,23 @@
+name: 问题反馈
+description: 提供可复现步骤，帮助定位应用或平台采集问题。
+body:
+  - type: markdown
+    attributes:
+      value: 请勿提交 Cookie、Token、密钥或私人笔记。安全漏洞请使用仓库私密报告。
+  - type: input
+    id: version
+    attributes:
+      label: 版本与部署方式
+      placeholder: v0.1.0 / Docker Compose / PostgreSQL 16
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤、预期结果与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 脱敏日志与浏览器信息

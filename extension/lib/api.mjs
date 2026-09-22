@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 export const DIRECT_BYTES = 5 * 1024 * 1024;
 export const MAX_BYTES = 20 * 1024 * 1024;
 export const CHUNK_BYTES = 256 * 1024;

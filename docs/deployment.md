@@ -1,6 +1,6 @@
 # 部署指南
 
-当前可部署的是 Phase 1–2：账号、模型配置、公开网页采集、Huey worker、AI 摘要、笔记与 PWA 分享入口。平台专项与备份随后续阶段接入。当前源码部署不依赖预先发布的镜像。
+当前版本提供账号、模型配置、平台网页采集、Huey worker、AI 摘要、标签检索、PWA 离线、浏览器扩展、Shortcut 与笔记库备份恢复。当前源码部署不依赖预先发布的镜像。
 
 ## Docker Compose
 
@@ -26,7 +26,7 @@ Compose 用 PostgreSQL 连接覆盖 `.env` 中的 `CLIPO_DATABASE_URL`。本地�
 
 数据使用 Docker 命名卷 `pgdata` 和 `appdata` 持久化。`docker compose down` 保留数据，带 `--volumes` 则会删除卷；保存好 `.env` 中的 `CLIPO_SECRET_KEY`，恢复数据库时需要相同密钥解密已保存的 API Key。
 
-当前开发机已通过 Docker Desktop/Compose 的镜像构建、启动、空 PostgreSQL 迁移、健康检查和静态首页检查，PostgreSQL 16 专项测试已通过；这些结果不替代 Compose 内完整业务流程验收。最新范围见 [构建进度](progress.md)。
+当前开发机已通过 Docker Desktop/Compose 的镜像构建、启动、空 PostgreSQL 迁移、健康检查和静态首页检查，PostgreSQL 16 专项测试已通过；Phase 6 另在独立空 Compose 中验证设置向导、创建账号、内容直传到 worker 落库、摘要降级、中文检索和备份下载；未在该容器中请求真实平台或模型。最新范围见 [构建进度](progress.md)。
 
 ## 不使用 Docker
 
@@ -49,6 +49,7 @@ make serve
 
 ```nginx
 location / {
+    client_max_body_size 100m;
     proxy_pass http://127.0.0.1:8000;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -60,7 +61,7 @@ location / {
 
 ## 备份与升级
 
-应用层 JSON/Markdown 导出、自动备份将在 Phase 6 提供。目前可使用数据库备份：
+设置页已提供 JSON/Markdown 导出、JSON 恢复和自动备份，见[备份与恢复](backup.md)。完整实例（含账号和配置）还需数据库备份：
 
 ```bash
 docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > clipo.sql

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from app.extractors.base import CapturedComment
 from app.services.comments import select_comments
 

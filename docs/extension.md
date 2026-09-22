@@ -4,10 +4,10 @@ Phase 5 提供 Chrome/Edge 的 Manifest V3 扩展：从当前网页读取正文�
 
 ## 安装与配置
 
-先将服务端更新到包含 Phase 5 的版本。源码运行执行 `make upgrade`（升级到 `0010_capture_payloads`）、`make build`，然后重启 API 和 worker；Docker Compose 运行 `docker compose up --build -d --wait`，启动入口自动迁移。当前本机 Compose 是测试环境，可直接升级和验证，无需以备份为前置条件；其他部署按其数据保留要求安排备份。旧容器即使健康也不代表已支持内容直传，升级验证记录见 [构建进度](progress.md)。
+先将服务端更新到包含 Phase 5 的版本。源码运行执行 `make upgrade`（升级到最新迁移，v0.1.0 为 `0011_backup_jobs`）、`make build`，然后重启 API 和 worker；Docker Compose 运行 `docker compose up --build -d --wait`，启动入口自动迁移。当前本机 Compose 是测试环境，可直接升级和验证，无需以备份为前置条件；其他部署按其数据保留要求安排备份。旧容器即使健康也不代表已支持内容直传，升级验证记录见 [构建进度](progress.md)。
 
 1. 源码安装：打开 `chrome://extensions`（Edge 使用 `edge://extensions`），开启开发者模式，点击“加载已解压的扩展程序”，选择仓库的 `extension/` 目录。
-2. 或运行 `make extension-package`，解压 `extension/out/clipo-extension-0.1.0.zip`，加载解压目录。打包不包含测试、凭据或本机数据；尚未发布到扩展商店。
+2. 或下载 [v0.1.0 扩展安装包](https://github.com/tlwsy/Clipo/releases/tag/v0.1.0)，也可运行 `make extension-package`，解压 `extension/out/clipo-extension-0.1.0.zip`，加载解压目录。打包不包含测试、凭据或本机数据；尚未发布到扩展商店。
 3. 在 Clipo 网页的设置中创建 API Token，例如命名为“桌面扩展”。明文仅显示一次。
 4. 打开扩展“设置”，填服务器 origin（例如 `https://clipo.example.com`）和 Token，点击“保存配置”。首次会请求访问这台服务器的权限；允许后会校验 Token 与连通性。也可单独点击“测试连接”。
 

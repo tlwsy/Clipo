@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { originPermission, serverAddress } from "../lib/api.mjs";
 const form = document.querySelector("#settings");
 const server = document.querySelector("#server");

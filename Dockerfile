@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 FROM node:22-alpine AS frontend
 WORKDIR /build/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -15,6 +17,10 @@ COPY backend/requirements.lock /tmp/requirements.lock
 RUN pip install --no-cache-dir -r /tmp/requirements.lock \
     && useradd --create-home --uid 10001 clipo
 COPY backend/ ./backend/
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md /app/
+LABEL org.opencontainers.image.source="https://github.com/tlwsy/Clipo" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later" \
+      org.opencontainers.image.version="0.1.0"
 RUN pip install --no-cache-dir --no-deps ./backend \
     && mkdir -p /app/data \
     && chown -R clipo:clipo /app

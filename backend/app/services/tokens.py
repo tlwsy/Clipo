@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from app.errors import ClipoError
 from app.repositories import UserRepository
 from app.schemas.auth import IssuedTokenResponse, TokenResponse

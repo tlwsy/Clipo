@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """两个临时实例的浏览器备份恢复验收，仅使用虚构数据和离线模型。"""
 
 import io

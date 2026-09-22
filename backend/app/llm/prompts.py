@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 SYSTEM_PROMPT = """你是网页笔记整理助手。以中文输出 JSON 对象：
 {"summary_markdown": "简洁 Markdown 摘要", "key_points": ["要点"], "suggested_tags": ["标签"],
 "comment_scores": [{"index": 0, "score": 0.8, "reason": "补充具体方法"}]}。

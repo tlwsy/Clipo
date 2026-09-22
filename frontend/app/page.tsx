@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";

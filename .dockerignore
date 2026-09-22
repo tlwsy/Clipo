@@ -14,3 +14,6 @@
 **/*.tsbuildinfo
 backend/app/static
 data
+frontend/test-results
+frontend/playwright-report
+docs/assets

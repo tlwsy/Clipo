@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from app.models import ApiToken, UserSettings
 from app.security.credentials import decrypt_secret, hash_token
 from fastapi import FastAPI

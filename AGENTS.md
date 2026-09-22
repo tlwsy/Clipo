@@ -14,7 +14,7 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 - 开发与贡献约定见 `DEVELOPMENT.md`、`CONTRIBUTING.md`；设计与后续计划见 `ARCHITECTURE.md`、`IMPLEMENTATION_PLAN.md`。
 - 文档中的目标目录、架构和计划不代表均已实现；实际行为以代码、迁移和可复现验证为准。
 - Phase 3 已接入小红书 HTML 帖子与内嵌评论提取、独立的评论采集上限（0–100，默认 100）、签名接口评论分页、评论初筛与 AI 评分，已通过用户提供的真实帖子与模型样本验收；小黑盒帖子与评论分页、两平台后台 Cookie 有效性检测也已接入；B 站和 YouTube 视频/公开字幕/热评也已接入；YouTube 线上验收受当前环境 DNS 限制。
-- Phase 4 的标签、收藏、中文检索、PWA 最近 50 篇离线缓存与写队列恢复已实现并通过本地验证；Shortcut 已提供一次性配置码、设置页安装/配置入口及支持剪贴板的通用版，用户于 2026-09-22 确认 iCloud 分享版本完成 iOS 实机核验；仓库生成的未签名模板仅通过本地契约测试，Mac 签名及导入未另行验证。Docker Compose 构建/启动/迁移/健康检查及 PostgreSQL 16 专项测试已通过，Compose 内完整浏览器业务链路仍待验收。Phase 5 已接入 Manifest V3 扩展、平台 DOM 直取、后端内容直传和分块上传，通过本地 Chromium 离线验收；真实登录平台与 Edge 仍待验收，M5 尚未全部通过。备份仍属 Phase 6。
+- Phase 4 的标签、收藏、中文检索、PWA 最近 50 篇离线缓存与写队列恢复已实现并通过本地验证；Shortcut 已提供一次性配置码、设置页安装/配置入口及支持剪贴板的通用版，用户于 2026-09-22 确认 iCloud 分享版本完成 iOS 实机核验；仓库生成的未签名模板仅通过本地契约测试，Mac 签名及导入未另行验证。Docker Compose 构建/启动/迁移/健康检查及 PostgreSQL 16 专项测试已通过，Compose 内完整浏览器业务链路仍待验收。Phase 5 已接入 Manifest V3 扩展、平台 DOM 直取、后端内容直传和分块上传，通过本地 Chromium 离线验收；真实登录平台与 Edge 仍待验收，M5 尚未全部通过。Phase 6 已实现 JSON/Markdown 导出与恢复、本地/S3/WebDAV 备份和定时任务，已通过 SQLite、PostgreSQL、MinIO/WsgiDAV 与双实例 Chromium 验证；发布状态见 docs/progress.md。
 
 ## 代码位置与运行架构
 

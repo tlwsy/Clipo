@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clipo contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /* The static export script replaces these values with this build's manifest. */
 const VERSION = "__CLIPO_BUILD__";
 const PRECACHE = /* __CLIPO_PRECACHE__ */ [];

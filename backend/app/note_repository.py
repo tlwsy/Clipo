@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.sql.elements import ColumnElement
 

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Heybox web hkey protocol, checked against the official web bundle.
 
 Algorithm reference: ParseHub (MIT), Copyright (c) 2024 梓澪.

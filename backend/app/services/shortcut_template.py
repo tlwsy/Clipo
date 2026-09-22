@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clipo contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Credential-free Shortcut protocol v1; Apple action execution needs device acceptance."""
 
 from typing import Any
