@@ -4,7 +4,7 @@ Phase 5 提供 Chrome/Edge 的 Manifest V3 扩展：从当前网页读取正文�
 
 ## 安装与配置
 
-先将服务端更新到包含 Phase 5 的版本。源码运行需备份数据库、执行 `make upgrade`（升级到 `0010_capture_payloads`）、`make build`，然后重启 API 和 worker；Docker Compose 需备份后运行 `docker compose up --build -d`，启动入口自动迁移。旧容器即使健康也不代表已支持内容直传。本次扩展开发只使用临时库验收，没有更新你的日常运行容器。
+先将服务端更新到包含 Phase 5 的版本。源码运行执行 `make upgrade`（升级到 `0010_capture_payloads`）、`make build`，然后重启 API 和 worker；Docker Compose 运行 `docker compose up --build -d --wait`，启动入口自动迁移。当前本机 Compose 是测试环境，可直接升级和验证，无需以备份为前置条件；其他部署按其数据保留要求安排备份。旧容器即使健康也不代表已支持内容直传，升级验证记录见 [构建进度](progress.md)。
 
 1. 源码安装：打开 `chrome://extensions`（Edge 使用 `edge://extensions`），开启开发者模式，点击“加载已解压的扩展程序”，选择仓库的 `extension/` 目录。
 2. 或运行 `make extension-package`，解压 `extension/out/clipo-extension-0.1.0.zip`，加载解压目录。打包不包含测试、凭据或本机数据；尚未发布到扩展商店。

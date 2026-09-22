@@ -49,6 +49,12 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 修改 worker 代码后需重启 `make dev`。单独启动 uvicorn 时，还需运行 `.venv/bin/python -m app.tasks.worker`；API 与 worker 必须共用数据库、主密钥和 `CLIPO_QUEUE_PATH`。
 
+## 本机 Docker 环境
+
+- 本仓库当前 Docker Compose 服务是测试环境，不是生产环境，内部数据用于测试，无需因数据保留顾虑阻塞开发验证。
+- 开发需要时可直接重建镜像、更新/重启服务、执行迁移及写入测试数据，无需逐次确认，也无需将备份作为升级的前置条件。
+- 更新后检查应用与数据库健康状态、迁移版本及 API/worker 运行情况；需要验证业务时直接使用测试环境。此约定仅适用于本机测试 Compose，不代表其他部署环境。
+
 ## 实现约定
 
 - Python 使用 Black 与 Ruff，行宽 100，目标 Python 3.11；新增和修改的函数补齐类型注解，公共函数明确返回类型。

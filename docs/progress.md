@@ -245,3 +245,11 @@ YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复
 
 - 补充服务端升级/迁移/API 与 worker 重启步骤，以及无需提供 Cookie/Token 的真实平台验收清单；本次没有更新日常 Compose 容器。
 - 纯文档节点核对迁移版本、命令与本地链接，`git diff --check` 通过；未另行重跑测试或构建。当前阻塞仅涉及真实登录平台环境和 Edge 实机验收。
+
+## Phase 5 Docker 测试环境升级（2026-09-22）
+
+- 用户明确当前本机 Docker Compose 是测试环境，可直接升级、迁移与写入测试数据，无需因内部数据顾虑阻塞验证或要求先备份；已写入 `AGENTS.md`，同步扩展升级指南。
+- 本次执行 `docker compose config --quiet`、`docker compose up --build -d --wait --wait-timeout 120` 成功；重新构建前端和应用镜像并替换应用容器，应用及 PostgreSQL 16 均为 healthy。
+- 容器内查询确认迁移版本为 `0010_capture_payloads`，分块上传两张表已存在；运行中 OpenAPI 包含 payload 契约、创建上传、上传分块与完成上传接口；API 和 Huey worker 进程均在运行。
+- `http://127.0.0.1:8000` 与热点转发入口 `http://192.168.137.1:18000` 的健康接口、首页、设置页和队列页均返回 HTTP 200，健康接口为 `{"status":"ok"}`。
+- 本节点仅修改说明文档并更新测试容器，`git diff --check` 通过；未重跑全量单元测试或浏览器业务验收，不将本次健康/契约检查记为真实平台或 Compose 完整业务链路验收。
