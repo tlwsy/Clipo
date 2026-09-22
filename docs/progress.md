@@ -239,3 +239,9 @@ YouTube 线上兼容性需要在能够正常解析并访问 YouTube 的环境复
 - 新增 `make extension-package`，可直接加载源码目录或解压 `extension/out/clipo-extension-0.1.0.zip`；尚未发布商店。同步安装、权限、代理限制与恢复教程。
 - 本节点运行 `make lint`、`make test`、`make build`、`make extension-package` 通过：后端 **362 项**、前端 **23 项**、扩展 **5 项**。Chromium 使用独立配置与真实未打包扩展，原生服务器授权、activeTab 弹窗/右键、选区/标签、两平台 DOM 评论、评论上限/结构变化、约 5.7 MB 中文分块上传（关闭弹窗后仍完成）、实际停止扩展 service worker 后恢复队列且不重复入库、撤销 Token 全链路通过；无页面脚本错误，设置和 popup 截图已检查。扩展上传单测另覆盖丢失分块确认和已完成任务确认后的恢复；实际停止 service worker 不等同于操作系统或浏览器进程崩溃验收。
 - 真实已登录小红书/小黑盒浏览器和 Edge 尚未验收，需要可访问的目标平台登录环境。本地开发与验证已完成，**M5 保持待实机验收**，不将离线 12 条评论等同于真实帖子全部评论。Phase 6 尚未开始；Phase 4 iOS 待验收项不变。
+
+
+## Phase 5 实机验收交接（2026-09-22）
+
+- 补充服务端升级/迁移/API 与 worker 重启步骤，以及无需提供 Cookie/Token 的真实平台验收清单；本次没有更新日常 Compose 容器。
+- 纯文档节点核对迁移版本、命令与本地链接，`git diff --check` 通过；未另行重跑测试或构建。当前阻塞仅涉及真实登录平台环境和 Edge 实机验收。
