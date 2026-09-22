@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Clipo 扩展设置</title
+  ><link rel="stylesheet" href="../style.css" />
+  <body>
+    <main>
+      <span class="brand">CLIPO · 浏览器扩展</span>
+      <h1>连接你的收藏空间</h1>
+      <p class="hint">
+        在 Clipo 网页设置中创建一个 API
+        Token，命名为“浏览器扩展”，然后粘贴到这里。
+      </p>
+      <form id="settings">
+        <label for="server">服务器地址</label
+        ><input
+          id="server"
+          type="url"
+          placeholder="https://clipo.example.com"
+          required
+          autocomplete="url"
+        />
+        <label for="token">API Token</label
+        ><input
+          id="token"
+          type="password"
+          required
+          maxlength="256"
+          autocomplete="off"
+          spellcheck="false"
+        /><small
+          >凭据仅保存在当前浏览器，不参与浏览器账号同步。公网地址需使用
+          HTTPS。</small
+        >
+        <div class="actions">
+          <button id="save" type="submit">保存配置</button
+          ><button id="test" class="secondary" type="button">测试连接</button>
+        </div>
+      </form>
+      <p id="result" role="status" class="notice" hidden></p>
+      <p class="hint">
+        首次连接需授权访问所填服务器。更换服务器或 Token
+        时，会清除本机尚未提交的内容。
+      </p>
+    </main>
+    <script type="module" src="options.mjs"></script>
+  </body>
+</html>

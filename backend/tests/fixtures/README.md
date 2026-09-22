@@ -26,3 +26,5 @@
 `youtube.html` 与 `youtube-captions.json` 模拟播放器/页面配置/英文自动字幕；
 `youtube-comments-initial.json` / `top.json` / `page2.json` 覆盖切换热评、旧评论 renderer、
 新版实体引用、跨页重复和不得采集的楼中楼。所有视频、作者、评论和访客标识均为虚构。
+
+`extension-generic.html`、`extension-xiaohongshu.html`、`extension-xiaoheihe.html` 是人工构造的 DOM 夹具，覆盖可见正文、排除脚本/表单、选区、图片、顶层评论及点击展开的懒加载。供 `scripts/smoke_extension.py` 加载真实扩展执行，不访问平台或使用真实 Cookie；不能证明线上平台 DOM 兼容性。

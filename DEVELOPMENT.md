@@ -2,7 +2,7 @@
 
 ## 仓库结构（目标）
 
-当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已接入小红书、小黑盒、B 站与 YouTube，提供平台 Cookie 配置与后台检测、评论采集上限、初筛与 AI 评分。Phase 4 已实现标签/收藏、中文检索、离线阅读与同步，并提供通过本地契约测试的未签名 Shortcut 模板；iOS 实机验收仍待完成。备份存储和扩展属于后续阶段，下方为目标目录，实际能力与验收限制见 [构建进度](docs/progress.md)。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
+当前已落地 Phase 1–2 的认证、设置、通用网页采集、Huey 队列、LLM 处理、笔记 API 与 Web 页面；Phase 3 已接入小红书、小黑盒、B 站与 YouTube，提供平台 Cookie 配置与后台检测、评论采集上限、初筛与 AI 评分。Phase 4 已实现标签/收藏、中文检索、离线阅读与同步，并提供通过本地契约测试的未签名 Shortcut 模板；iOS 实机验收仍待完成。Phase 5 扩展与后端内容直传/分块上传已实现并通过本地 Chromium 验收，真实平台登录浏览器与 Edge 待验收；备份存储属于后续阶段，下方为目标目录，实际能力与验收限制见 [构建进度](docs/progress.md)。应用工厂为 `app.main:create_app`，运行入口为 `app.asgi:app`。
 
 ```
 clipo/
@@ -90,7 +90,7 @@ make build
 make serve                         # http://localhost:8000
 ```
 
-`make serve` 会启动 API 与 Huey worker；浏览器扩展在 Phase 5 接入，当前无需构建扩展。
+`make serve` 会启动 API 与 Huey worker；浏览器扩展无需编译，可直接加载 `extension/`，运行 `make extension-package` 生成分发 ZIP。使用与验收见 [扩展文档](docs/extension.md)。
 
 ## 常用命令
 
@@ -126,6 +126,7 @@ make up / make down                # docker compose
 | 集成 | 提交 URL 到笔记可见的完整链路 | pytest + 测试库 |
 | 契约 | OpenAPI 快照，防止意外破坏客户端 | schemathesis |
 | 前端 | 组件与离线队列逻辑 | vitest |
+| 扩展 | 上传契约、断点恢复与 DOM 端到端 | Node test + Playwright/Chromium |
 | 端到端 | 登录、保存、搜索主流程 | Playwright（Phase 4 起） |
 
 适配器测试必须使用 `tests/fixtures/` 下的离线 HTML，不允许请求真实站点；线上结构变更时更新夹具并同步改适配器。

@@ -14,7 +14,7 @@ Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网�
 
 B 站和 YouTube 支持视频简介、公开可取得的字幕和顶层热评，字幕或评论不可取得会明确提示。B 站真实元数据与评论已验证；YouTube 已通过离线与浏览器验证，但当前环境无法解析其域名，线上验收待网络就绪。
 
-**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置接口、设置页入口和支持剪贴板的未签名通用模板，已通过本地请求契约验证；Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收，M4 尚未全部通过。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。浏览器扩展和备份属于后续阶段。完整状态与验收限制见 [构建进度](docs/progress.md)。
+**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置接口、设置页入口和支持剪贴板的未签名通用模板，已通过本地请求契约验证；Apple 签名、iOS 导入、系统分享与通知仍待苹果设备验收，M4 尚未全部通过。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。Phase 5 浏览器扩展已实现并通过本地 Chromium 验收；真实平台登录浏览器与 Edge 待验收，备份属于后续阶段。完整状态与验收限制见 [构建进度](docs/progress.md)。
 
 ## ✨ 目标特性（按阶段建设）
 
@@ -63,7 +63,7 @@ make dev
 
 ## 📱 客户端
 
-PWA 已提供；Shortcut 未签名模板已提供，iOS 实机待验收；浏览器扩展为后续规划。
+PWA 与浏览器扩展已提供；Shortcut 未签名模板已提供，iOS 实机待验收。
 
 ### PWA（Web App）
 
@@ -77,7 +77,7 @@ PWA 已提供；Shortcut 未签名模板已提供，iOS 实机待验收；浏览
 
 ### 浏览器扩展
 
-计划在 Phase 5 支持 Chrome、Edge 等 Chromium 浏览器；`extension/` 当前只有说明文档，尚无可安装包。目标方案见 [浏览器扩展文档](docs/extension.md)。
+在 Chrome/Edge 扩展管理页开启开发者模式，“加载已解压的扩展程序”选择 `extension/`。配置 Clipo 地址与 API Token 并授权该服务器后，可从弹窗或右键保存网页、选区、小红书/小黑盒可见评论。`make extension-package` 可生成 ZIP。已通过 Chromium 离线端到端验收；真实平台与 Edge 待验收。安装、权限及限制见 [浏览器扩展文档](docs/extension.md)。
 
 ### iOS Shortcut
 

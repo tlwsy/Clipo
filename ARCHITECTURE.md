@@ -1,6 +1,6 @@
 # Clipo 技术架构
 
-本文档描述 Clipo 的系统架构、技术选型理由和核心数据模型。总体方案作为后续阶段的设计基线；当前已实现 Phase 1–2，未落地能力以 [构建进度](docs/progress.md) 为准。
+本文档描述 Clipo 的系统架构、技术选型理由和核心数据模型。总体方案作为设计基线；当前已推进至 Phase 5，实际能力与验收限制以 [构建进度](docs/progress.md) 为准。
 
 ## 1. 设计目标与约束
 
@@ -98,7 +98,7 @@ class Extractor(Protocol):
     def extract(self, url: str, payload: dict | None) -> CapturedContent: ...
 ```
 
-`CapturedContent` 为稳定的内部结构，隔离平台变动对下游的影响。当 `payload` 存在（扩展直传）时，适配器优先解析 payload，不发起网络请求。
+`CapturedContent` 为稳定的内部结构，隔离平台变动对下游的影响。当 `payload` 存在（扩展直传）时，由 `services/captures.py` 校验和规范化，在 worker 中直接进入摘要/评分流程，不调用提取器、不发起网络请求、不读写网页提取缓存。
 
 ## 5. LLM 编排
 
@@ -198,7 +198,7 @@ manifest v3
 └── options                        配置服务器地址与 API Token
 ```
 
-权限只申请 `activeTab`、`storage`、`contextMenus`、`scripting`，不申请 `<all_urls>`；仅在用户主动触发时通过 `activeTab` 注入。扩展侧适配器与后端 Extractor 共享字段定义，抓取结果作为 `payload` 直传，后端不再重复请求目标站点。
+安装权限只申请 `activeTab`、`storage`、`contextMenus`、`scripting`，不申请 `<all_urls>`；设置页按需申请配置服务器的单个 HTTP(S) 主机权限（Chrome 授权不区分端口），Token 请求仍固定到配置的 origin 且拒绝跳转；仅在用户主动触发时通过 `activeTab` 注入。扩展侧适配器与后端 Extractor 共享字段定义，抓取结果作为 `payload` 直传，后端不再重复请求目标站点。
 
 ## 11. 媒体与备份
 

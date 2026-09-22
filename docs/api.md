@@ -192,7 +192,7 @@ Cookie 通过当前账号的仓储加密保存；保存设置不向平台发起�
 
 ## 后续接口规划
 
-Phase 4 的 `q` 搜索、标签与收藏接口已提供，Shortcut 复用现有 `POST /captures`。后续 Phase 5 计划扩展 `POST /captures` 的内容直传；Phase 6 计划接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。
+Phase 4 的 `q` 搜索、标签与收藏接口已提供，Shortcut 复用现有 `POST /captures`。Phase 5 已扩展 `POST /captures` 的内容直传与分块上传（见下文）；Phase 6 计划接入导出、导入与备份。分享链接、重新摘要、删除任务、限流等额外接口尚未实现，请勿依赖此前规划中的示例端点。
 
 ## iOS Shortcut 自动配置
 

@@ -1,93 +1,62 @@
 # 浏览器扩展
 
-扩展是桌面端的录入入口，也是小红书、小黑盒这类需要登录态站点最可靠的抓取方式：它运行在你已登录的浏览器里，直接读取页面 DOM，不需要在服务端保存 Cookie，也不触发反爬。
+Phase 5 提供 Chrome/Edge 的 Manifest V3 扩展：从当前网页读取正文、选区和小红书/小黑盒已加载的顶层评论，提交到自己的 Clipo。后端无需配置平台 Cookie，收到页面内容后只执行整理、摘要和评分。真实平台页面结构可能变化，完整评论以实际加载结果为准。
 
-支持 Chrome 与 Edge 等 Chromium 浏览器（Manifest V3）。Firefox 适配排在 MVP 之后。
+## 安装与配置
 
-## 安装
+1. 源码安装：打开 `chrome://extensions`（Edge 使用 `edge://extensions`），开启开发者模式，点击“加载已解压的扩展程序”，选择仓库的 `extension/` 目录。
+2. 或运行 `make extension-package`，解压 `extension/out/clipo-extension-0.1.0.zip`，加载解压目录。打包不包含测试、凭据或本机数据；尚未发布到扩展商店。
+3. 在 Clipo 网页的设置中创建 API Token，例如命名为“桌面扩展”。明文仅显示一次。
+4. 打开扩展“设置”，填服务器 origin（例如 `https://clipo.example.com`）和 Token，点击“保存配置”。首次会请求访问这台服务器的权限；允许后会校验 Token 与连通性。也可单独点击“测试连接”。
 
-1. 从 Releases 下载 `clipo-extension-<version>.zip` 并解压。
-2. 打开 `chrome://extensions`，右上角开启开发者模式。
-3. 点"加载已解压的扩展程序"，选择解压出的目录。
-4. 点扩展图标 → 设置，填入服务器地址与 API Token，点"测试连接"。
+公网服务器必须使用 HTTPS；HTTP 仅支持 localhost、回环和常见内网 IPv4。地址可含端口，不支持子路径部署。Chrome 的主机授权粒度不区分端口，但扩展请求仍固定发送到所填的服务器 origin，禁止跟随重定向。
 
-API Token 的获取：在 Clipo 网页端 设置 → API Token → 新建，命名为 `chrome-extension`。明文只显示一次，复制后立即粘贴到扩展设置里。Token 可随时撤销，撤销后该扩展立刻失效，不影响其他客户端。
+凭据保存在当前浏览器的 `chrome.storage.local`，只允许扩展可信页面访问，不通过浏览器账号同步。撤销 Token 在 Clipo 网页设置中操作。更换服务器或 Token 会清除本机待提交内容，防止旧账号内容提交到新账号。测试过其他主机后，成功保存配置会撤销未使用的主机权限。
 
-## 使用
+## 保存
 
-三种触发方式，行为一致：
+- 点击工具栏扩展图标，再点“保存当前页”；可选填逗号分隔的标签。
+- 或在页面/选区上右键，选择“保存到 Clipo”。选区单独保留于笔记，不覆盖全文。
 
-- 页面右键 → 保存到 Clipo
-- 点击工具栏图标 → 保存当前页
-- 先选中一段文字再右键，选区会作为附加备注一起提交
+平台请先打开帖子详情。扩展最多尝试 14 秒滚动/点击“查看更多评论”，读取已显示的顶层评论，跨轮次去重，不采集楼中楼。评论上限来自当前账号设置（0–100）；0 关闭。到达上限、页面没有继续加载或无法确认终页时，笔记保留“不完整”提示。用户仍可展开评论后重新保存。平台抓取不得保证取得被删除、隐藏、折叠或超过配置上限的所有评论。
 
-保存后 popup 显示结果。默认全自动，不要求你确认任何内容；如果想顺手加标签，popup 里有快捷标签输入框，跳过也无妨。
+通用网页读取 `article`、`main` 或可见正文，排除脚本、表单控件、隐藏节点和导航；不上传 Cookie、LocalStorage 或原始页面 HTML。图片保留外链，不下载媒体。没有可见正文或无法识别平台帖子时提示重新打开详情/更新扩展。
 
-## 权限说明
+点击提交后可关闭 popup；关闭目标页前请等待读取完成。扩展图标显示 `…` 表示正在处理，`✓` 表示已交给后端，`!` 表示需要处理失败原因。popup 显示最近一次结果，可打开服务器保存队列或已保存笔记。
 
-只申请四项：
+## 上传与恢复
 
-| 权限 | 用途 |
-|------|------|
-| `activeTab` | 仅在你主动触发时读取当前标签页 |
-| `scripting` | 注入内容脚本以提取结构化内容 |
-| `storage` | 保存服务器地址与 Token |
-| `contextMenus` | 右键菜单项 |
+单次 JSON 请求小于等于 5 MiB 时直接提交，更大内容按 256 KiB 分块，最多 20 MiB。上传前在扩展 IndexedDB 暂存页面；每个分块确认后持久化进度。service worker 被回收或浏览器退出后，可在 popup 点击“重试提交”，浏览器启动也尝试恢复；网络失败不会自动无限重试。相同提交使用固定幂等键，不重复创建笔记。
 
-不申请 `<all_urls>`，因此安装时不会出现"读取你在所有网站上的数据"这类提示。扩展不在后台监听浏览记录，不主动上传任何页面。
+最多暂存 3 项，内容保存在当前设备，成功提交后移除。清除本机队列不撤回已被服务器接收的任务。后端未完成上传 1 小时后过期，此时清除本机队列并重新保存原页面。反向代理需允许 5 MiB 请求体（Nginx 建议 `client_max_body_size 6m`）。
 
-## 架构
+## 权限与开发
 
-```
-extension/
-├── manifest.json
-├── background/          service worker：接收指令、调用 API、结果通知
-├── content/             按平台注入的内容脚本
-│   ├── base.ts          共享的 payload 结构与工具
-│   ├── xiaohongshu.ts
-│   ├── xiaoheihe.ts
-│   └── generic.ts       通用页面：标题、正文、选区
-├── popup/               保存状态与快捷标签
-└── options/             服务器地址、Token、连通性测试
+安装仅申请 `activeTab`、`scripting`、`storage`、`contextMenus` 四项，不申请固定网站或 `<all_urls>` 权限。Manifest 的 `optional_host_permissions` 声明可配置 HTTP(S) 自托管服务器的范围，实际授权只在设置页点击时请求所填主机。内容脚本仅在主动保存时通过 `activeTab` 注入，服务端凭据不传入内容脚本。
+
+- `background/worker.mjs`：消息来源检查、右键入口、账号配置、提交与状态。
+- `content/extract.mjs`：隔离世界中执行的 DOM 读取及平台选择器；不访问页面 JS 状态。
+- `lib/api.mjs`：Token 请求、上限、分块、幂等；`lib/store.mjs`：持久化上传进度。
+- `options/`、`popup/`：原生 HTML/CSS/JS，无构建依赖和远端脚本。
+
+契约见 [API 内容直传](api.md#浏览器内容直传phase-5)，`payload.author` 是字符串，选区与标签在 `payload` 内。不提交 `source_hint`。缺失作者/时间留空，后端按 URL 确定平台。
+
+运行 `make lint`、`make test` 会包含扩展脚本检查和上传单测。真实加载扩展的离线浏览器验收：
+
+```bash
+CLIPO_TEST_CHROMIUM=/path/to/chrome \
+  uv run --no-project --with playwright --with python-xlib python scripts/smoke_extension.py
 ```
 
-内容脚本产出的 payload 与后端 Extractor 的 `CapturedContent` 字段一致，后端收到 payload 后直接进入规范化步骤，跳过网络抓取。这套字段定义是两侧的契约，改动要同步。
-
-提交的 payload 形如：
-
-```json
-{
-  "url": "https://www.xiaohongshu.com/explore/xxxx",
-  "source_hint": "xiaohongshu",
-  "selection": "可选的选中文本",
-  "payload": {
-    "title": "帖子标题",
-    "author": { "name": "作者", "url": "https://..." },
-    "published_at": "2026-09-01T10:00:00Z",
-    "text": "正文……",
-    "images": ["https://..."],
-    "comments": [{ "author": "甲", "content": "……", "likes": 128, "replies": 3 }]
-  }
-}
-```
-
-大 payload：超过 5 MB 时先请求建立任务拿到 `job_id`，再分块上传内容。多数页面远低于这个量级，走一次性提交即可。
-
-## 新增平台适配
-
-1. 在 `content/` 新建与后端适配器同名的文件，实现 `matches(url)` 与 `extract(document)`。
-2. 在 `manifest.json` 的内容脚本匹配规则中登记域名。
-3. 字段对齐 `base.ts` 的类型定义；缺失字段留空而不是编造。
-4. 后端同步补一个服务端适配器作为移动端兜底（见开发指南）。
-
-评论抓取注意懒加载：先滚动或点击"查看更多"展开到上限条数，再统一读取，否则只能拿到首屏几条。
+Linux 需安装 Xvfb，脚本使用独立浏览器、临时数据库和离线 HTML，不使用日常账号。截图位于忽略目录 `frontend/test-results/`。这不能替代真实登录小红书/小黑盒和 Edge 实机验收；当前结论见 [构建进度](progress.md)。
 
 ## 排障
 
 | 现象 | 处理 |
-|------|------|
-| 测试连接失败 | 核对地址含协议与端口；HTTPS 证书自签时浏览器需先信任 |
-| 401 未认证 | Token 被撤销或复制不全，重新生成 |
-| 保存成功但评论很少 | 页面评论未展开，或该平台适配器需要更新 |
-| 图标点击无反应 | 查看 `chrome://extensions` 中该扩展的 service worker 日志 |
-| 更新扩展后设置丢失 | 开发者模式下重新加载会保留 storage，删除后重装则不会 |
+| --- | --- |
+| 无法读取页面 | 浏览器内部页、扩展商店、PDF 和部分受保护页面不可注入；打开普通网页再点保存 |
+| 无法连接/权限移除 | 核对服务器、端口、证书，在设置重新点击保存并允许主机访问 |
+| Token 失效 | 网页设置生成新 Token，再更新扩展 |
+| 页面结构不识别 | 确认帖子详情已加载，保留脱敏的最小 DOM 夹具后更新对应选择器 |
+| 评论偏少 | 查看笔记提示和账号上限，展开评论后重新保存 |
+| 上传失败 | 保留暂存内容并重试；超过一小时后重新保存页面 |

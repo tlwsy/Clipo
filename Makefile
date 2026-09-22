@@ -1,7 +1,7 @@
 PYTHON ?= python3
 VENV := .venv/bin
 
-.PHONY: install configure dev serve build lint fmt test migrate upgrade gen-api up down
+.PHONY: install configure dev serve build lint fmt test migrate upgrade gen-api up down extension-package
 
 install:
 	@test -x $(VENV)/python || uv venv --python $(PYTHON) .venv
@@ -24,6 +24,7 @@ lint:
 	$(VENV)/ruff check --config backend/pyproject.toml backend scripts
 	$(VENV)/black --config backend/pyproject.toml --check backend scripts
 	npm --prefix frontend run lint
+	node extension/scripts/check.mjs
 
 fmt:
 	$(VENV)/black --config backend/pyproject.toml backend scripts
@@ -33,6 +34,7 @@ fmt:
 test:
 	$(VENV)/pytest backend/tests
 	npm --prefix frontend test
+	node --test extension/tests/*.test.mjs
 
 upgrade:
 	$(VENV)/alembic -c backend/alembic.ini upgrade head
@@ -50,3 +52,6 @@ up:
 
 down:
 	docker compose down
+
+extension-package:
+	$(PYTHON) scripts/package_extension.py

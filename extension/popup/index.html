@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>保存到 Clipo</title
+  ><link rel="stylesheet" href="../style.css" />
+  <body class="popup">
+    <main>
+      <span class="brand">CLIPO · 随手收藏</span>
+      <h1>把这一页留下来</h1>
+      <p id="page-title">正在读取当前标签页…</p>
+      <p class="hint">保存正文、选区和平台评论。页面加载的评论可能不完整。</p>
+      <label for="tags">标签 <span class="hint">（可选，逗号分隔）</span></label
+      ><input id="tags" placeholder="阅读, 灵感" maxlength="1020" />
+      <div class="actions">
+        <button id="capture">保存当前页</button
+        ><button id="options" class="secondary">设置</button>
+      </div>
+      <p id="result" role="status" class="notice">点击保存后即可关闭此窗口。</p>
+      <a id="note" hidden target="_blank" rel="noreferrer">阅读笔记 →</a>
+      <section id="pending" hidden>
+        <h2>本机待提交内容</h2>
+        <p id="pending-count"></p>
+        <div class="actions">
+          <button id="resume">重试提交</button
+          ><button id="clear" class="secondary">清除本机队列</button>
+        </div>
+      </section>
+      <p>
+        <a id="jobs" hidden target="_blank" rel="noreferrer"
+          >打开 Clipo 保存队列 →</a
+        >
+      </p>
+    </main>
+    <script type="module" src="popup.mjs"></script>
+  </body>
+</html>

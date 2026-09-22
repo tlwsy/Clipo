@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>离线小红书</title><body>
+<section class="note-container"><div class="author-wrapper"><a href="/user/profile/fixture"><span class="username">离线作者</span></a></div>
+<h1 id="detail-title">平台 DOM 直取验收</h1><div id="detail-desc"><p>浏览器内的帖子正文，保留完整内容。</p><p>第二段可选文字。</p><script type="application/json">{"secret":"DO_NOT_CAPTURE"}</script><input value="DO_NOT_CAPTURE"></div>
+<div class="media-container"><img src="https://images.example.com/photo.jpg"><img src="javascript:alert(1)"></div><time datetime="2026-09-21T09:00:00+08:00">昨天</time>
+<div class="note-scroller" style="height:140px;overflow:auto"><div class="comments-container"><div class="total">共 12 条评论</div>
+<div class="parent-comment" data-comment-id="c1"><div class="author"><span class="name">读者 1</span></div><div class="content"><span class="note-text">第一条评论提供详细使用参数</span></div><span class="like"><span class="count">1.2万</span></span><span class="reply"><span class="count">2</span></span><div class="sub-comments"><div class="comment-item"><div class="content">不采集楼中楼</div></div></div></div>
+<button class="show-more">查看更多评论</button></div></div></section>
+<script>
+document.querySelector('.show-more').onclick = function () {
+  for (let i=2;i<=12;i++) {
+    const node=document.createElement('div');node.className='parent-comment';node.dataset.commentId='c'+i;
+    node.innerHTML='<div class="author"><span class="name">读者 '+i+'</span></div><div class="content"><span class="note-text">评论 '+i+' 提供更多具体经验和建议</span></div><span class="like"><span class="count">'+i+'</span></span>';
+    this.before(node);
+  }
+  this.remove();
+  const end=document.createElement('div');end.className='end-container';end.textContent='没有更多了';document.querySelector('.comments-container').append(end);
+};
+</script></body></html>

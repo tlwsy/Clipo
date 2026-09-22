@@ -1,0 +1,135 @@
+:root {
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  color: #20332f;
+  background: #f4f6f1;
+  font-size: 14px;
+  line-height: 1.65;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  padding: 26px;
+  max-width: 620px;
+  margin: 28px auto;
+  background: #fff;
+  border: 1px solid #dce5dc;
+  border-radius: 18px;
+}
+body.popup {
+  width: 360px;
+  min-height: 340px;
+}
+.popup main {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 22px;
+}
+h1 {
+  font-size: 25px;
+  letter-spacing: -0.6px;
+  margin: 4px 0 14px;
+}
+h2 {
+  font-size: 16px;
+}
+p {
+  margin: 10px 0;
+}
+.brand {
+  color: #237466;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 16px;
+}
+input {
+  display: block;
+  width: 100%;
+  border: 1px solid #bdcdc4;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 6px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+input:focus,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #9dcfbd;
+  outline-offset: 2px;
+}
+button,
+.button {
+  display: inline-block;
+  background: #237466;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 15px;
+  cursor: pointer;
+  text-decoration: none;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.secondary {
+  background: #ecf1eb;
+  color: #294d42;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+small,
+.hint {
+  color: #61746b;
+}
+small {
+  display: block;
+  margin-top: 8px;
+}
+.notice {
+  padding: 12px;
+  border-radius: 8px;
+  background: #edf5ee;
+  overflow-wrap: anywhere;
+}
+.error {
+  background: #fff0eb;
+  color: #893a28;
+}
+a {
+  color: #216e5e;
+}
+#page-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+#pending {
+  border-top: 1px solid #dce5dc;
+  margin-top: 20px;
+  padding-top: 8px;
+}
+[hidden] {
+  display: none !important;
+}
