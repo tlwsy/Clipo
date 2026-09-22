@@ -77,9 +77,15 @@ export async function api<T>(
   options: RequestInit & {
     authenticated?: boolean;
     expectedUserId?: number;
+    responseType?: "json" | "blob";
   } = {},
 ): Promise<T> {
-  const { authenticated = true, expectedUserId, ...init } = options;
+  const {
+    authenticated = true,
+    expectedUserId,
+    responseType = "json",
+    ...init
+  } = options;
   try {
     if (authenticated && !accessToken) await refreshSession();
     const request = () => {
@@ -90,7 +96,8 @@ export async function api<T>(
           "登录账号已改变，请刷新页面",
         );
       const headers = new Headers(init.headers);
-      if (init.body) headers.set("Content-Type", "application/json");
+      if (init.body && !headers.has("Content-Type"))
+        headers.set("Content-Type", "application/json");
       if (authenticated && accessToken)
         headers.set("Authorization", `Bearer ${accessToken}`);
       return fetch(`/api/v1${path}`, {
@@ -107,6 +114,8 @@ export async function api<T>(
       if (accessToken === usedToken) await refreshSession();
       response = await request();
     }
+    if (response.ok && responseType === "blob")
+      return (await response.blob()) as T;
     return await parse<T>(response);
   } catch (error) {
     if (authenticated && error instanceof ApiError && error.status === 401) {

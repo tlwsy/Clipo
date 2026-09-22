@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { AppShell, useAccount } from "@/components/app-shell";
 import { CaptureSettings } from "@/components/capture-settings";
+import { BackupSettings } from "@/components/backup-settings";
 import { Icon } from "@/components/icon";
 import { PlatformSettings } from "@/components/platform-settings";
 import { ShortcutSettings } from "@/components/shortcut-settings";
@@ -445,6 +446,7 @@ function SettingsContent() {
               <CaptureSettings initial={data.settings.capture} />
               <PlatformSettings initial={data.settings.platform_cookies} />
               <ShortcutSettings />
+              <BackupSettings />
               <TokenSettings initial={data.tokens} />
             </>
           ) : (

@@ -40,6 +40,7 @@ def app(tmp_path: Path, request: pytest.FixtureRequest) -> Iterator[FastAPI]:
         database_url=database_url,
         static_path=tmp_path / "static",
         queue_path=tmp_path / "huey.db",
+        backup_path=tmp_path / "backups",
     )
     application = create_app(settings)
     config = Config(str(BACKEND_ROOT / "alembic.ini"))

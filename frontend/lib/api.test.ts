@@ -20,6 +20,32 @@ function response(value: unknown, status = 200) {
 }
 
 describe("authenticated API client", () => {
+  it("renews authentication for binary downloads and preserves JSON errors", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(response({}, 401))
+      .mockResolvedValueOnce(response(session))
+      .mockResolvedValueOnce(new Response("ZIP bytes"))
+      .mockResolvedValueOnce(
+        response(
+          { error: { code: "backup_expired", message: "请重新导出" } },
+          410,
+        ),
+      );
+    vi.stubGlobal("fetch", fetch);
+    const { api, acceptSession } = await import("./api");
+    acceptSession({ ...session, access_token: "expired" });
+    const blob = await api<Blob>("/backups/test/download", {
+      responseType: "blob",
+    });
+    expect(await blob.text()).toBe("ZIP bytes");
+    expect(fetch.mock.calls[2][1].headers.get("Authorization")).toBe(
+      "Bearer fresh-access",
+    );
+    await expect(
+      api("/backups/test/download", { responseType: "blob" }),
+    ).rejects.toMatchObject({ code: "backup_expired" });
+  });
   beforeEach(() => {
     vi.resetModules();
   });

@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     queue_path: Path = BACKEND_ROOT.parent / "data" / "huey.db"
     extraction_cache_ttl_seconds: int = Field(default=86400, ge=0, le=2592000)
     shortcut_install_url: str | None = None
+    backup_path: Path = BACKEND_ROOT.parent / "data" / "backups"
+    backup_allowed_origins: list[str] = Field(default_factory=list)
+    backup_keep: int = Field(default=10, ge=1, le=100)
+    export_retention_days: int = Field(default=7, ge=1, le=365)
 
     @field_validator("shortcut_install_url")
     @classmethod

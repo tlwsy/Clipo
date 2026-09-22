@@ -10,10 +10,40 @@ from starlette.concurrency import run_in_threadpool
 from app.api.dependencies import Config, CurrentUser, Db
 from app.backup_repository import BackupRepository
 from app.errors import ClipoError
-from app.schemas.backup import MAX_IMPORT_BYTES, BackupJobResponse, ExportRequest
+from app.schemas.backup import (
+    MAX_IMPORT_BYTES,
+    BackupJobResponse,
+    BackupSettingsResponse,
+    BackupSettingsUpdate,
+    ExportRequest,
+)
 from app.services.backup import download_path, job_directory
+from app.services.backup_settings import read_backup_settings, save_backup_settings
 
 router = APIRouter(prefix="/backups", tags=["backups"])
+
+
+@router.get("/settings", response_model=BackupSettingsResponse)
+def read_config(db: Db, user: CurrentUser, settings: Config) -> BackupSettingsResponse:
+    return read_backup_settings(BackupRepository(db, user.id), settings)
+
+
+@router.put("/settings", response_model=BackupSettingsResponse)
+def save_config(
+    body: BackupSettingsUpdate, db: Db, user: CurrentUser, settings: Config
+) -> BackupSettingsResponse:
+    return save_backup_settings(BackupRepository(db, user.id), body, settings)
+
+
+@router.post("/run", response_model=BackupJobResponse, status_code=202)
+def backup(body: ExportRequest, request: Request, db: Db, user: CurrentUser) -> BackupJobResponse:
+    repository = BackupRepository(db, user.id)
+    if repository.settings().backup_config.get("target", "none") == "none":
+        raise ClipoError(422, "backup_disabled", "请先保存备份目标配置")
+    job = repository.create_backup_job("backup", "backup:" + body.request_key)
+    db.commit()
+    request.app.state.capture_queue.backups.enqueue(user.id, job.id)
+    return BackupJobResponse.model_validate(job)
 
 
 @router.get("", response_model=list[BackupJobResponse])

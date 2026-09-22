@@ -1,6 +1,7 @@
 import logging
 import uuid
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from huey import SqliteHuey
 from pydantic import ValidationError
@@ -11,9 +12,11 @@ from app.backup_repository import BackupRepository, due_jobs
 from app.config import Settings
 from app.db.base import utcnow
 from app.errors import ClipoError
-from app.models import BackupJob
+from app.models import BackupJob, UserSettings
 from app.schemas.backup import Archive
 from app.services.backup import job_directory, write_archive
+from app.services.backup_settings import schedule_match
+from app.storage.backup import store_backup
 
 logger = logging.getLogger("clipo.backup")
 
@@ -72,6 +75,12 @@ class BackupQueue:
                     artifact, count = write_archive(
                         BackupRepository(db, user_id), directory, execution
                     )
+                if kind == "backup":
+                    with self.sessions() as db:
+                        config = BackupRepository(db, user_id).settings().backup_config
+                    if config.get("target", "none") == "none":
+                        raise ClipoError(422, "backup_disabled", "请先配置备份目标再重试")
+                    store_backup(directory / artifact, user_id, job_id, config, self.settings)
                 with self.sessions.begin() as db:
                     accepted = BackupRepository(db, user_id).fence_backup(
                         job_id,
@@ -109,6 +118,7 @@ class BackupQueue:
             logger.warning("Backup %s failed (%s)", job_id, type(exc).__name__)
 
     def recover(self) -> None:
+        self.schedule()
         with self.sessions.begin() as db:
             # Global scans dispatch identifiers only; all content uses scoped repositories.
             db.execute(
@@ -132,3 +142,48 @@ class BackupQueue:
             )
         for user_id, job_id in pending:
             self.enqueue(user_id, job_id)
+        self.cleanup()
+
+    def schedule(self) -> None:
+        now = utcnow()
+        try:
+            local_time = now.astimezone(ZoneInfo(self.settings.timezone))
+        except Exception:
+            logger.warning("Backup scheduler timezone is invalid")
+            return
+        with self.sessions() as db:
+            users = list(db.scalars(select(UserSettings.user_id)))
+        for user_id in users:
+            with self.sessions.begin() as db:
+                repository = BackupRepository(db, user_id)
+                config = repository.settings().backup_config
+                if config.get("target", "none") == "none" or not config.get("schedule"):
+                    continue
+                if schedule_match(config["schedule"])(local_time):
+                    repository.create_backup_job(
+                        "backup", "scheduled:" + now.strftime("%Y%m%d%H%M")
+                    )
+
+    def cleanup(self) -> None:
+        cutoff = utcnow() - timedelta(days=self.settings.export_retention_days)
+        with self.sessions() as db:
+            expired = list(
+                db.execute(
+                    select(BackupJob.user_id, BackupJob.id)
+                    .where(
+                        BackupJob.status == "success",
+                        BackupJob.updated_at < cutoff,
+                        BackupJob.artifact.is_not(None),
+                        BackupJob.artifact != "expired.zip",
+                    )
+                    .limit(100)
+                )
+            )
+        for user_id, job_id in expired:
+            with self.sessions.begin() as db:
+                repository = BackupRepository(db, user_id)
+                job = repository.backup_job(job_id)
+                directory = job_directory(self.settings, user_id, job_id)
+                for path in directory.glob("*.zip"):
+                    path.unlink(missing_ok=True)
+                job.artifact = "expired.zip"

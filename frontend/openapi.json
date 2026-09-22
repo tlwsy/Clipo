@@ -2600,6 +2600,351 @@
         }
       }
     },
+    "/api/v1/backups/settings": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Read Config",
+        "operationId": "read_config_api_v1_backups_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Save Config",
+        "operationId": "save_config_api_v1_backups_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/backups/run": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Backup",
+        "operationId": "backup_api_v1_backups_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupJobResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/api/v1/backups": {
       "get": {
         "tags": [
@@ -5131,6 +5476,171 @@
           "updated_at"
         ],
         "title": "BackupJobResponse"
+      },
+      "BackupSettingsResponse": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "none",
+              "local",
+              "s3",
+              "webdav"
+            ],
+            "title": "Target"
+          },
+          "schedule": {
+            "type": "string",
+            "title": "Schedule"
+          },
+          "endpoint": {
+            "type": "string",
+            "title": "Endpoint"
+          },
+          "bucket": {
+            "type": "string",
+            "title": "Bucket"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "prefix": {
+            "type": "string",
+            "title": "Prefix"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "access_key_set": {
+            "type": "boolean",
+            "title": "Access Key Set"
+          },
+          "secret_set": {
+            "type": "boolean",
+            "title": "Secret Set"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "local_keep": {
+            "type": "integer",
+            "title": "Local Keep"
+          },
+          "download_retention_days": {
+            "type": "integer",
+            "title": "Download Retention Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target",
+          "schedule",
+          "endpoint",
+          "bucket",
+          "region",
+          "prefix",
+          "username",
+          "access_key_set",
+          "secret_set",
+          "timezone",
+          "local_keep",
+          "download_retention_days"
+        ],
+        "title": "BackupSettingsResponse"
+      },
+      "BackupSettingsUpdate": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "none",
+              "local",
+              "s3",
+              "webdav"
+            ],
+            "title": "Target",
+            "default": "none"
+          },
+          "schedule": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Schedule",
+            "default": ""
+          },
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Endpoint",
+            "default": ""
+          },
+          "bucket": {
+            "type": "string",
+            "maxLength": 63,
+            "pattern": "^[a-z0-9.-]*$",
+            "title": "Bucket",
+            "default": ""
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9-]+$",
+            "title": "Region",
+            "default": "us-east-1"
+          },
+          "prefix": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[a-zA-Z0-9_/-]*$",
+            "title": "Prefix",
+            "default": "clipo"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Username",
+            "default": ""
+          },
+          "access_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Key"
+          },
+          "secret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret"
+          },
+          "clear_credentials": {
+            "type": "boolean",
+            "title": "Clear Credentials",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BackupSettingsUpdate"
       },
       "CapabilitiesResponse": {
         "properties": {

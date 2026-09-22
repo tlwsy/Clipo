@@ -909,6 +909,28 @@ input[aria-invalid="true"] {
 .settings-card label small {
   font-size: 10px;
 }
+#backups {
+  scroll-margin-top: 90px;
+}
+#backups > label,
+#backups > form {
+  margin-top: 24px;
+}
+#backups select {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+#backups select:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
 .platform-fields {
   border: 0;
   padding: 0;
