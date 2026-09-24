@@ -104,6 +104,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+        if request.url.path.startswith(("/public", "/api/v1/public/")):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
         return response
 
     app.add_middleware(CaptureBodyLimit)

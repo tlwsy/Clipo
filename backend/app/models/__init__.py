@@ -113,4 +113,5 @@ from app.models.capture import (  # noqa: E402, F401
     Source,
     Tag,
 )
+from app.models.sharing import SharedLink  # noqa: E402, F401
 from app.models.summary import SummaryJob  # noqa: E402, F401

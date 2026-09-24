@@ -86,8 +86,45 @@ def main() -> None:
             page.set_viewport_size({"width": 390, "height": 844})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             page.screenshot(path=str(RESULTS / "notes-summary-mobile.png"), full_page=True)
+            sharing = page.get_by_role("region", name="公开分享", exact=True)
+            sharing.locator("summary").click()
+            sharing.get_by_role("button", name="确认内容可公开并创建链接").click()
+            expect(sharing.get_by_label("分享链接（仅本次显示）")).to_be_visible()
+            share_url = sharing.get_by_label("分享链接（仅本次显示）").input_value()
+            assert "/public/#" in share_url
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            public_context = browser.new_context(viewport={"width": 390, "height": 844})
+            public_page = public_context.new_page()
+            public_page.on("pageerror", lambda error: errors.append(str(error)))
+            public_response = public_page.goto(share_url)
+            assert public_response.headers["cache-control"] == "no-store"
+            expect(public_page.get_by_role("heading", name="笔记能力验收")).to_be_visible()
+            expect(public_page.locator(".markdown")).to_contain_text("给未来留一份笔记")
+            expect(public_page.locator(".comment")).to_contain_text("AI 评分 0.9")
+            assert (
+                public_page.locator("meta[name=robots]")
+                .get_attribute("content")
+                .startswith("noindex")
+            )
+            assert public_page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            assert public_page.evaluate("localStorage.length") == 0
+            assert public_page.evaluate("async () => (await indexedDB.databases()).length") == 0
+            public_page.screenshot(path=str(RESULTS / "notes-public-mobile.png"), full_page=True)
+            public_context.set_offline(True)
+            expect(public_page.get_by_role("heading", name="笔记能力验收")).to_have_count(0)
+            public_context.set_offline(False)
+            public_page.goto(share_url)
+            expect(public_page.get_by_role("heading", name="笔记能力验收")).to_be_visible()
+            sharing.get_by_role("button", name="撤销链接", exact=True).click()
+            expect(sharing.get_by_role("status")).to_have_text("分享链接已撤销。")
+            public_page.reload()
+            expect(public_page.locator("main").get_by_role("alert")).to_contain_text("分享链接无效")
+            expect(public_page.get_by_role("heading", name="笔记能力验收")).to_have_count(0)
+            public_context.close()
             assert not errors, errors
-        print("笔记浏览器验收通过：摘要失败保留原文、重试成功、同篇更新、评论评分及手机布局")
+        print(
+            "笔记浏览器验收通过：摘要失败/重试、同篇更新、评论评分、匿名分享/撤销、无离线内容及手机布局"
+        )
 
 
 if __name__ == "__main__":

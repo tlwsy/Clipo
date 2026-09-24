@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
+import { NoteSharing } from "@/components/note-sharing";
 import { AppShell } from "@/components/app-shell";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
@@ -115,6 +116,7 @@ function Reader() {
           </header>
           <NoteOrganization note={note} onChange={setNote} />
           <NoteSummary noteId={note.id} onChange={setNote} />
+          <NoteSharing noteId={note.id} />
           {(note.content.capture_warnings ?? []).map((warning, index) => (
             <p className="notice" role="status" key={index}>
               {warning}
