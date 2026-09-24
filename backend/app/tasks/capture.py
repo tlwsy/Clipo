@@ -20,6 +20,7 @@ from app.services.captures import browser_content
 from app.services.settings import load_platform_cookie
 from app.tasks.backup import BackupQueue
 from app.tasks.platform_checks import PlatformCheckQueue
+from app.tasks.summary import SummaryQueue
 from app.upload_repository import UploadRepository
 
 logger = logging.getLogger("clipo.capture")
@@ -114,6 +115,7 @@ class CaptureQueue:
         self.pipeline = CapturePipeline(sessions, settings)
         self.platform_checks = PlatformCheckQueue(self.huey, sessions, settings)
         self.backups = BackupQueue(self.huey, sessions, settings)
+        self.summaries = SummaryQueue(self.huey, sessions, settings)
 
         @self.huey.task(name="clipo.capture")
         def capture(user_id: int, job_id: str):
@@ -185,3 +187,4 @@ class CaptureQueue:
                 UploadRepository(db, user_id).expire_upload(job_id)
         self.platform_checks.recover()
         self.backups.recover()
+        self.summaries.recover()

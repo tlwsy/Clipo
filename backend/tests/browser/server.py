@@ -146,6 +146,7 @@ if __name__ == "__main__":
         engine = create_db_engine(settings)
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()
+        queue.summaries.llm = OfflineModel()
         queue.recover()
         Consumer(queue.huey, workers=1).run()
     else:
