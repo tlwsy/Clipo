@@ -17,7 +17,7 @@
 5. PR 描述写清改了什么、为什么、怎么验证的。
 6. 新增源码沿用 SPDX 文件头（`SPDX-License-Identifier: AGPL-3.0-or-later`），保留第三方归属；完整许可见 `LICENSE` 与 `THIRD_PARTY_NOTICES.md`。
 
-GitHub CI 运行 lint、SQLite 全量测试、PostgreSQL 备份/迁移、契约生成一致性、静态构建、浏览器备份恢复和镜像构建。版本标签触发发布工作流，CI 成功后上传扩展 ZIP、校验和与 GHCR 镜像。新增行为请附测试，并明确真实平台待验收范围。
+GitHub CI 配置运行 lint、SQLite 全量测试、PostgreSQL 备份/笔记摘要/分享/限流/迁移、契约生成一致性、静态构建、浏览器备份恢复/摘要分享和镜像构建。Phase 7 新增步骤已通过本地同类验证，远端结果以实际 workflow 为准。版本标签触发发布工作流，CI 成功后上传扩展 ZIP、校验和与 GHCR 镜像。新增行为请附测试，并明确真实平台待验收范围。
 
 ## 最常见的贡献：新增平台适配器
 
