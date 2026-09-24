@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.api.dependencies import CurrentUser, Db
 from app.schemas.sharing import (
@@ -31,7 +31,12 @@ def list_links(note_id: int, repository: Repo) -> list[ShareResponse]:
 
 
 @router.post("/notes/{note_id}/shares", response_model=IssuedShareResponse, status_code=201)
-def create(note_id: int, payload: ShareRequest, repository: Repo) -> IssuedShareResponse:
+def create(
+    note_id: int, payload: ShareRequest, repository: Repo, request: Request
+) -> IssuedShareResponse:
+    # Commit only authentication bookkeeping before the limiter's separate transaction.
+    repository.db.commit()
+    request.app.state.note_limiter.share(repository.user_id)
     link, token = repository.create_share(note_id, payload.expires_in_days)
     return IssuedShareResponse(**ShareResponse.model_validate(link).model_dump(), token=token)
 

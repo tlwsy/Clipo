@@ -45,6 +45,8 @@ clipo/
 
 ## 本地开发
 
+Phase 7 已接入同篇笔记重新摘要、可过期/撤销的公开分享与数据库共享的访问频率保护。功能边界、接口和迁移见[笔记能力说明](docs/note-sharing.md)，阶段验收记录见[构建进度](docs/progress.md)。浏览器专项使用 `CLIPO_TEST_CHROMIUM=/path/to/chrome uv run --no-project --with playwright python scripts/smoke_notes.py`，运行前执行 `make build`；全程采用临时数据库和固定模型。
+
 推荐在仓库根目录运行（Python 3.11+、uv、Node.js 20+、npm）：
 
 ```bash

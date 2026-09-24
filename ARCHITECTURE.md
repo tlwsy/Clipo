@@ -1,6 +1,6 @@
 # Clipo 技术架构
 
-本文档描述 Clipo 的系统架构、技术选型理由和核心数据模型。总体方案作为设计基线；当前已推进至 Phase 5，实际能力与验收限制以 [构建进度](docs/progress.md) 为准。
+本文档描述 Clipo 的系统架构、技术选型理由和核心数据模型。总体方案作为设计基线；当前已推进至 Phase 7，实际能力与验收限制以 [构建进度](docs/progress.md) 为准。
 
 ## 1. 设计目标与约束
 
@@ -164,7 +164,9 @@ media_assets(id PK, note_id FK, kind, original_url, storage_key, width, height, 
 | 扩展 / Shortcut | API Token（用户在设置页生成，仅展示一次） | 长期，可撤销 |
 | 分享链接 | 无需登录，凭 token 只读单条笔记 | 可设过期 |
 
-密码使用 Argon2id 哈希。API Token 存储哈希值，校验时比对。所有写接口要求认证；分享链接接口是唯一匿名可读入口，且只返回该条笔记的公开字段。
+密码使用 Argon2id 哈希。API Token 存储哈希值，校验时比对。所有笔记修改要求认证；公开笔记通过持有分享凭据的匿名只读 POST 接口返回明确允许的字段。设置初始化、认证和元信息也有各自的匿名入口。
+
+Phase 7 重新摘要使用独立 `summary_jobs`、`summary_request_keys` 与 Huey 任务，原文不重新抓取，成功原位更新、失败保留已有有效结果；所有合并请求的键均保存，避免完成后重放再次调用模型。公开分享通过 `shared_links` 保存 256 位随机凭据的哈希及有效期，链接片段由页面提交给只读接口。`access_buckets` 提供跨进程的有界计数，保护匿名读取、分享创建和摘要提交；详细字段与边界见[笔记能力说明](docs/note-sharing.md)。
 
 ## 8. API 约定
 

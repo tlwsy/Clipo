@@ -8,7 +8,7 @@ from sqlalchemy import and_, or_, select, update
 from app.db.base import utcnow
 from app.errors import ClipoError
 from app.llm.orchestrator import SummaryResult
-from app.models import Note, SummaryJob
+from app.models import Note, SummaryJob, SummaryRequestKey
 from app.note_repository import NoteRepository
 
 ACTIVE = ("queued", "running", "retrying")
@@ -45,8 +45,12 @@ class SummaryRepository(NoteRepository):
     def submit_summary(self, note_id: int, key: str) -> SummaryJob:
         self._lock_note(note_id)
         existing = self.db.scalar(
-            select(SummaryJob).where(
-                SummaryJob.user_id == self.user_id, SummaryJob.request_key == key
+            select(SummaryJob)
+            .join(SummaryRequestKey)
+            .where(
+                SummaryJob.user_id == self.user_id,
+                SummaryRequestKey.user_id == self.user_id,
+                SummaryRequestKey.request_key == key,
             )
         )
         if existing:
@@ -61,6 +65,7 @@ class SummaryRepository(NoteRepository):
             )
         )
         if active:
+            self._remember_request(active.id, note_id, key)
             return active
         from sqlalchemy.dialects.postgresql import insert as pg_insert
         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -80,7 +85,34 @@ class SummaryRepository(NoteRepository):
         )
         if existing is None or existing.note_id != note_id:
             raise ClipoError(409, "idempotency_conflict", "此请求已用于其他笔记，请刷新后重试")
+        self._remember_request(existing.id, note_id, key)
         return existing
+
+    def _remember_request(self, job_id: str, note_id: int, key: str) -> None:
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        insert = sqlite_insert if self.db.get_bind().dialect.name == "sqlite" else pg_insert
+        self.db.execute(
+            insert(SummaryRequestKey)
+            .values(
+                user_id=self.user_id,
+                request_key=key,
+                job_id=job_id,
+            )
+            .on_conflict_do_nothing()
+        )
+        remembered = self.db.scalar(
+            select(SummaryJob)
+            .join(SummaryRequestKey)
+            .where(
+                SummaryJob.user_id == self.user_id,
+                SummaryRequestKey.user_id == self.user_id,
+                SummaryRequestKey.request_key == key,
+            )
+        )
+        if remembered is None or remembered.note_id != note_id or remembered.id != job_id:
+            raise ClipoError(409, "idempotency_conflict", "此请求已用于其他笔记，请刷新后重试")
 
     def retry_summary(self, job_id: str) -> SummaryJob:
         job = self.summary_job(job_id)

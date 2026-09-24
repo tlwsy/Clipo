@@ -34,3 +34,15 @@ class SummaryJob(Base):
     last_error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class SummaryRequestKey(Base):
+    __tablename__ = "summary_request_keys"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    request_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    job_id: Mapped[str] = mapped_column(
+        ForeignKey("summary_jobs.id", ondelete="CASCADE"), index=True
+    )

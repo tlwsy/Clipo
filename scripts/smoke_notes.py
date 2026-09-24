@@ -86,6 +86,14 @@ def main() -> None:
             page.set_viewport_size({"width": 390, "height": 844})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             page.screenshot(path=str(RESULTS / "notes-summary-mobile.png"), full_page=True)
+            response = context.request.put(
+                base + "/api/v1/settings",
+                headers={"Authorization": "Bearer " + token},
+                data={"llm": {"model": "offline-hostile"}},
+            )
+            assert response.status == 200
+            panel.get_by_role("button", name="重新生成摘要", exact=True).click()
+            expect(page.locator(".markdown")).to_contain_text("安全测试", timeout=20000)
             sharing = page.get_by_role("region", name="公开分享", exact=True)
             sharing.locator("summary").click()
             sharing.get_by_role("button", name="确认内容可公开并创建链接").click()
@@ -95,12 +103,29 @@ def main() -> None:
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             public_context = browser.new_context(viewport={"width": 390, "height": 844})
             public_page = public_context.new_page()
+            external: list[str] = []
+            public_page.on(
+                "request",
+                lambda req: external.append(req.url) if not req.url.startswith(base) else None,
+            )
             public_page.on("pageerror", lambda error: errors.append(str(error)))
             public_response = public_page.goto(share_url)
             assert public_response.headers["cache-control"] == "no-store"
             expect(public_page.get_by_role("heading", name="笔记能力验收")).to_be_visible()
             expect(public_page.locator(".markdown")).to_contain_text("给未来留一份笔记")
             expect(public_page.locator(".comment")).to_contain_text("AI 评分 0.9")
+            expect(public_page.locator(".markdown")).to_contain_text("安全测试")
+            assert public_page.evaluate("window.clipoXss") is None
+            assert (
+                public_page.locator(
+                    "article script, article img, article [onerror], article a[href^='javascript:']"
+                ).count()
+                == 0
+            )
+            assert not external, external
+            assert public_page.locator("a[target='_blank']").evaluate_all(
+                "links => links.every(link => link.rel.includes('noreferrer'))"
+            )
             assert (
                 public_page.locator("meta[name=robots]")
                 .get_attribute("content")

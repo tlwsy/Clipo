@@ -112,9 +112,17 @@ class OfflineModel:
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
         if kwargs["model"] == "offline-no-scores":
             comments = []
+        summary = "## 给未来留一份笔记\n保留来源、压缩观点，并定期回顾。"
+        if kwargs["model"] == "offline-hostile":
+            summary += (
+                "\n\n安全测试 <script>window.clipoXss=1</script>"
+                '\n<img src="https://example.com/unwanted.jpg" onerror="window.clipoXss=1">'
+                "\n[危险链接](javascript:alert%281%29)"
+                "\n![外部图片](https://example.com/remote.jpg)"
+            )
         return json.dumps(
             {
-                "summary_markdown": "## 给未来留一份笔记\n保留来源、压缩观点，并定期回顾。",
+                "summary_markdown": summary,
                 "key_points": ["保存来源与完整正文", "定期回顾并付诸行动"],
                 "suggested_tags": ["知识管理"],
                 "comment_scores": [

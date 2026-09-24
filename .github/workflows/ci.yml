@@ -35,10 +35,13 @@ jobs:
       - run: make install
       - run: make lint
       - run: make test
-      - name: PostgreSQL backup and migrations
+      - name: PostgreSQL backup, note capabilities and migrations
         run: >-
           .venv/bin/pytest backend/tests/integration/test_backups.py
           backend/tests/integration/test_backup_targets.py
+          backend/tests/integration/test_summary_jobs.py
+          backend/tests/integration/test_sharing.py
+          backend/tests/integration/test_note_limits.py
           backend/tests/integration/test_migrations.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
@@ -48,6 +51,8 @@ jobs:
         run: uv run --no-project --with playwright python -m playwright install --with-deps chromium
       - name: Browser export and empty-instance restore
         run: uv run --no-project --with playwright python scripts/smoke_backup.py
+      - name: Browser summary and public sharing
+        run: uv run --no-project --with playwright python scripts/smoke_notes.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:

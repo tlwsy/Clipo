@@ -46,7 +46,8 @@ from app.services.settings import (
 router = APIRouter(
     prefix="/api/v1",
     responses={
-        status: {"model": ErrorResponse} for status in (400, 401, 403, 404, 409, 422, 500, 503)
+        status: {"model": ErrorResponse}
+        for status in (400, 401, 403, 404, 409, 413, 422, 429, 500, 503)
     },
 )
 COOKIE_NAME = "clipo_refresh"

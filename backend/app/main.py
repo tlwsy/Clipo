@@ -15,10 +15,12 @@ from starlette.responses import Response
 
 from app import __version__
 from app.api.body_limit import CaptureBodyLimit
+from app.api.note_guard import NoteAccessGuard
 from app.api.v1.routes import router
 from app.config import Settings, get_settings
 from app.db.session import create_db_engine, session_factory
 from app.errors import ClipoError, validation_message
+from app.security.note_limits import NoteRateLimiter
 from app.services.search import SearchBackend
 from app.tasks.capture import CaptureQueue
 
@@ -29,6 +31,8 @@ def error_response(
     status: int, code: str, message: str, detail: dict | None = None
 ) -> JSONResponse:
     headers = {"WWW-Authenticate": "Bearer"} if status == 401 else None
+    if status == 429 and detail and "retry_after" in detail:
+        headers = {"Retry-After": str(detail["retry_after"])}
     return JSONResponse(
         {"error": {"code": code, "message": message, "detail": detail or {}}},
         status_code=status,
@@ -54,6 +58,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = engine
     app.state.session_factory = session_factory(engine)
+    app.state.note_limiter = NoteRateLimiter(
+        app.state.session_factory, settings.secret_key.get_secret_value()
+    )
     app.state.capture_queue = CaptureQueue(app.state.session_factory, settings)
 
     @app.exception_handler(ClipoError)
@@ -111,6 +118,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return response
 
     app.add_middleware(CaptureBodyLimit)
+    app.add_middleware(NoteAccessGuard, limiter=app.state.note_limiter)
     app.include_router(router)
 
     @app.api_route(

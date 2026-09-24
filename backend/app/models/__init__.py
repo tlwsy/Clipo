@@ -101,6 +101,7 @@ class UserSettings(Base):
 
 
 # Import every mapped table so Alembic sees the complete metadata.
+from app.models.access import AccessBucket  # noqa: E402, F401
 from app.models.backup import BackupJob  # noqa: E402, F401
 from app.models.capture import (  # noqa: E402, F401
     CaptureJob,
@@ -114,4 +115,4 @@ from app.models.capture import (  # noqa: E402, F401
     Tag,
 )
 from app.models.sharing import SharedLink  # noqa: E402, F401
-from app.models.summary import SummaryJob  # noqa: E402, F401
+from app.models.summary import SummaryJob, SummaryRequestKey  # noqa: E402, F401

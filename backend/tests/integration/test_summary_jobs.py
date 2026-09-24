@@ -95,9 +95,39 @@ def test_regenerate_in_place_preserves_content_and_organization(
     assert json.loads(model.calls[0]["messages"][1]["content"])["comments"][0]["index"] == 0
     assert client.get("/api/v1/notes?q=新的摘要", headers=auth).json()["items"][0]["id"] == note_id
     assert submit(client, auth, note_id)["id"] == job["id"]
+    assert submit(client, auth, note_id, "another")["id"] == job["id"]
     with app.state.session_factory() as db:
         assert db.scalar(select(func.count()).select_from(Note)) == 1
         assert db.get(Note, note_id).content["raw_html"] == "<p>保留快照</p>"
+
+
+def test_merged_key_cannot_be_reused_for_another_note(
+    app: FastAPI, client: TestClient, auth: dict
+) -> None:
+    first, second = seed_note(app), seed_note(app)
+    job = submit(client, auth, first, "first")
+    assert submit(client, auth, first, "merged")["id"] == job["id"]
+    response = client.post(
+        f"/api/v1/notes/{second}/summarize", headers=auth, json={"request_key": "merged"}
+    )
+    assert response.status_code == 409
+    app.state.capture_queue.summaries.run(1, job["id"])
+    assert submit(client, auth, first, "merged")["id"] == job["id"]
+
+
+def test_summary_key_migration_backfills_existing_jobs(
+    app: FastAPI, client: TestClient, auth: dict
+) -> None:
+    note_id = seed_note(app)
+    job = submit(client, auth, note_id)
+    config = Config(str(BACKEND_ROOT / "alembic.ini"))
+    with app.state.engine.begin() as connection:
+        config.attributes["connection"] = connection
+        command.downgrade(config, "0014_access_buckets")
+        command.upgrade(config, "head")
+        command.upgrade(config, "head")
+        command.check(config)
+    assert submit(client, auth, note_id)["id"] == job["id"]
 
 
 def test_missing_model_fails_then_manual_retry_and_scoring_failure_preserves_scores(

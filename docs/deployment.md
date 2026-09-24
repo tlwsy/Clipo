@@ -78,6 +78,8 @@ docker compose logs -f app
 
 ## 排障
 
+公开分享与重新摘要的请求频率在应用数据库中统一计数，超限会返回 429 和 `Retry-After`；详见[笔记能力与访问保护](note-sharing.md#访问频率保护)。反向代理仅应信任已知代理地址，避免将 `FORWARDED_ALLOW_IPS` 配置为 `*`；未配置代理信任时，多位访客可能共用代理地址的配额。分享凭据使用 POST 正文提交，不要开启请求正文记录。公开页及接口的 `no-store`、`no-referrer` 标头需透传。
+
 | 现象 | 检查方向 |
 |------|----------|
 | 提示缺少或无效的 `CLIPO_SECRET_KEY` | 在 `.env` 中填入 `openssl rand -hex 32` 的输出，保留此值 |

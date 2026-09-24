@@ -21,6 +21,9 @@ Repo = Annotated[SummaryRepository, Depends(repository)]
 
 @router.post("/notes/{note_id}/summarize", response_model=SummaryJobResponse, status_code=202)
 def submit(note_id: int, payload: SummaryRequest, repository: Repo, request: Request) -> SummaryJob:
+    # Authentication may flush API-token last_used_at; release its SQLite write lock first.
+    repository.db.commit()
+    request.app.state.note_limiter.summary(repository.user_id)
     job = repository.submit_summary(note_id, payload.request_key)
     repository.db.commit()
     if job.status == "queued":
@@ -40,6 +43,8 @@ def read(job_id: str, repository: Repo) -> SummaryJob:
 
 @router.post("/summary-jobs/{job_id}/retry", response_model=SummaryJobResponse, status_code=202)
 def retry(job_id: str, repository: Repo, request: Request) -> SummaryJob:
+    repository.db.commit()
+    request.app.state.note_limiter.summary(repository.user_id)
     job = repository.retry_summary(job_id)
     repository.db.commit()
     request.app.state.capture_queue.summaries.enqueue(repository.user_id, job.id)
