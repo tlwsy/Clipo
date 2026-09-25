@@ -58,7 +58,10 @@ def media_key(value: str) -> tuple[str, str]:
 def article_url(value: str | None) -> str | None:
     if not value:
         return None
-    parts = urlsplit(value)
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        return None
     if (
         parts.hostname == "api.xiaoheihe.cn"
         and parts.path.rstrip("/") == "/open_inapp"
@@ -292,6 +295,12 @@ def parse_body(link: dict[str, Any]) -> tuple[str, list[str], list[CapturedBlock
                     )
         if len(raw) > MAX_BLOCKS:
             parser.warn("正文内容块超过上限，已保留取得的内容；请查看原网页补充。")
+        if not any(obj(row).get("type") == "html" for row in raw):
+            # Short posts use a header gallery on the real website, although the
+            # API places the gallery inventory after the text block.
+            blocks = [block for block in blocks if block.type == "image"] + [
+                block for block in blocks if block.type != "image"
+            ]
     images = blocks_images(blocks)
     if len(images) > MAX_IMAGES:
         parser.warn("正文图片超过 1000 张，超出部分未载入。")

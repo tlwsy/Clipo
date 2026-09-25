@@ -120,7 +120,7 @@
 返回 `id`、`title`、`url`、`source`、`content`、`summary_markdown`、`key_points`、`suggested_tags`、`comments`、`status`、`summary_error`、`created_at`、`updated_at`。
 
 - `source`：平台、最终来源 URL、作者、作者 URL、发布时间；没有的元数据为 `null`。
-- `content`：统一提取结构（URL、平台、标题、完整正文 `text`、作者、发布时间、图片 URL 和评论）。`comment_capture_limit` 记录本次平台评论采集上限（0–100，0 表示关闭），历史笔记和通用网页为 `null`。数据库保留原始 HTML，但接口的 `raw_html` 始终为 `null`。
+- `content`：统一提取结构（URL、平台、标题、完整正文 `text`、作者、发布时间、图片 URL 和评论）。`blocks` 为按原文顺序排列的安全内容块，`content_version` 当前为 1；旧笔记缺省为空块，继续使用 `text` 与 `images`。`comment_capture_limit` 记录本次平台评论采集上限（0–100，0 表示关闭），历史笔记和通用网页为 `null`。数据库保留原始 HTML，但接口的 `raw_html` 始终为 `null`。
 - `summary_markdown`：AI 摘要；未生成时为 `null`，要点与建议标签为空数组。
 - `summary_error`：未配置密钥或模型失败时的可读原因，不包含供应商原始返回或密钥。
 - `comments`：小黑盒及视频适配器也按采集上限保存顶层评论/热评；小红书适配器按 `capture.max_comments` 保存页面内嵌的顶层评论（默认最多 100 条，含作者、内容、点赞及回复数），有完整 Cookie 和访问参数时补抓分页，不包含楼中楼内容。新增 `ai_score`（0–1 或 `null`）、`ai_reason`（理由或 `null`）与 `is_valuable`（评分达到采集时阈值）。初筛只选择评分候选，已采集评论全部保留且保持原始顺序；未评分不等于 0 分。通用网页提取器不提取评论。
@@ -128,6 +128,8 @@
 - `content.capture_warnings`：采集未完整完成的可读提示，例如分页缺少 Cookie/访问参数、分页预算耗尽；不会回显平台返回体。`extractor_version` 供缓存版本判定使用。
 
 图片目前只保留来源链接，不下载媒体。AI 建议会自动添加为标签；`suggested_tags` 保留模型原始建议，`tags` 为当前可管理标签。
+
+`blocks` 支持文字、标题、图片/图注、游戏卡片、引用、代码、列表、表格、折叠区与分隔线；行内文字支持链接、粗体、斜体、删除线和代码。字段定义及深度、数量、长度限制以 OpenAPI 为准，不接受任意 HTML、脚本或属性。内容直传 `payload` 同样接受 `blocks` 与 `content_version`，缺省值兼容旧扩展；服务端生成纯文本供检索和摘要使用。公开分享返回同一安全结构，JSON 导出/恢复与 Markdown 导出保留它。重新生成摘要不重新采集，旧笔记中已丢失的顺序需要重新保存来源页面才能补回。
 
 ### DELETE /notes/{id}
 

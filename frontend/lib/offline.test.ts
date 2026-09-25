@@ -86,6 +86,33 @@ function deletion(id = 1): Operation {
 }
 
 describe("account-scoped offline notes", () => {
+  it("preserves nested article blocks when reading a cached note offline", async () => {
+    const captured = note(1);
+    captured.content.blocks = [
+      {
+        type: "details",
+        text: "补充",
+        alt: "",
+        level: 2,
+        ordered: false,
+        header: false,
+        children: [
+          {
+            type: "image",
+            text: "",
+            alt: "步骤",
+            level: 2,
+            ordered: false,
+            header: false,
+            url: "https://example.com/step.png",
+          },
+        ],
+      },
+    ];
+    await saveNotes(owner.generation, [captured]);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+    expect((await loadNote(1)).content.blocks).toEqual(captured.content.blocks);
+  });
   it("retains only 50 most recent notes and ignores stale writes after switching accounts", async () => {
     await saveNotes(
       owner.generation,

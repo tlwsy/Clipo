@@ -190,7 +190,7 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     expect(page.locator(".comment").nth(1)).to_contain_text("AI 评分 0.6")
     expect(page.locator(".comment").nth(2)).to_contain_text("未评分")
     expect(page.locator(".comment").first).to_contain_text("提供了可操作的补充建议")
-    expect(page.get_by_role("link", name="查看图片")).to_have_count(2)
+    expect(page.locator(".article-content figure")).to_have_count(2)
     screenshots = ROOT / "frontend/test-results"
     page.screenshot(path=str(screenshots / "xiaohongshu-desktop.png"), full_page=True)
     page.set_viewport_size({"width": 390, "height": 844})
@@ -287,7 +287,7 @@ def check_heybox_capture(page: Page, base: str) -> None:
     expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
     job.get_by_role("link", name="阅读笔记").click()
     expect(page.get_by_role("heading", name="离线小黑盒笔记")).to_be_visible()
-    expect(page.locator(".original-text")).to_contain_text("保存游戏攻略")
+    expect(page.locator(".article-content")).to_contain_text("保存游戏攻略")
     expect(page.locator(".comment")).to_have_count(12)
     expect(page.get_by_text("已评分 2 / 12 条", exact=False)).to_be_visible()
     expect(page.locator(".comment .pill")).to_have_count(1)

@@ -1896,3 +1896,221 @@ input[aria-invalid="true"] {
   background: var(--mint);
   border-radius: 8px;
 }
+
+.article-content {
+  max-width: 100%;
+  line-height: 1.95;
+  color: #394d41;
+}
+.article-content > * + * {
+  margin-top: 18px;
+}
+.article-content .article-paragraph {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.article-content h2 {
+  font-size: 23px;
+  margin: 34px 0 18px;
+}
+.article-content h3 {
+  font-size: 19px;
+  margin: 28px 0 14px;
+}
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  margin: 22px 0 12px;
+}
+.article-content a:not(.game-card-action) {
+  color: var(--green);
+}
+.article-paragraph a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.article-content figure {
+  margin: 24px 0;
+}
+.article-image-link {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.article-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 9px;
+}
+.article-content figcaption {
+  margin: 10px auto 0;
+  font-size: 13px;
+  color: #68746c;
+  text-align: center;
+  white-space: pre-wrap;
+}
+.article-image-fallback {
+  display: inline-block;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.article-content blockquote {
+  margin: 22px 0;
+  padding: 12px 20px;
+  border-left: 3px solid #a6c4b0;
+  background: #f6f8f4;
+}
+.article-content blockquote > * + *,
+.article-content li > * + * {
+  margin-top: 10px;
+}
+.article-content ul,
+.article-content ol {
+  padding-left: 24px;
+}
+.article-content li {
+  padding: 3px 0;
+}
+.article-content pre {
+  padding: 18px;
+  background: #f4f6f3;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.article-content :not(pre) > code {
+  background: #f0f3ef;
+  border-radius: 3px;
+  padding: 2px 5px;
+}
+.article-table {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.article-table table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 14px;
+}
+.article-table th,
+.article-table td {
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  text-align: left;
+  min-width: 100px;
+}
+.article-table th {
+  background: #f3f7f0;
+}
+.article-content details {
+  border: 1px solid var(--line);
+  padding: 14px 18px;
+  border-radius: 9px;
+}
+.article-content summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.article-content details[open] summary {
+  margin-bottom: 16px;
+}
+.article-content hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 30px 0;
+}
+.article-media-notice {
+  border-radius: 9px;
+  background: #f3f7f0;
+  padding: 15px;
+  font-size: 13px;
+}
+.article-media-notice button {
+  margin-top: 8px;
+}
+.game-card {
+  display: grid;
+  grid-template-columns: minmax(120px, 38%) minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  border: 1px solid #dce5dd;
+  border-radius: 14px;
+  padding: 16px;
+  background: linear-gradient(115deg, #f0f5ed, #fafcf8);
+  margin: 24px 0;
+}
+.game-card-cover {
+  display: block;
+  min-width: 0;
+}
+.game-card-cover img {
+  width: 100%;
+  aspect-ratio: 460 / 215;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.game-card-info {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.game-card-store {
+  color: #6b7f72;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.game-card-info > strong {
+  font-size: 18px;
+  line-height: 1.45;
+}
+.game-card-info > .muted {
+  font-size: 12px;
+}
+.game-card-action {
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 4px;
+  background: var(--green);
+  color: #fff;
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.game-card-action:hover {
+  background: var(--green-dark);
+}
+.game-card-placeholder {
+  border-radius: 8px;
+  background: #e2ece1;
+  min-height: 80px;
+  display: grid;
+  place-items: center;
+  color: #748675;
+}
+@media (max-width: 560px) {
+  .game-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+  }
+  .game-card-cover img {
+    max-height: 170px;
+    object-fit: cover;
+  }
+  .game-card-info > strong {
+    font-size: 17px;
+  }
+  .article-content h2 {
+    font-size: 21px;
+  }
+}

@@ -32,3 +32,5 @@
 新版实体引用、跨页重复和不得采集的楼中楼。所有视频、作者、评论和访客标识均为虚构。
 
 `extension-generic.html`、`extension-xiaohongshu.html`、`extension-xiaoheihe.html` 是人工构造的 DOM 夹具，覆盖可见正文、排除脚本/表单、选区、图片、顶层评论及点击展开的懒加载。供 `scripts/smoke_extension.py` 加载真实扩展执行，不访问平台或使用真实 Cookie；不能证明线上平台 DOM 兼容性。
+
+`extension-heybox-rich.html` 按已观察到的小黑盒类名构造，文字、账号和链接均为虚构；由 `scripts/smoke_article.py` 验证有序正文、图注、可见 Steam 卡片、CSS 隐藏节点排除及顶层评论直传，不执行真实站点请求。

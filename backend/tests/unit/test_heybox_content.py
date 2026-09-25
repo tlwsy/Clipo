@@ -52,8 +52,8 @@ def test_text_links_newlines_stickers_and_local_upload_paths() -> None:
     ]
     body, _, blocks, _ = parse_body({"text": raw})
     assert body == "第一行[惊讶]\n第二行😉说明"
-    assert blocks[-1].alt == ""
-    assert blocks[0].inlines[-1].url == "https://example.com/"
+    assert blocks[0].type == "image" and blocks[0].alt == ""
+    assert blocks[1].inlines[-1].url == "https://example.com/"
     assert (
         article_url(
             "heybox://%7B%22protocol_type%22%3A%22openLink%22%2C%22link%22%3A%7B%22linkid%22%3A12%7D%7D"

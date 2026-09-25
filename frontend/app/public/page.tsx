@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
+import { ArticleContent } from "@/components/article-content";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 export default function PublicNotePage() {
@@ -137,24 +138,13 @@ export default function PublicNotePage() {
           )}
           <section className="original-section">
             <h2>原始正文</h2>
-            <div className="original-text">
-              {note.text || "这篇内容没有文字正文。"}
-            </div>
+            <ArticleContent
+              text={note.text}
+              blocks={note.blocks}
+              images={note.images}
+              publicView
+            />
           </section>
-          {note.images.length > 0 && (
-            <section className="original-section">
-              <h2>原文图片</h2>
-              <ul>
-                {note.images.map((url, index) => (
-                  <li key={index}>
-                    <a href={url} target="_blank" rel="noreferrer noopener">
-                      查看图片 {index + 1} ↗
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
           {note.comments.length > 0 && (
             <section className="original-section">
               <h2>评论</h2>

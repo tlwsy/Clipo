@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import { ArticleContent } from "@/components/article-content";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
 import { NoteSharing } from "@/components/note-sharing";
@@ -165,34 +166,16 @@ function Reader() {
           )}
           <section className="original-section">
             <h2>原始正文</h2>
-            <div className="original-text">
-              {note.content.text || "这篇内容没有文字正文。"}
-            </div>
+            <ArticleContent
+              text={note.content.text}
+              blocks={note.content.blocks}
+              images={note.content.images}
+            />
           </section>
           {note.content.selection && (
             <section className="original-section">
               <h2>保存时的选区</h2>
               <p className="original-text">{note.content.selection}</p>
-            </section>
-          )}
-          {(note.content.images ?? []).length > 0 && (
-            <section className="original-section">
-              <h2>原文图片</h2>
-              <p className="muted">图片链接指向原网站。</p>
-              <ul>
-                {note.content.images?.map((url, index) => (
-                  <li key={index}>
-                    <a
-                      className="text-link"
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      查看图片 {index + 1} ↗
-                    </a>
-                  </li>
-                ))}
-              </ul>
             </section>
           )}
           {(note.comments.length > 0 ||
