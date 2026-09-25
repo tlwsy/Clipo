@@ -12,6 +12,7 @@ import {
 
 import { api, errorMessage, type Schema } from "@/lib/api";
 import { captureKey } from "@/lib/share";
+import { Icon } from "@/components/icon";
 
 const statusLabels = {
   queued: "等待处理",
@@ -168,27 +169,67 @@ export function BackupSettings() {
           导出 JSON 与 Markdown
         </button>
       </div>
-      <label>
-        导入 library.json
+      <div
+        className="backup-import"
+        role="group"
+        aria-labelledby="backup-import-label"
+      >
+        <h3 id="backup-import-label">导入 library.json</h3>
         <input
           ref={input}
           type="file"
+          hidden
+          aria-label="导入 library.json"
           accept=".json,application/json"
           disabled={busy}
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
-      </label>
-      <p className="section-description">
-        选择解压后的 JSON，最多 100
-        MiB。导入会追加到当前账号；相同文件重复提交不会重复添加。完整校验失败不会写入笔记。
-      </p>
-      <button
-        className="button secondary"
-        disabled={busy || !file}
-        onClick={restore}
-      >
-        确认追加导入
-      </button>
+        <div className="backup-file-picker">
+          <button
+            type="button"
+            className="button secondary small"
+            disabled={busy}
+            onClick={() => input.current?.click()}
+          >
+            <Icon name="clip" size={16} />
+            {file ? "更换文件" : "选择 JSON 文件"}
+          </button>
+          <div className="backup-file-info" aria-live="polite">
+            <span>{file ? file.name : "尚未选择文件"}</span>
+            {file && (
+              <small>
+                {file.size < 1024 * 1024
+                  ? `${(file.size / 1024).toFixed(1)} KiB`
+                  : `${(file.size / (1024 * 1024)).toFixed(1)} MiB`}
+              </small>
+            )}
+          </div>
+          {file && (
+            <button
+              type="button"
+              className="inline-button"
+              disabled={busy}
+              onClick={() => {
+                setFile(null);
+                if (input.current) input.current.value = "";
+              }}
+            >
+              移除文件
+            </button>
+          )}
+        </div>
+        <p className="section-description">
+          选择解压后的 JSON，最多 100
+          MiB。导入会追加到当前账号；相同文件重复提交不会重复添加。完整校验失败不会写入笔记。
+        </p>
+        <button
+          className="button secondary"
+          disabled={busy || !file}
+          onClick={restore}
+        >
+          确认追加导入
+        </button>
+      </div>
       {config && (
         <form onSubmit={save}>
           <label>

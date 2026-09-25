@@ -189,18 +189,48 @@ def main() -> None:
             expect(page.get_by_role("heading", name="你的笔记.")).to_be_visible()
             page.goto(destination + "/settings/#backups")
             panel = page.locator("#backups")
-            panel.get_by_label("导入 library.json").set_input_files(
+            chooser_events = []
+            page.on("filechooser", lambda chooser: chooser_events.append(chooser))
+            picker = panel.locator(".backup-file-picker")
+            expect(panel.get_by_role("button", name="确认追加导入")).to_be_disabled()
+            panel.get_by_role("heading", name="导入 library.json").click()
+            panel.get_by_text("尚未选择文件", exact=True).click()
+            picker.click(position={"x": 3, "y": 3})
+            page.wait_for_timeout(150)
+            assert not chooser_events, "标题、文件名和容器留白不应打开文件选择器"
+            choose = panel.get_by_role("button", name="选择 JSON 文件")
+            choose.focus()
+            with page.expect_file_chooser() as selected:
+                choose.press("Enter")
+            selected.value.set_files(
                 {"name": "library.json", "mimeType": "application/json", "buffer": library}
             )
+            expect(panel.locator(".backup-file-info")).to_contain_text("library.json")
+            panel.get_by_role("button", name="移除文件").click()
+            expect(panel.get_by_text("尚未选择文件", exact=True)).to_be_visible()
+            expect(panel.get_by_role("button", name="确认追加导入")).to_be_disabled()
+            with page.expect_file_chooser() as selected:
+                choose.click()
+            selected.value.set_files(
+                {"name": "library.json", "mimeType": "application/json", "buffer": library}
+            )
+            page.set_viewport_size({"width": 390, "height": 844})
+            panel.locator(".backup-import").scroll_into_view_if_needed()
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            page.screenshot(path=str(RESULTS / "backup-file-picker-mobile.png"))
+            page.set_viewport_size({"width": 1280, "height": 900})
             panel.get_by_role("button", name="确认追加导入").click()
             expect(panel.get_by_text("导入 · 已完成", exact=True)).to_be_visible(timeout=20000)
+            expect(panel.get_by_text("尚未选择文件", exact=True)).to_be_visible()
             notes = request(destination, "/notes", destination_token)["items"]
             assert len(notes) == 1 and notes[0]["title"] == payload["payload"]["title"]
             restored = request(destination, f"/notes/{notes[0]['id']}", destination_token)
             assert restored["content"]["images"] == payload["payload"]["images"]
             assert restored["comments"][0]["likes"] == 12
             assert restored["tags"][0]["name"] == "知识管理"
-            panel.get_by_label("导入 library.json").set_input_files(
+            with page.expect_file_chooser() as selected:
+                panel.get_by_role("button", name="选择 JSON 文件").click()
+            selected.value.set_files(
                 {"name": "library.json", "mimeType": "application/json", "buffer": library}
             )
             panel.get_by_role("button", name="确认追加导入").click()
@@ -210,7 +240,7 @@ def main() -> None:
             context.close()
         shutil.copy(root / "source/server.log", RESULTS / "backup-source.log")
         print(
-            "浏览器备份验收通过：本地目标、导出下载、空实例恢复、评论/标签/媒体引用、重复导入与手机布局"
+            "浏览器备份验收通过：本地目标、导出下载、恢复、重复导入、选文件点击范围/键盘/移除与手机布局"
         )
 
 
