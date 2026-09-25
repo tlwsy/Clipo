@@ -23,6 +23,76 @@ from playwright.sync_api import Page, expect, sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def check_model_settings(page: Page) -> None:
+    card = page.locator("#llm")
+    provider = card.get_by_label("服务商预设")
+    address = card.get_by_label("Base URL")
+    model = card.get_by_label("模型名称", exact=True)
+    key = card.get_by_label("API Key")
+    fetch = card.get_by_role("button", name="获取模型列表")
+    provider.select_option("deepseek")
+    expect(address).to_have_value("https://api.deepseek.com")
+    expect(model).to_have_value("")
+    expect(fetch).to_be_disabled()
+    key.fill("offline-preview-key")
+
+    def catalog(route) -> None:
+        assert route.request.post_data_json == {
+            "base_url": "https://api.deepseek.com",
+            "api_key": "offline-preview-key",
+        }
+        route.fulfill(json={"models": ["offline-a", "offline-b"]})
+
+    page.route("**/api/v1/settings/llm/models", catalog)
+    fetch.click()
+    card.get_by_label("可用模型").select_option("offline-b")
+    expect(model).to_have_value("offline-b")
+    model.fill("manual-model")
+    expect(card.get_by_label("可用模型")).to_have_value("")
+    screenshots = ROOT / "frontend/test-results"
+    screenshots.mkdir(exist_ok=True)
+    card.screenshot(path=str(screenshots / "model-settings-desktop.png"))
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    card.screenshot(path=str(screenshots / "model-settings-mobile.png"))
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.unroute("**/api/v1/settings/llm/models")
+    page.route(
+        "**/api/v1/settings/llm/models",
+        lambda route: route.fulfill(
+            status=422, json={"error": {"message": "服务不支持获取模型列表，请手动填写模型名称"}}
+        ),
+    )
+    fetch.click()
+    expect(card.get_by_role("alert")).to_contain_text("手动填写")
+    expect(model).to_have_value("manual-model")
+    page.unroute("**/api/v1/settings/llm/models")
+    provider.select_option("custom")
+    expect(key).to_have_value("")
+    expect(card.get_by_label("可用模型")).to_have_count(0)
+    address.fill("https://custom.example/v1")
+    key.fill("offline-custom-key")
+    model.fill("custom-model")
+    card.get_by_role("button", name="保存配置", exact=True).click()
+    expect(card.locator(".notice.success")).to_be_visible()
+    page.reload()
+    expect(provider).to_have_value("custom")
+    expect(address).to_have_value("https://custom.example/v1")
+    expect(model).to_have_value("custom-model")
+    expect(key).to_have_value("")
+    page.route("**/api/v1/settings/llm/models", lambda route: route.fulfill(json={"models": []}))
+    fetch.click()
+    expect(card.get_by_role("status")).to_contain_text("空列表")
+    expect(model).to_have_value("custom-model")
+    page.unroute("**/api/v1/settings/llm/models")
+    # Restore the fixture configuration for the remaining capture checks.
+    provider.select_option("dashscope")
+    key.fill("offline-test-key")
+    model.fill("qwen-plus")
+    card.get_by_role("button", name="保存配置", exact=True).click()
+    expect(card.locator(".notice.success")).to_be_visible()
+
+
 def check_platform_settings(page: Page) -> None:
     card = page.locator("#platforms")
     xhs = card.get_by_label("小红书 Cookie", exact=True)
@@ -619,6 +689,7 @@ def main() -> None:
                     page.get_by_label("API Key").fill("offline-test-key")
                     page.get_by_role("button", name="保存配置").click()
                     expect(page.locator(".notice.success")).to_be_visible()
+                    check_model_settings(page)
                     check_platform_settings(page)
                     check_platform_probes(page)
                     check_capture_settings(page)
@@ -684,6 +755,7 @@ def main() -> None:
                                     "URL capture",
                                     "original-only note",
                                     "AI summary",
+                                    "model presets, catalog selection and manual fallback",
                                     "platform Cookie save, replace, clear and retry",
                                     "platform login checks, expired and restricted states",
                                     "Xiaohongshu login failure, Cookie retry and comment scores",

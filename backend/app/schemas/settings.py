@@ -27,6 +27,17 @@ class LlmUpdate(BaseModel):
     text_token_budget: int | None = Field(default=None, ge=100, le=100000)
 
 
+class LlmModelsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    base_url: HttpUrl | None = None
+    api_key: SecretStr | None = Field(default=None, max_length=4096)
+
+
+class LlmModelsResponse(BaseModel):
+    models: list[str]
+
+
 class PlatformCookiesUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

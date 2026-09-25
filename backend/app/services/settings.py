@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import SecretStr
 
 from app.config import Settings
+from app.errors import ClipoError
 from app.extractors.base import ExtractionError
 from app.platform_repository import PlatformCheckRepository
 from app.repositories import UserRepository
@@ -62,6 +63,19 @@ def read_settings(repository: UserRepository, settings: Settings) -> SettingsRes
 
 
 def update_llm(repository: UserRepository, payload: LlmUpdate, settings: Settings) -> None:
+    current = read_settings(repository, settings).llm
+    if "base_url" in payload.model_fields_set and settings.llm_base_url is None:
+        base_url = str(payload.base_url) if payload.base_url else LLM_DEFAULTS["base_url"]
+        if (
+            base_url.rstrip("/") != current.base_url.rstrip("/")
+            and current.api_key_set
+            and ("api_key" not in payload.model_fields_set or settings.llm_api_key is not None)
+        ):
+            raise ClipoError(
+                422,
+                "llm_key_required",
+                "更换模型服务地址时，请填写新服务的 API Key 或清除旧密钥；部署密钥需由管理员修改",
+            )
     config = dict(repository.settings().llm_config)
     for key in payload.model_fields_set:
         value = getattr(payload, key)

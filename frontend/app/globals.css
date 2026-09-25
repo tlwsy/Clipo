@@ -918,7 +918,8 @@ input[aria-invalid="true"] {
 #backups > form {
   margin-top: 24px;
 }
-#backups select {
+#backups select,
+#llm select {
   width: 100%;
   min-height: 44px;
   margin-top: 8px;
@@ -929,9 +930,26 @@ input[aria-invalid="true"] {
   color: inherit;
   font: inherit;
 }
-#backups select:focus {
+#backups select:focus,
+#llm select:focus {
   outline: 2px solid var(--green);
   outline-offset: 2px;
+}
+#llm select:disabled {
+  background: #f2f4f0;
+  color: var(--muted);
+}
+.model-discovery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.model-discovery small {
+  flex: 1 1 200px;
+  color: var(--muted);
+  font-size: 11px;
 }
 .platform-fields {
   border: 0;

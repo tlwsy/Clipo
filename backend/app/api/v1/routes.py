@@ -27,6 +27,8 @@ from app.schemas.auth import (
 )
 from app.schemas.settings import (
     CapabilitiesResponse,
+    LlmModelsRequest,
+    LlmModelsResponse,
     PlatformCheckResponse,
     PlatformChecksResponse,
     PlatformName,
@@ -36,6 +38,7 @@ from app.schemas.settings import (
 )
 from app.services import tokens as token_service
 from app.services.auth import AuthService
+from app.services.llm_models import discover_models
 from app.services.settings import (
     read_settings,
     update_capture_settings,
@@ -174,6 +177,13 @@ def put_user_settings(
     if payload.capture is not None:
         update_capture_settings(repository, payload.capture)
     return read_settings(repository, settings)
+
+
+@router.post("/settings/llm/models", response_model=LlmModelsResponse, tags=["settings"])
+def llm_models(
+    payload: LlmModelsRequest, repository: UserRepo, settings: Config
+) -> LlmModelsResponse:
+    return LlmModelsResponse(models=discover_models(repository, settings, payload))
 
 
 @router.get("/settings/platform-checks", response_model=PlatformChecksResponse, tags=["settings"])
