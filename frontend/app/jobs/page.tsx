@@ -24,6 +24,7 @@ function Queue() {
   const [busy, setBusy] = useState(true);
   const [retrying, setRetrying] = useState<string | null>(null);
   const fetching = useRef(false);
+  const retryRequest = useRef(false);
   const currentItems = useRef(items);
   const load = useCallback(async (next?: string, poll = false) => {
     if (fetching.current) return;
@@ -88,6 +89,8 @@ function Queue() {
     };
   }, [load]);
   async function retry(id: string) {
+    if (retryRequest.current) return;
+    retryRequest.current = true;
     setRetrying(id);
     setError("");
     try {
@@ -100,6 +103,7 @@ function Queue() {
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      retryRequest.current = false;
       setRetrying(null);
     }
   }
@@ -177,13 +181,17 @@ function Queue() {
                 {job.last_error}
               </p>
             )}
-            {job.status === "failed" && (
+            {(job.status === "failed" || job.status === "retrying") && (
               <button
                 className="button secondary small"
                 disabled={retrying !== null}
                 onClick={() => retry(job.job_id)}
               >
-                {retrying === job.job_id ? "提交中…" : "重新保存"}
+                {retrying === job.job_id
+                  ? "提交中…"
+                  : job.status === "retrying"
+                    ? "立即重试"
+                    : "重新保存"}
               </button>
             )}
             {job.note_id && (

@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 
-from sqlalchemy import and_, delete, or_, select, update
+from sqlalchemy import and_, case, delete, or_, select, update
 
 from app.db.base import utcnow
 from app.errors import ClipoError
@@ -129,11 +129,13 @@ class CaptureRepository(UserRepository):
             .where(
                 CaptureJob.id == job_id,
                 CaptureJob.user_id == self.user_id,
-                CaptureJob.status == "failed",
+                CaptureJob.status.in_(("failed", "retrying")),
             )
             .values(
                 status="queued",
-                attempts=0,
+                # Advancing a scheduled retry consumes the existing retry budget.
+                # Only restarting a terminal failure begins a new attempt cycle.
+                attempts=case((CaptureJob.status == "failed", 0), else_=CaptureJob.attempts),
                 last_error=None,
                 next_retry_at=None,
                 lease_expires_at=None,
@@ -142,7 +144,9 @@ class CaptureRepository(UserRepository):
             )
         )
         if result.rowcount != 1:
-            raise ClipoError(409, "job_not_failed", "只有失败任务可以重试，请刷新队列查看最新状态")
+            raise ClipoError(
+                409, "job_not_failed", "只有失败或等待重试的任务可以重试，请刷新队列查看最新状态"
+            )
         self.db.expire_all()
         return self.job(job_id)
 

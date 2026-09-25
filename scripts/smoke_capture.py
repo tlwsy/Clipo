@@ -731,6 +731,15 @@ def main() -> None:
                     page.locator(".note-card").first.click()
                     expect(page.locator(".key-points")).to_be_visible()
                     page.screenshot(path=str(screenshots / "note-detail.png"), full_page=True)
+                    page.goto(base + "/")
+                    page.get_by_label("网页链接").fill("https://example.com/retry-early")
+                    page.get_by_role("button", name="保存网页").click()
+                    early = page.locator(".job-card").filter(has_text="example.com/retry-early")
+                    expect(early.locator(".job-status.retrying")).to_be_visible(timeout=20000)
+                    expect(early).to_contain_text("下次重试")
+                    early.get_by_role("button", name="立即重试").click()
+                    expect(early.locator(".job-status.success")).to_be_visible(timeout=15000)
+                    expect(early).to_contain_text("已尝试 2 次")
                     check_xiaohongshu_capture(page, base)
                     check_comment_capture_limit(page, base)
                     check_xhs_pagination(page, base)
@@ -766,6 +775,7 @@ def main() -> None:
                                     "YouTube captions, top sort, old and modern comments",
                                     "delete",
                                     "manual retry",
+                                    "manual retry before scheduled backoff expires",
                                     "share through login",
                                     "mobile layout",
                                     "manifest and service worker",

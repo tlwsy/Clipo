@@ -26,6 +26,8 @@ attempts: dict[str, int] = {}
 
 def fetch(url: str) -> tuple[str, str]:
     attempts[url] = attempts.get(url, 0) + 1
+    if "/retry-early" in url and attempts[url] == 1:
+        raise ExtractionError("测试网页暂不可用，可以立即重试")
     if "/retry" in url and attempts[url] == 1:
         raise ExtractionError("测试网页暂时限制访问，请点击重新保存", False)
     return html, url

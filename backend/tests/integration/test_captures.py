@@ -8,11 +8,14 @@ from pathlib import Path
 import pytest
 from app.capture_repository import CaptureRepository
 from app.db.base import utcnow
+from app.errors import ClipoError
 from app.extractors import generic
 from app.extractors.base import CapturedComment, CapturedContent, ExtractionError
 from app.llm.orchestrator import SummaryResult
 from app.models import CaptureJob, Comment, ExtractionCache, Note, Source
 from app.tasks.capture import CaptureQueue
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 HTML = (Path(__file__).parents[1] / "fixtures" / "article.html").read_text()
@@ -155,6 +158,98 @@ def test_exponential_retries_exhaust_then_manual_retry(client, app, auth, monkey
         client.get(f"/api/v1/jobs/{queued['job_id']}", headers=auth).json()["status"] == "success"
     )
     assert client.post(f"/api/v1/jobs/{queued['job_id']}/retry", headers=auth).status_code == 409
+
+
+def test_retry_before_deadline_preserves_budget_and_ignores_old_dispatch(
+    client: TestClient, app: FastAPI, auth: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(url: str) -> tuple[str, str]:
+        raise ExtractionError("暂时不可用")
+
+    monkeypatch.setattr(generic, "fetch_html", fail)
+    queued = submit(client, auth)
+    queue = app.state.capture_queue
+    execute(app)
+    old_dispatch = queue.huey.dequeue()
+    assert old_dispatch is not None and old_dispatch.eta is not None
+    path = f"/api/v1/jobs/{queued['job_id']}"
+    assert client.get(path, headers=auth).json()["next_retry_at"] is not None
+    result = client.post(path + "/retry", headers=auth)
+    assert result.status_code == 202
+    assert result.json()["status"] == "queued"
+    assert result.json()["attempts"] == 1
+    assert result.json()["next_retry_at"] is None
+    assert result.json()["last_error"] is None
+    assert client.post(path + "/retry", headers=auth).status_code == 409
+    execute(app)
+    waiting = client.get(path, headers=auth).json()
+    assert waiting["status"] == "retrying" and waiting["attempts"] == 2
+    # A previous schedule firing during the new backoff cannot claim the job.
+    old_dispatch.eta = None
+    queue.huey.execute(old_dispatch)
+    assert client.get(path, headers=auth).json() == waiting
+    monkeypatch.setattr(generic, "fetch_html", lambda url: (HTML, url))
+    assert client.post(path + "/retry", headers=auth).status_code == 202
+    queue.pipeline.run(1, queued["job_id"])
+    queue.huey.execute(old_dispatch)
+    queue.pipeline.run(1, queued["job_id"])
+    assert client.get(path, headers=auth).json()["attempts"] == 3
+    assert len(client.get("/api/v1/notes", headers=auth).json()["items"]) == 1
+
+
+def test_concurrent_manual_retry_only_queues_once(
+    client: TestClient, app: FastAPI, auth: dict
+) -> None:
+    job_id = submit(client, auth)["job_id"]
+    with app.state.session_factory.begin() as db:
+        job = db.get(CaptureJob, job_id)
+        job.status = "retrying"
+        job.attempts = 2
+        job.next_retry_at = utcnow() + timedelta(minutes=8)
+
+    def retry() -> str:
+        try:
+            with app.state.session_factory.begin() as db:
+                return CaptureRepository(db, 1).retry(job_id).status
+        except ClipoError:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda _: retry(), range(2)))
+    assert sorted(results) == ["conflict", "queued"]
+    with app.state.session_factory() as db:
+        job = db.get(CaptureJob, job_id)
+        assert job.attempts == 2 and job.next_retry_at is None
+
+
+def test_manual_retry_does_not_interrupt_worker_or_cross_accounts(
+    client: TestClient, app: FastAPI, auth: dict
+) -> None:
+    job_id = submit(client, auth)["job_id"]
+    with app.state.session_factory.begin() as db:
+        repository = CaptureRepository(db, 1)
+        repository.claim(job_id, "current-worker")
+    path = f"/api/v1/jobs/{job_id}/retry"
+    assert client.post(path, headers=auth).status_code == 409
+    with app.state.session_factory.begin() as db:
+        job = db.get(CaptureJob, job_id)
+        assert job.execution_id == "current-worker" and job.status == "running"
+        CaptureRepository(db, 1).fail(job_id, "current-worker", "暂时失败", 480)
+    app.state.settings.registration_open = True
+    other = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "other",
+            "email": "other@example.com",
+            "password": "another-long-password",
+        },
+    ).json()
+    assert (
+        client.post(path, headers={"Authorization": "Bearer " + other["access_token"]}).status_code
+        == 404
+    )
+    with app.state.session_factory() as db:
+        assert db.get(CaptureJob, job_id).status == "retrying"
 
 
 def test_user_isolation_includes_cache_jobs_notes_and_api_token(client, app, auth, offline):
