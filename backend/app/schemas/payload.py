@@ -7,6 +7,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.content import CapturedBlock, bounded_blocks
 from app.security.urls import UnsafeURL, normalize_url
 
 
@@ -34,6 +35,8 @@ class CapturePayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=2000)
     text: str = Field(min_length=1, max_length=8_000_000)
+    blocks: list[CapturedBlock] = Field(default_factory=list, max_length=10000)
+    content_version: int = Field(default=1, ge=1, le=1)
     author: str | None = Field(default=None, max_length=500)
     author_url: str | None = Field(default=None, max_length=4096)
     published_at: datetime | None = None
@@ -48,6 +51,8 @@ class CapturePayload(BaseModel):
     capture_warnings: list[Annotated[str, Field(max_length=500)]] = Field(
         default_factory=list, max_length=10
     )
+
+    _blocks = field_validator("blocks", mode="before")(bounded_blocks)
 
     @field_validator("title", "text")
     @classmethod

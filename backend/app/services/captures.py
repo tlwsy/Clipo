@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from pydantic import ValidationError
 
 from app.capture_repository import CaptureRepository
+from app.content import blocks_images, blocks_text
 from app.errors import ClipoError
 from app.extractors.base import CapturedContent
 from app.models import CaptureJob
@@ -69,6 +70,12 @@ def browser_content(url: str, payload: dict, max_comments: int) -> CapturedConte
     elif host in {"xiaoheihe.cn", "www.xiaoheihe.cn", "api.xiaoheihe.cn"}:
         platform = "xiaoheihe"
     data["comments"] = data["comments"][:max_comments]
+    if data.get("blocks"):
+        from app.content import CapturedBlock
+
+        blocks = [CapturedBlock.model_validate(block) for block in data["blocks"]]
+        data["text"] = blocks_text(blocks) or data["text"]
+        data["images"] = list(dict.fromkeys([*blocks_images(blocks), *data["images"]]))
     return CapturedContent(
-        url=url, platform=platform, comment_capture_limit=max_comments, extractor_version=1, **data
+        url=url, platform=platform, comment_capture_limit=max_comments, extractor_version=2, **data
     )

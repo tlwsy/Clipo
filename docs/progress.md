@@ -1,5 +1,7 @@
 # 构建进度
 
+2026-09-25：开始小黑盒十篇真实文章还原专项；已用现有测试 Compose Cookie 访问全部样本并完成基线对照，Cookie 只读使用。首个实现节点接入有序正文结构、图注与章节、卡片元数据、旧缓存失效和直传/分享/导出恢复契约；`make lint`、`make test`、`make gen-api`、`make build` 通过（后端 418、前端 24、扩展 5 项）。阅读界面、扩展与逐篇最终验收继续进行，尚不能判定达到 90% 目标；详见 [专项记录](heybox-fidelity.md)。
+
 2026-09-24：**Phase 7 笔记能力补全的约定开发及本地验收已完成，M7 通过。** 已提供重新生成摘要、公开分享及相关访问保护；本机测试 Compose 已升级至 `0015_summary_request_keys` 并通过实际 API/worker 验证。未推送本次分支、运行远端 CI 或发布新版本；此前 Phase 5 真实平台/Edge、Android 系统分享及 YouTube 线上待验收项仍保留。详细范围见[实施计划](../IMPLEMENTATION_PLAN.md#phase-7--笔记能力补全)，使用与限制见[笔记能力说明](note-sharing.md)。
 
 ## Phase 7 阶段验收与测试部署（2026-09-24）

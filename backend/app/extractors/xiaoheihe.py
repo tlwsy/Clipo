@@ -2,25 +2,30 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Read Heybox posts and paginated top-level comments via its official web API."""
 
-import json
 import re
 import time
 from collections.abc import Callable
 from typing import Any
 from urllib.parse import parse_qs, urlencode, urlsplit
 
-from lxml import etree
-from lxml import html as lxml_html
 from pydantic import SecretStr
 
-from app.extractors.base import CapturedComment, CapturedContent, ExtractionError, LoginExpiredError
+from app.content import blocks_text, walk_blocks
+from app.extractors.base import (
+    CapturedComment,
+    CapturedContent,
+    ExtractionError,
+    LoginExpiredError,
+)
 from app.extractors.generic import PlatformRequests, ScopedCookie, fetch_html, fetch_json
+from app.extractors.heybox_content import enrich_games, parse_body, readable_emojis
 from app.extractors.heybox_sign import sign_params
-from app.extractors.structured import count, html_text, media_url, obj, text, timestamp
+from app.extractors.structured import count, html_text, obj, text, timestamp
 
 API_HOSTS = frozenset({"api.xiaoheihe.cn"})
 PAGE_HOSTS = API_HOSTS | {"www.xiaoheihe.cn", "xiaoheihe.cn"}
 TREE_PATH = "/bbs/app/link/tree"
+GAME_INFO_PATH = "/game/get_game_infos/"
 LOGIN_ERROR = "小黑盒登录态失效，请在设置中更新完整 Cookie 后重试"
 STRUCTURE_ERROR = "小黑盒帖子结构无法识别，请确认帖子可访问并反馈适配问题"
 
@@ -56,7 +61,7 @@ class HeyboxClient:
         self.requests = requests or PlatformRequests()
 
     def get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
-        if path not in (TREE_PATH, "/account/restore_login"):
+        if path not in (TREE_PATH, "/account/restore_login", GAME_INFO_PATH):
             raise ValueError("Unsupported Heybox endpoint")
         query = {
             "os_type": "web",
@@ -112,46 +117,36 @@ class HeyboxClient:
             return True
         raise ExtractionError("小黑盒未返回明确的登录状态，请重新登录后更新 Cookie", False)
 
-
-def _body(link: dict[str, Any]) -> tuple[str, list[str]]:
-    value = link.get("text")
-    try:
-        blocks = json.loads(value) if isinstance(value, str) else value
-    except ValueError:
-        blocks = None
-    if not isinstance(blocks, list):
-        return text(value), []
-    paragraphs: list[str] = []
-    images: list[str] = []
-    for block in blocks:
-        block = obj(block)
-        if block.get("type") == "html":
-            source = text(block.get("text"))
-            paragraphs.append(html_text(source))
-            if source:
-                try:
-                    tree = lxml_html.fromstring(source)
-                except (etree.ParserError, ValueError):
-                    continue
-                for value in tree.xpath("//img/@data-original|//img/@src")[:50]:
-                    image = media_url(value)
-                    if image and image not in images:
-                        images.append(image)
-        elif block.get("type") in ("text", "txt"):
-            paragraphs.append(text(block.get("text")))
-        elif block.get("type") == "img":
-            image = media_url(block.get("url"))
-            if image and image not in images:
-                images.append(image)
-    return "\n\n".join(value for value in paragraphs if value), images[:50]
+    def game_infos(self, appids: list[str]) -> dict[str, dict[str, Any]]:
+        if not appids:
+            return {}
+        result = self.get(GAME_INFO_PATH, {"appids": ",".join(appids)})
+        rows = result.get("base_infos")
+        if not isinstance(rows, list):
+            return {}
+        return {
+            str(row.get("steam_appid")): row
+            for row in rows
+            if isinstance(row, dict) and row.get("steam_appid") is not None
+        }
 
 
-def parse_heybox(result: dict[str, Any], url: str, html: str, max_comments: int) -> CapturedContent:
+def parse_heybox(
+    result: dict[str, Any],
+    url: str,
+    html: str,
+    max_comments: int,
+    games: dict[str, dict[str, Any]] | None = None,
+) -> CapturedContent:
     link = obj(result.get("link"))
     if not link:
         raise ExtractionError(STRUCTURE_ERROR, False)
     title = text(link.get("title"))
-    body, images = _body(link)
+    body, images, blocks, warnings = parse_body(link)
+    if games is not None:
+        if enrich_games(blocks, games):
+            warnings.append("部分游戏卡片未取得可靠商店信息，已保留原始卡片。")
+        body = blocks_text(blocks)
     if not (title or body or images):
         raise ExtractionError(STRUCTURE_ERROR, False)
     user = obj(link.get("user"))
@@ -159,9 +154,10 @@ def parse_heybox(result: dict[str, Any], url: str, html: str, max_comments: int)
     return CapturedContent(
         url=url,
         platform="xiaoheihe",
-        title=title[:1000],
+        title=readable_emojis(title[:1000]),
         text=body,
         images=images,
+        blocks=blocks,
         author=text(user.get("username")) or None,
         author_url=(
             f"https://www.xiaoheihe.cn/app/user/profile/{user_id}"
@@ -171,7 +167,8 @@ def parse_heybox(result: dict[str, Any], url: str, html: str, max_comments: int)
         published_at=timestamp(link.get("create_at")),
         raw_html=html,
         comment_capture_limit=max_comments,
-        extractor_version=1,
+        extractor_version=2,
+        capture_warnings=warnings,
     )
 
 
@@ -248,6 +245,23 @@ class XiaoheiheExtractor:
             if not same_share:
                 raise ExtractionError(STRUCTURE_ERROR, False)
         content = parse_heybox(first, final_url, html, self.max_comments)
+        appids = list(
+            dict.fromkeys(
+                block.appid
+                for block in walk_blocks(content.blocks)
+                if block.type == "game_card" and block.appid
+            )
+        )
+        if appids:
+            try:
+                games = client.game_infos(appids[:50])
+                if enrich_games(content.blocks, games) or len(appids) > 50:
+                    content.capture_warnings.append(
+                        "部分游戏卡片未取得可靠商店信息，已保留原始卡片。"
+                    )
+            except ExtractionError:
+                content.capture_warnings.append("游戏卡片详情暂时无法取得，正文和图片已保留。")
+            content.text = blocks_text(content.blocks)
         seen: set[str] = set()
         page = first
         deadline = time.monotonic() + 180

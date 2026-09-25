@@ -7755,6 +7755,21 @@
             "minLength": 1,
             "title": "Text"
           },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/CapturedBlock-Input"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Blocks"
+          },
+          "content_version": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Content Version",
+            "default": 1
+          },
           "author": {
             "anyOf": [
               {
@@ -7907,6 +7922,310 @@
         "type": "object",
         "title": "CaptureSettingsUpdate"
       },
+      "CapturedBlock-Input": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "heading",
+              "image",
+              "game_card",
+              "quote",
+              "code",
+              "list",
+              "list_item",
+              "table",
+              "table_row",
+              "table_cell",
+              "details",
+              "divider"
+            ],
+            "title": "Type"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1000000,
+            "title": "Text",
+            "default": ""
+          },
+          "inlines": {
+            "items": {
+              "$ref": "#/components/schemas/ContentInline"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Inlines"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/CapturedBlock-Input"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Children"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image"
+          },
+          "alt": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Alt",
+            "default": ""
+          },
+          "level": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Level",
+            "default": 2
+          },
+          "ordered": {
+            "type": "boolean",
+            "title": "Ordered",
+            "default": false
+          },
+          "header": {
+            "type": "boolean",
+            "title": "Header",
+            "default": false
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "appid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{1,12}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appid"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "steam",
+                  "epic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "CapturedBlock",
+        "description": "No HTML, CSS, scripts or arbitrary attributes are accepted."
+      },
+      "CapturedBlock-Output": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "heading",
+              "image",
+              "game_card",
+              "quote",
+              "code",
+              "list",
+              "list_item",
+              "table",
+              "table_row",
+              "table_cell",
+              "details",
+              "divider"
+            ],
+            "title": "Type"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1000000,
+            "title": "Text",
+            "default": ""
+          },
+          "inlines": {
+            "items": {
+              "$ref": "#/components/schemas/ContentInline"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Inlines"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/CapturedBlock-Output"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Children"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image"
+          },
+          "alt": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Alt",
+            "default": ""
+          },
+          "level": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Level",
+            "default": 2
+          },
+          "ordered": {
+            "type": "boolean",
+            "title": "Ordered",
+            "default": false
+          },
+          "header": {
+            "type": "boolean",
+            "title": "Header",
+            "default": false
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "appid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{1,12}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appid"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "steam",
+                  "epic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "CapturedBlock",
+        "description": "No HTML, CSS, scripts or arbitrary attributes are accepted."
+      },
       "CapturedComment": {
         "properties": {
           "author": {
@@ -8000,6 +8319,21 @@
             },
             "type": "array",
             "title": "Images"
+          },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/CapturedBlock-Output"
+            },
+            "type": "array",
+            "maxItems": 10000,
+            "title": "Blocks"
+          },
+          "content_version": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": 1.0,
+            "title": "Content Version",
+            "default": 1
           },
           "comments": {
             "items": {
@@ -8155,6 +8489,53 @@
           "code"
         ],
         "title": "ConsumePairing"
+      },
+      "ContentInline": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 1000000,
+            "title": "Text"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "bold": {
+            "type": "boolean",
+            "title": "Bold",
+            "default": false
+          },
+          "italic": {
+            "type": "boolean",
+            "title": "Italic",
+            "default": false
+          },
+          "strike": {
+            "type": "boolean",
+            "title": "Strike",
+            "default": false
+          },
+          "code": {
+            "type": "boolean",
+            "title": "Code",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ContentInline"
       },
       "ErrorBody": {
         "properties": {
@@ -9246,6 +9627,13 @@
             },
             "type": "array",
             "title": "Images"
+          },
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/CapturedBlock-Output"
+            },
+            "type": "array",
+            "title": "Blocks"
           },
           "summary_markdown": {
             "anyOf": [

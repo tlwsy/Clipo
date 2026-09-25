@@ -954,6 +954,13 @@ export interface components {
             title: string;
             /** Text */
             text: string;
+            /** Blocks */
+            blocks?: components["schemas"]["CapturedBlock-Input"][];
+            /**
+             * Content Version
+             * @default 1
+             */
+            content_version: number;
             /** Author */
             author?: string | null;
             /** Author Url */
@@ -989,6 +996,110 @@ export interface components {
         CaptureSettingsUpdate: {
             /** Max Comments */
             max_comments?: number | null;
+        };
+        /**
+         * CapturedBlock
+         * @description No HTML, CSS, scripts or arbitrary attributes are accepted.
+         */
+        "CapturedBlock-Input": {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "text" | "heading" | "image" | "game_card" | "quote" | "code" | "list" | "list_item" | "table" | "table_row" | "table_cell" | "details" | "divider";
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /** Inlines */
+            inlines?: components["schemas"]["ContentInline"][];
+            /** Children */
+            children?: components["schemas"]["CapturedBlock-Input"][];
+            /** Url */
+            url?: string | null;
+            /** Image */
+            image?: string | null;
+            /**
+             * Alt
+             * @default
+             */
+            alt: string;
+            /**
+             * Level
+             * @default 2
+             */
+            level: number;
+            /**
+             * Ordered
+             * @default false
+             */
+            ordered: boolean;
+            /**
+             * Header
+             * @default false
+             */
+            header: boolean;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+            /** Appid */
+            appid?: string | null;
+            /** Store */
+            store?: ("steam" | "epic") | null;
+        };
+        /**
+         * CapturedBlock
+         * @description No HTML, CSS, scripts or arbitrary attributes are accepted.
+         */
+        "CapturedBlock-Output": {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "text" | "heading" | "image" | "game_card" | "quote" | "code" | "list" | "list_item" | "table" | "table_row" | "table_cell" | "details" | "divider";
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /** Inlines */
+            inlines?: components["schemas"]["ContentInline"][];
+            /** Children */
+            children?: components["schemas"]["CapturedBlock-Output"][];
+            /** Url */
+            url?: string | null;
+            /** Image */
+            image?: string | null;
+            /**
+             * Alt
+             * @default
+             */
+            alt: string;
+            /**
+             * Level
+             * @default 2
+             */
+            level: number;
+            /**
+             * Ordered
+             * @default false
+             */
+            ordered: boolean;
+            /**
+             * Header
+             * @default false
+             */
+            header: boolean;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+            /** Appid */
+            appid?: string | null;
+            /** Store */
+            store?: ("steam" | "epic") | null;
         };
         /** CapturedComment */
         CapturedComment: {
@@ -1028,6 +1139,13 @@ export interface components {
             published_at?: string | null;
             /** Images */
             images?: string[];
+            /** Blocks */
+            blocks?: components["schemas"]["CapturedBlock-Output"][];
+            /**
+             * Content Version
+             * @default 1
+             */
+            content_version: number;
             /** Comments */
             comments?: components["schemas"]["CapturedComment"][];
             /** Comment Capture Limit */
@@ -1072,6 +1190,33 @@ export interface components {
              * Format: password
              */
             code: string;
+        };
+        /** ContentInline */
+        ContentInline: {
+            /** Text */
+            text: string;
+            /** Url */
+            url?: string | null;
+            /**
+             * Bold
+             * @default false
+             */
+            bold: boolean;
+            /**
+             * Italic
+             * @default false
+             */
+            italic: boolean;
+            /**
+             * Strike
+             * @default false
+             */
+            strike: boolean;
+            /**
+             * Code
+             * @default false
+             */
+            code: boolean;
         };
         /** ErrorBody */
         ErrorBody: {
@@ -1425,6 +1570,8 @@ export interface components {
             text: string;
             /** Images */
             images: string[];
+            /** Blocks */
+            blocks?: components["schemas"]["CapturedBlock-Output"][];
             /** Summary Markdown */
             summary_markdown: string | null;
             /** Key Points */

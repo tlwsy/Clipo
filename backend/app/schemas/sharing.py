@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
+from app.content import CapturedBlock
+
 
 class ShareRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -47,6 +49,7 @@ class PublicNoteResponse(BaseModel):
     published_at: datetime | None
     text: str
     images: list[str]
+    blocks: list[CapturedBlock] = Field(default_factory=list)
     summary_markdown: str | None
     key_points: list[str]
     comments: list[PublicComment]

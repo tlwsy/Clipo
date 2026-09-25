@@ -8,6 +8,7 @@ from pathlib import Path
 
 from app.backup_repository import BackupRepository
 from app.config import Settings
+from app.content import blocks_markdown
 from app.db.base import utcnow
 from app.errors import ClipoError
 from app.schemas.backup import MAX_IMPORT_BYTES
@@ -66,7 +67,11 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                     "",
                     "## 原文",
                     "",
-                    note.content.text,
+                    (
+                        blocks_markdown(note.content.blocks)
+                        if note.content.blocks
+                        else note.content.text
+                    ),
                     "",
                     "## 媒体引用",
                     "",

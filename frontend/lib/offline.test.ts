@@ -42,6 +42,7 @@ function note(id: number): Schema["NoteResponse"] {
       text: "原始正文",
       platform: "web",
       extractor_version: 1,
+      content_version: 1,
     },
     comments: [],
     summary_markdown: "摘要",

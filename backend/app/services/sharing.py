@@ -25,6 +25,7 @@ def read_public_note(repository: SharingRepository, note_id: int) -> PublicNoteR
         published_at=source.published_at,
         text=content.text,
         images=[safe for url in content.images if (safe := public_url(url)) is not None],
+        blocks=content.blocks,
         summary_markdown=note.summary_markdown,
         key_points=note.key_points,
         comments=[

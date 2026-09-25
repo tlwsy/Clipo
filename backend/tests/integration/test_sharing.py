@@ -73,6 +73,7 @@ def test_public_read_has_only_allowed_fields_and_hashed_capability(
         "published_at",
         "text",
         "images",
+        "blocks",
         "summary_markdown",
         "key_points",
         "comments",

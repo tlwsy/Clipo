@@ -219,7 +219,7 @@ class CaptureRepository(UserRepository):
         ):
             return None
         if content.platform in ("xiaohongshu", "xiaoheihe", "bilibili", "youtube"):
-            if content.platform == "xiaohongshu" and content.extractor_version < 2:
+            if content.platform in ("xiaohongshu", "xiaoheihe") and content.extractor_version < 2:
                 return None
             limit = self.capture_settings().max_comments if max_comments is None else max_comments
             # Legacy XHS cache entries were extracted with the fixed 100-comment ceiling.

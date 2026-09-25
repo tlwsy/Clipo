@@ -3,7 +3,9 @@
 from datetime import datetime
 from typing import Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.content import CapturedBlock, bounded_blocks
 
 
 class CapturedComment(BaseModel):
@@ -22,12 +24,16 @@ class CapturedContent(BaseModel):
     author_url: str | None = None
     published_at: datetime | None = None
     images: list[str] = Field(default_factory=list)
+    blocks: list[CapturedBlock] = Field(default_factory=list, max_length=10000)
+    content_version: int = Field(default=1, ge=1, le=1)
     comments: list[CapturedComment] = Field(default_factory=list)
     comment_capture_limit: int | None = Field(default=None, ge=0, le=100)
     capture_warnings: list[str] = Field(default_factory=list)
     extractor_version: int = 0
     raw_html: str | None = None
     selection: str | None = None
+
+    _blocks = field_validator("blocks", mode="before")(bounded_blocks)
 
 
 class ExtractionError(Exception):
