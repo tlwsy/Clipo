@@ -1,6 +1,13 @@
 # 构建进度
 
-2026-09-25：小黑盒十篇真实文章还原专项已接入有序正文、阅读组件、游戏卡片、扩展 DOM 结构、直传/分享/导出恢复与旧缓存失效。使用已有 Compose Cookie 访问全部样本，配置只读保留；十篇在临时 Clipo 桌面/手机阅读验证通过，63 张正文图片与 15 张卡片封面全部加载。最新 `make lint`、`make test`、`make build` 通过（后端 418、前端 28、扩展 5 项），PostgreSQL 16 专项 30 项及五个 Chromium 脚本通过。标准 Docker 重建受 Docker Hub 网络超时阻塞，本机测试部署与最终验收记录继续进行；真实平台完整扩展/Edge、Steam 商店直接访问仍待验收，详见 [专项记录](heybox-fidelity.md)。
+2026-09-25：**小黑盒十篇文章的正文与结构专项完成，每篇已验证项目达到 90/100 的保守下限**，不是像素还原率；组件/链接的其余 10 分暂不计入。新增有序正文、图注/章节、游戏卡片、阅读组件与扩展 DOM 结构，兼容直传/分享/导出恢复，旧小黑盒缓存失效。63 张正文图片与 15 张卡片封面全部加载；用户已有 Cookie 用于浏览与采集，只读保留且更新前后指纹一致。详见 [逐篇核对、计分范围与限制](heybox-fidelity.md#最终逐篇核对2026-09-25)。
+
+## 小黑盒专项最终验收（2026-09-25）
+
+- 分支 `feat/heybox-rich-content`；节点 `c61080e`（范围）、`dbadb10`（有序结构与平台解析）、`f7813cf`（阅读组件与扩展）。十篇后端结构、图片顺序、标题/作者/日期与登录态原网页对应；桌面/手机验证无横向溢出。原站表情暂为名称文字、短帖图库纵向排布，Epic 不错配 Steam；实际 Steam 页面访问受环境 DNS 限制。
+- 本次 `make gen-api`、`make lint`、`make test`、`make build` 通过；最终全量再次运行后端 **418**、前端 **28**、扩展 **5** 项通过，有两条既有依赖弃用警告。独立 PostgreSQL 16 的结构、小黑盒、直传、备份、分享与迁移 **30 项**通过。五个 Chromium 脚本 `smoke_article.py`、`smoke_capture.py`、`smoke_notes.py`、`smoke_backup.py`、`smoke_extension.py` 通过；补充表情回归后 `smoke_article.py` 再次通过。
+- 本机测试 Compose 更新并通过健康、迁移 `0015_summary_request_keys`、API/worker、十篇直传落库和浏览器卡片/分享核验；临时账号已清理，原账号加密 Cookie 配置未变。标准 Dockerfile 重建因 Docker Hub 网络超时未完成，采用现有运行镜像 + 离线 wheel + 已构建静态资源的本地替代镜像，仅验证当前依赖上的应用更新，不能当作标准镜像重建通过。
+- CI 接入正文浏览器和 PostgreSQL 专项，YAML 解析通过；本次未运行远端 CI、推送或发布。真实平台十篇 collector 对照已做；真实平台完整扩展 popup、Edge 及此前其他平台/设备待验收项仍保留。此次不重新验收评论/模型质量，图片未离线下载。
 
 2026-09-24：**Phase 7 笔记能力补全的约定开发及本地验收已完成，M7 通过。** 已提供重新生成摘要、公开分享及相关访问保护；本机测试 Compose 已升级至 `0015_summary_request_keys` 并通过实际 API/worker 验证。未推送本次分支、运行远端 CI 或发布新版本；此前 Phase 5 真实平台/Edge、Android 系统分享及 YouTube 线上待验收项仍保留。详细范围见[实施计划](../IMPLEMENTATION_PLAN.md#phase-7--笔记能力补全)，使用与限制见[笔记能力说明](note-sharing.md)。
 

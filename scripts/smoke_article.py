@@ -133,6 +133,8 @@ print(json.dumps({'title':c.title,'text':c.text,
             )
             assert "error" not in result, result
             captured = result["payload"]
+            assert captured["title"] == "结构验收[惊讶]"
+            assert "表情[惊讶]" in captured["text"]
             assert (
                 len(captured["comments"]) == 1 and captured["comments"][0]["content"] == "顶层评论"
             )

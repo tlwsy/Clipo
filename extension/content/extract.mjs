@@ -14,6 +14,14 @@ export async function collectPage(maxComments = 100, selectedText = "") {
         : "web";
     const clean = (value) => (value || "").replace(/\u0000/g, "").trim();
     const text = (node) => clean(node?.innerText || node?.textContent);
+    const emojiLabel = (node) => {
+      const value =
+        node.getAttribute("title") ||
+        node.getAttribute("aria-label") ||
+        node.getAttribute("alt") ||
+        node.dataset.emoji?.replace(/^cube_/, "");
+      return `[${clean(value) || "表情"}]`;
+    };
     const first = (root, selectors) =>
       selectors
         .flatMap((selector) => Array.from(root.querySelectorAll(selector)))
@@ -155,8 +163,14 @@ export async function collectPage(maxComments = 100, selectedText = "") {
     const content = profile ? first(root, profile.body) : root;
     if (!content || !text(content))
       throw new Error("正文尚未加载，请等待页面显示内容后重新保存");
+    const titleNode = profile ? first(root, profile.title) : null;
+    const titleCopy = titleNode?.cloneNode(true);
+    if (platform === "xiaoheihe")
+      titleCopy?.querySelectorAll(".hb-emoji").forEach((node) => {
+        node.replaceWith(emojiLabel(node));
+      });
     const title = profile
-      ? text(first(root, profile.title))
+      ? text(platform === "xiaoheihe" ? titleCopy : titleNode)
       : clean(document.title);
     if (!title) throw new Error("未找到标题，页面结构可能已变化，请更新扩展");
     const warnings = [];
@@ -314,11 +328,7 @@ export async function collectPage(maxComments = 100, selectedText = "") {
             return;
           }
           if (node.matches(".hb-emoji")) {
-            const label =
-              node.getAttribute("title") ||
-              node.getAttribute("aria-label") ||
-              node.getAttribute("alt");
-            inlines.push({ text: label ? `[${label}]` : "[表情]", ...marks });
+            inlines.push({ text: emojiLabel(node), ...marks });
             return;
           }
           if (tag === "img") {

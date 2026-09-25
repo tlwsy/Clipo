@@ -35,13 +35,16 @@ jobs:
       - run: make install
       - run: make lint
       - run: make test
-      - name: PostgreSQL backup, note capabilities and migrations
+      - name: PostgreSQL capture, backup, note capabilities and migrations
         run: >-
           .venv/bin/pytest backend/tests/integration/test_backups.py
           backend/tests/integration/test_backup_targets.py
           backend/tests/integration/test_summary_jobs.py
           backend/tests/integration/test_sharing.py
           backend/tests/integration/test_note_limits.py
+          backend/tests/integration/test_rich_content.py
+          backend/tests/integration/test_xiaoheihe_capture.py
+          backend/tests/integration/test_payload_capture.py
           backend/tests/integration/test_migrations.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
@@ -53,6 +56,8 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_backup.py
       - name: Browser summary and public sharing
         run: uv run --no-project --with playwright python scripts/smoke_notes.py
+      - name: Browser ordered articles and platform DOM
+        run: uv run --no-project --with playwright python scripts/smoke_article.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:
