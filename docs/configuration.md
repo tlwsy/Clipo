@@ -61,6 +61,8 @@ Clipo 有两层配置：**环境变量**（部署级，优先级最高）与**�
 
 已保存的密钥只在原服务地址获取列表时复用；更换服务地址时须填写新密钥或清除旧密钥后保存，避免旧凭据发往其他服务。部署环境锁定的字段继续优先使用部署值。模型列表获取仅支持公开 HTTPS、80/443 端口，不跟随重定向；私有服务仍可手动配置模型名称。自动获取通过本服务认证接口 `POST /api/v1/settings/llm/models` 代理，密钥不进入 URL 或浏览器持久化缓存。
 
+预设地址与协议参考（2026-09-25 核对）：[百炼 OpenAI 兼容接口](https://help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope)、[DeepSeek 接入说明](https://api-docs.deepseek.com/)、[硅基流动快速开始](https://docs.siliconflow.cn/docs/userguide/quickstart)与[模型列表](https://docs.siliconflow.cn/docs/api/models-get)、[OpenAI 模型列表接口](https://developers.openai.com/api/reference/resources/models/methods/list)。百炼官方说明原公共域名仍可使用，并推荐业务空间专属域名；预设不包含账号私有的业务空间 ID。
+
 | 项 | 说明 |
 |----|------|
 | Base URL | OpenAI 兼容端点。直连模型服务或指向自建 One API 网关 |
