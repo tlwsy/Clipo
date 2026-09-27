@@ -42,6 +42,8 @@ def offline_bili(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
         if path.startswith("/bfs/subtitle/"):
             assert path.endswith("chinese.json")
             return httpx.Response(200, json=fixture("bilibili-captions.json"))
+        if path == "/x/v2/reply/reply":
+            return httpx.Response(200, json={"code": 0, "data": {"replies": []}})
         if path == "/x/v2/reply":
             assert request.url.params["sort"] == "2"
             return httpx.Response(
@@ -63,7 +65,7 @@ def test_video_metadata_captions_and_hot_comment_pages(
     assert c.author_url == "https://space.bilibili.com/42" and c.published_at.year == 2024
     assert len(c.images) == 1 and len(c.comments) == 23
     assert c.comments[0].likes == 99 and c.comments[0].replies == 2
-    assert c.raw_html == HTML and c.capture_warnings == []
+    assert c.raw_html == HTML and "楼中楼分页" in c.capture_warnings[-1]
     player = next(r for r in offline_bili if r.url.path == "/x/player/wbi/v2")
     assert player.url.params["cid"] == ("200" if url.endswith("p=2") else "100")
 
@@ -141,7 +143,7 @@ def test_no_public_subtitles_is_explicit(monkeypatch: pytest.MonkeyPatch) -> Non
         bilibili.BilibiliExtractor, "api", lambda *args: {"need_login_subtitle": True}
     )
     c = bilibili.BilibiliExtractor(max_comments=0).extract(URL)
-    assert c.capture_warnings == ["字幕需要登录，已保存视频简介。"]
+    assert c.capture_warnings[0] == "字幕需要登录，已保存视频简介。"
 
 
 def test_exact_platform_matching() -> None:

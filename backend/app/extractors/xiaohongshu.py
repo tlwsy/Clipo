@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Clipo contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Parse HTML note data and collect bounded top-level comments via the read-only web API."""
+"""Parse HTML note data and collect bounded comments and replies via the read-only web API."""
 
 import json
 import re
@@ -103,27 +103,35 @@ def _comments(detail: dict[str, Any], max_comments: int) -> list[CapturedComment
     rows = _object(detail.get("comments")).get("list", [])
     if not isinstance(rows, list):
         return []
-    result = []
+    result: list[CapturedComment] = []
     seen_ids: set[str] = set()
-    for row in rows:
-        row = _object(row)
+    stack = [(row, None) for row in reversed(rows)]
+    visited = 0
+    while stack and len(result) < max_comments and visited < 10000:
+        raw, parent = stack.pop()
+        visited += 1
+        row = _object(raw)
         text = _text(row.get("content"))
-        identifier = _text(row.get("id"))
+        identifier = _text(row.get("id"))[:200]
+        children = row.get("subComments", row.get("sub_comments", []))
+        if isinstance(children, list):
+            stack.extend((child, identifier or parent) for child in reversed(children))
         if not text or (identifier and identifier in seen_ids):
             continue
         if identifier:
             seen_ids.add(identifier)
         user = _object(row.get("userInfo") or row.get("user_info"))
+        target = _object(row.get("targetComment") or row.get("target_comment"))
         result.append(
             CapturedComment(
+                source_id=identifier or None,
+                parent_source_id=_text(target.get("id"))[:200] or parent,
                 author=_text(user.get("nickname")) or None,
                 content=text,
                 likes=_count(row.get("likeCount", row.get("like_count"))),
                 replies=_count(row.get("subCommentCount", row.get("sub_comment_count"))),
             )
         )
-        if len(result) == max_comments:
-            break
     return result
 
 
@@ -186,7 +194,7 @@ def parse_xiaohongshu(html: str, url: str, *, max_comments: int = MAX_COMMENTS) 
         images=images,
         comments=_comments(detail, max_comments),
         comment_capture_limit=max_comments,
-        extractor_version=2,
+        extractor_version=3,
         raw_html=html,
     )
 
@@ -225,8 +233,6 @@ class XiaohongshuExtractor:
         state = _initial_state(lxml_html.fromstring(html))
         detail = _object(_object(_object(state.get("note")).get("noteDetailMap")).get(note_id))
         embedded = _object(detail.get("comments"))
-        if embedded.get("hasMore") is False or embedded.get("has_more") is False:
-            return content
         token = parse_qs(parts.query).get("xsec_token", [""])[0]
         if not secret or not token:
             content.capture_warnings.append(
@@ -239,8 +245,13 @@ class XiaohongshuExtractor:
         cursor = _text(embedded.get("cursor"))
         visited: set[str] = set()
         deadline = time.monotonic() + 180
+        reply_budget = [10]
+        self.collect_replies(content, rows, client, note_id, token, deadline, reply_budget)
         # API pagination may repeat rows or cursors; bound pages and elapsed time independently.
+        top_complete = embedded.get("hasMore") is False or embedded.get("has_more") is False
         for _ in range(10):
+            if top_complete or len(content.comments) >= self.max_comments:
+                break
             if cursor in visited or time.monotonic() >= deadline:
                 break
             visited.add(cursor)
@@ -248,12 +259,63 @@ class XiaohongshuExtractor:
             comments = page.get("comments")
             if not isinstance(comments, list) or type(page.get("has_more")) is not bool:
                 raise ExtractionError("小红书评论结构已变化，请反馈适配问题", False)
-            rows.extend(row for row in comments if isinstance(row, dict))
+            additions = [row for row in comments if isinstance(row, dict)]
+            rows.extend(additions)
             content.comments = _comments({"comments": {"list": rows}}, self.max_comments)
-            if len(content.comments) >= self.max_comments or page["has_more"] is False:
-                return content
+            self.collect_replies(content, rows, client, note_id, token, deadline, reply_budget)
+            top_complete = page["has_more"] is False
+            if len(content.comments) >= self.max_comments or top_complete:
+                break
             cursor = _text(page.get("cursor"))
             if not cursor:
                 break
-        content.capture_warnings.append("评论分页提前结束，已保留取得的评论；可稍后重新采集。")
+        if not top_complete and len(content.comments) < self.max_comments:
+            content.capture_warnings.append("评论分页提前结束，已保留取得的评论；可稍后重新采集。")
         return content
+
+    def collect_replies(
+        self,
+        content: CapturedContent,
+        rows: list[dict[str, Any]],
+        client: XhsClient,
+        note_id: str,
+        token: str,
+        deadline: float,
+        budget: list[int] | None = None,
+    ) -> None:
+        budget = [10] if budget is None else budget
+        for row in rows:
+            root_id = _text(row.get("id"))
+            children = row.get("subComments", row.get("sub_comments", []))
+            children = list(children) if isinstance(children, list) else []
+            count = _count(row.get("subCommentCount", row.get("sub_comment_count")))
+            more = row.get("subCommentHasMore", row.get("sub_comment_has_more"))
+            if not root_id or more is False or count <= len(children):
+                continue
+            cursor = _text(row.get("subCommentCursor", row.get("sub_comment_cursor")))
+            visited: set[str] = set()
+            try:
+                while len(content.comments) < self.max_comments:
+                    if budget[0] <= 0 or time.monotonic() >= deadline or cursor in visited:
+                        content.capture_warnings.append(
+                            "部分楼中楼回复未完整取得，已保留采集结果。"
+                        )
+                        return
+                    visited.add(cursor)
+                    budget[0] -= 1
+                    page = client.replies(note_id, root_id, token, cursor)
+                    additions = page.get("comments")
+                    if not isinstance(additions, list) or type(page.get("has_more")) is not bool:
+                        raise ExtractionError("小红书回复结构无法识别", False)
+                    children.extend(additions)
+                    row["subComments"] = children
+                    content.comments = _comments({"comments": {"list": rows}}, self.max_comments)
+                    if not page["has_more"]:
+                        row["subCommentHasMore"] = False
+                        break
+                    cursor = _text(page.get("cursor"))
+                    if not cursor:
+                        raise ExtractionError("小红书回复分页游标缺失", False)
+            except ExtractionError:
+                content.capture_warnings.append("部分楼中楼回复未完整取得，已保留采集结果。")
+                return

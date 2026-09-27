@@ -54,10 +54,13 @@ def test_export_import_roundtrip_preserves_library_and_is_idempotent(
             "selection": "摘录",
         }
         note.summary_markdown, note.is_favorite = "**摘要**", True
+        note.comment_insights = [{"text": "评论中的具体建议", "indices": [0]}]
         db.add(
             Comment(
                 note_id=note_id,
                 content="有价值的评论",
+                source_id="reply",
+                parent_source_id="root",
                 author="作者",
                 likes=9,
                 replies=2,
@@ -98,12 +101,14 @@ def test_export_import_roundtrip_preserves_library_and_is_idempotent(
             "is_favorite",
             "summary_error",
             "comment_score_error",
+            "comment_insights",
             "created_at",
             "updated_at",
         ):
             assert getattr(restored, field) == getattr(original, field)
         assert {tag.name for tag in repository.list_tags()} == {"中文标签", "未使用标签"}
         comment = repository.comments(ids[0])[0]
+        assert comment.source_id == "reply" and comment.parent_source_id == "root"
         assert comment.ai_score == 0.9 and comment.is_valuable and comment.likes == 9
     again = client.post("/api/v1/backups/imports", headers=other_auth, json=archive).json()
     assert again["id"] == imported["id"]

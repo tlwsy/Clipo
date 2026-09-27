@@ -57,11 +57,16 @@ class Note(Base):
     is_favorite: Mapped[bool] = mapped_column(default=False, server_default=false())
     summary_error: Mapped[str | None] = mapped_column(Text)
     comment_score_error: Mapped[str | None] = mapped_column(Text)
+    comment_insights: Mapped[list[dict[str, Any]]] = mapped_column(
+        json_type, default=list, server_default="[]"
+    )
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class Comment(Base):
+    source_id: Mapped[str | None] = mapped_column(String(200))
+    parent_source_id: Mapped[str | None] = mapped_column(String(200))
     __tablename__ = "comments"
 
     id: Mapped[int] = mapped_column(primary_key=True)

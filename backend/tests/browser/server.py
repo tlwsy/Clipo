@@ -85,6 +85,8 @@ def bili_json(url: str, **kwargs: object) -> dict[str, Any]:
     parts = urlsplit(url)
     if parts.path == "/x/player/wbi/v2":
         name = "bilibili-player.json"
+    elif parts.path == "/x/v2/reply/reply":
+        return {"code": 0, "data": {"replies": []}}
     elif parts.path == "/x/v2/reply":
         name = f"bilibili-comments{parse_qs(parts.query)['pn'][0]}.json"
     elif parts.path.startswith("/bfs/subtitle/"):
@@ -103,6 +105,8 @@ def youtube_json(url: str, **kwargs: Any) -> dict[str, Any]:
         name = "youtube-captions.json"
     else:
         token = kwargs["json_body"]["continuation"]
+        if token == "reply-only":
+            return {}
         if token not in ("initial", "top", "page2"):
             raise AssertionError("Unexpected offline comment cursor")
         name = f"youtube-comments-{token}.json"
@@ -127,6 +131,11 @@ class OfflineModel:
                 "summary_markdown": summary,
                 "key_points": ["保存来源与完整正文", "定期回顾并付诸行动"],
                 "suggested_tags": ["知识管理"],
+                "comment_insights": (
+                    [{"text": "评论建议保存来源并保留操作步骤。", "indices": [0]}]
+                    if any(row["index"] == 0 for row in comments)
+                    else []
+                ),
                 "comment_scores": [
                     {
                         "index": row["index"],
@@ -144,6 +153,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "worker":
         generic.fetch_html = fetch
         xiaohongshu.fetch_html = fetch_xiaohongshu
+        XhsClient.replies = lambda *args: {"comments": [], "has_more": False}
         XhsClient.comments = xhs_comments
         XhsClient.check_login = xhs_login
         xiaoheihe.fetch_html = fetch_heybox

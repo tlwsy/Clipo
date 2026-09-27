@@ -77,6 +77,7 @@ def test_public_read_has_only_allowed_fields_and_hashed_capability(
         "summary_markdown",
         "key_points",
         "comments",
+        "comment_insights",
     }
     assert response.json()["comments"][0]["ai_score"] == 0.9
     assert "id" not in response.json()["comments"][0]

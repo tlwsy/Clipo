@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from app.content import CapturedBlock
+from app.llm.orchestrator import CommentInsight
 
 
 class ShareRequest(BaseModel):
@@ -52,4 +53,5 @@ class PublicNoteResponse(BaseModel):
     blocks: list[CapturedBlock] = Field(default_factory=list)
     summary_markdown: str | None
     key_points: list[str]
+    comment_insights: list[CommentInsight] = Field(default_factory=list)
     comments: list[PublicComment]

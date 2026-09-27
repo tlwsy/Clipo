@@ -108,7 +108,7 @@ class BilibiliExtractor:
             images=[image] if image else [],
             raw_html=html,
             comment_capture_limit=self.max_comments,
-            extractor_version=1,
+            extractor_version=2,
         )
         self.captions(content, aid, cid, requests)
         if self.max_comments:
@@ -167,7 +167,10 @@ class BilibiliExtractor:
 
     def comments(self, content: CapturedContent, aid: str, requests: PlatformRequests) -> None:
         seen: set[str] = set()
+        reply_budget = [10]
         deadline = time.monotonic() + 180
+        rows: list[dict[str, Any]] = []
+        page = 0
         try:
             for page in range(1, 6):
                 data = self.api(
@@ -177,11 +180,20 @@ class BilibiliExtractor:
                 )
                 rows = data.get("replies")
                 if rows is None:
-                    return
+                    break
                 if not isinstance(rows, list):
                     raise ExtractionError("评论结构无法识别，请反馈适配问题", False)
-                for row in rows:
-                    row = obj(row)
+                roots = [obj(row) for row in rows]
+                stack = [(row, None) for row in reversed(rows)]
+                visited = 0
+                while stack and visited < 10000:
+                    raw, parent = stack.pop()
+                    visited += 1
+                    row = obj(raw)
+                    source_id = identifier(row.get("rpid"))
+                    children = row.get("replies", [])
+                    if isinstance(children, list):
+                        stack.extend((child, source_id or parent) for child in reversed(children))
                     body = text(obj(row.get("content")).get("message"))
                     key = identifier(row.get("rpid")) or body
                     if not body or key in seen:
@@ -189,6 +201,81 @@ class BilibiliExtractor:
                     seen.add(key)
                     content.comments.append(
                         CapturedComment(
+                            source_id=source_id or None,
+                            parent_source_id=identifier(row.get("parent")) or parent,
+                            author=text(obj(row.get("member")).get("uname")) or None,
+                            content=body,
+                            likes=count(row.get("like")),
+                            replies=count(row.get("rcount")),
+                        )
+                    )
+                    if len(content.comments) >= self.max_comments:
+                        return
+                self.collect_replies(content, aid, roots, seen, requests, deadline, reply_budget)
+                if len(content.comments) >= self.max_comments:
+                    return
+                total = obj(data.get("page")).get("count")
+                if len(rows) < 20 or (type(total) is int and page * 20 >= total):
+                    break
+                if time.monotonic() >= deadline:
+                    break
+            if len(rows or []) >= 20 and page == 5:
+                content.capture_warnings.append("热评分页达到请求上限，已保留取得的评论及回复。")
+        except ExtractionError as exc:
+            content.capture_warnings.append(f"热评未完整取得：{exc}；已有内容已保存。")
+
+    def collect_replies(
+        self,
+        content: CapturedContent,
+        aid: str,
+        roots: list[dict[str, Any]],
+        seen: set[str],
+        requests: PlatformRequests,
+        deadline: float,
+        budget: list[int] | None = None,
+    ) -> None:
+        budget = [10] if budget is None else budget
+        for root in roots:
+            root_id = identifier(root.get("rpid"))
+            embedded = root.get("replies") or []
+            if not root_id or count(root.get("rcount")) <= len(embedded):
+                continue
+            for page in range(1, 6):
+                if len(content.comments) >= self.max_comments:
+                    return
+                if budget[0] <= 0 or time.monotonic() >= deadline:
+                    content.capture_warnings.append("B 站楼中楼分页达到请求上限，部分回复未取得。")
+                    return
+                budget[0] -= 1
+                data = self.api(
+                    "/x/v2/reply/reply",
+                    {
+                        "oid": aid,
+                        "type": "1",
+                        "root": root_id,
+                        "pn": str(page),
+                        "ps": "20",
+                    },
+                    requests,
+                )
+                rows = data.get("replies")
+                if rows is None:
+                    break
+                if not isinstance(rows, list):
+                    raise ExtractionError("B 站回复结构无法识别", False)
+                added = 0
+                for raw in rows:
+                    row = obj(raw)
+                    key = identifier(row.get("rpid"))
+                    body = text(obj(row.get("content")).get("message"))
+                    if not key or not body or key in seen:
+                        continue
+                    seen.add(key)
+                    added += 1
+                    content.comments.append(
+                        CapturedComment(
+                            source_id=key,
+                            parent_source_id=identifier(row.get("parent")) or root_id,
                             author=text(obj(row.get("member")).get("uname")) or None,
                             content=body,
                             likes=count(row.get("like")),
@@ -199,9 +286,7 @@ class BilibiliExtractor:
                         return
                 total = obj(data.get("page")).get("count")
                 if len(rows) < 20 or (type(total) is int and page * 20 >= total):
-                    return
-                if time.monotonic() >= deadline:
                     break
-            content.capture_warnings.append("热评分页达到请求上限，已保留取得的顶层评论。")
-        except ExtractionError as exc:
-            content.capture_warnings.append(f"热评未完整取得：{exc}；已有内容已保存。")
+                if page > 1 and not added:
+                    content.capture_warnings.append("B 站回复分页重复，已保留取得的评论。")
+                    break

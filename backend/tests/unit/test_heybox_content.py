@@ -158,4 +158,4 @@ def test_game_info_failure_does_not_lose_article(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(HeyboxClient, "game_infos", fail)
     content = XiaoheiheExtractor(max_comments=0).extract(url)
     assert "重要正文" in content.text and content.capture_warnings
-    assert content.extractor_version == 2
+    assert content.extractor_version == 3

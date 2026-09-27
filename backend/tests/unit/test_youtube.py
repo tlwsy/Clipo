@@ -43,6 +43,8 @@ def offline_youtube(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
         body = json.loads(request.content)
         assert body["context"]["client"]["clientName"] == "WEB"
         token = body["continuation"]
+        if token == "reply-only":
+            return httpx.Response(200, json={})
         assert token in ("initial", "top", "page2")
         return httpx.Response(200, json=fixture(f"youtube-comments-{token}.json"))
 
@@ -70,25 +72,23 @@ def test_metadata_captions_hot_sort_both_comment_schemas(
         and "字幕（en，自动字幕）" in c.text
         and "First save the source." in c.text
     )
-    assert len(c.images) == 1 and len(c.comments) == 3
+    assert len(c.images) == 1 and len(c.comments) == 4
     assert c.comments[0].content == "A useful comment 1 with practical details."
     assert c.comments[0].likes == 1234 and c.comments[0].replies == 2
     assert (
-        c.comments[2].likes == 42
-        and c.comments[2].replies == 3
-        and c.comments[2].author == "Viewer 3"
+        c.comments[3].likes == 42
+        and c.comments[3].replies == 3
+        and c.comments[3].author == "Viewer 3"
     )
     assert c.capture_warnings == [] and c.raw_html == HTML
-    assert len(offline_youtube) == 5
+    assert len(offline_youtube) == 6
 
 
 @pytest.mark.parametrize("limit", [0, 1, 2, 3])
 def test_comment_limits_and_disable(offline_youtube: list[httpx.Request], limit: int) -> None:
     c = youtube.YoutubeExtractor(max_comments=limit).extract(URL)
     assert len(c.comments) == limit and c.comment_capture_limit == limit
-    assert sum(r.method == "POST" for r in offline_youtube) == (
-        0 if limit == 0 else 2 if limit <= 2 else 3
-    )
+    assert sum(r.method == "POST" for r in offline_youtube) == (0 if limit == 0 else 2)
 
 
 @pytest.mark.parametrize(
@@ -171,11 +171,11 @@ def test_comment_loop_is_bounded_and_partial_results_kept(
 
     def next_page(self: object, token: str, config: dict, requests: object) -> dict:
         calls.append(token)
-        return fixture("youtube-comments-top.json")
+        return {} if token == "reply-only" else fixture("youtube-comments-top.json")
 
     monkeypatch.setattr(youtube.YoutubeExtractor, "next_page", next_page)
     c = youtube.YoutubeExtractor().extract(URL)
-    assert len(c.comments) == 2 and len(calls) == 2 and "提前结束" in c.capture_warnings[-1]
+    assert len(c.comments) == 3 and len(calls) == 3 and "提前结束" in c.capture_warnings[-1]
 
 
 @pytest.mark.parametrize("status", [302, 403, 429])
@@ -226,5 +226,5 @@ def test_changed_comment_schema_is_reported_without_discarding_prior_comments(
 
     monkeypatch.setattr(youtube.YoutubeExtractor, "next_page", page)
     content = youtube.YoutubeExtractor().extract(URL)
-    assert len(content.comments) == 2 and content.title
+    assert len(content.comments) == 3 and content.title
     assert "评论结构无法识别" in content.capture_warnings[-1]

@@ -251,14 +251,15 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     expect(page.get_by_role("heading", name="离线采集笔记")).to_be_visible()
     expect(page.locator(".reader-meta")).to_contain_text("离线作者")
     expect(page.locator(".original-text")).to_contain_text("保留正文与来源")
-    expect(page.locator(".comment")).to_have_count(10)
-    expect(page.locator(".comment").first).to_contain_text("12 赞 · 2 回复")
-    expect(page.get_by_text("采集到的评论可能不完整。", exact=True)).to_be_visible()
-    expect(page.get_by_text("已评分 2 / 10 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment")).to_have_count(9)
+    expect(page.locator(".comment").first).to_contain_text("12 赞")
+    expect(page.get_by_text("受平台和采集上限影响", exact=False)).to_be_visible()
+    expect(page.get_by_text("已采集 10 条（含回复），1 条优质评论", exact=False)).to_be_visible()
     expect(page.locator(".comment .pill")).to_have_count(1)
-    expect(page.locator(".comment").first).to_contain_text("AI 评分 0.9")
-    expect(page.locator(".comment").nth(1)).to_contain_text("AI 评分 0.6")
-    expect(page.locator(".comment").nth(2)).to_contain_text("未评分")
+    expect(page.locator(".comment").first).to_contain_text("AI 评分 90 / 100")
+    expect(page.get_by_text("AI 评分 60 / 100", exact=False)).to_have_count(0)
+    expect(page.get_by_role("heading", name="AI 评论精华")).to_be_visible()
+    expect(page.locator(".comment").nth(2)).to_contain_text("尚未评分")
     expect(page.locator(".comment").first).to_contain_text("提供了可操作的补充建议")
     expect(page.locator(".article-content figure")).to_have_count(2)
     screenshots = ROOT / "frontend/test-results"
@@ -285,7 +286,7 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
     ).to_be_visible()
     expect(page.locator(".comment")).to_have_count(10)
     expect(page.locator(".comment .pill")).to_have_count(0)
-    expect(page.get_by_text("已评分 0 / 10 条", exact=False)).to_be_visible()
+    expect(page.get_by_text("已采集 10 条（含回复），0 条优质评论", exact=False)).to_be_visible()
 
 
 def check_comment_capture_limit(page: Page, base: str) -> None:
@@ -308,14 +309,16 @@ def check_comment_capture_limit(page: Page, base: str) -> None:
         job = page.locator(".job-card").filter(has_text=url).first
         expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
         job.get_by_role("link", name="阅读笔记").click()
-        expect(page.locator(".comment")).to_have_count(limit)
+        expect(page.locator(".comment")).to_have_count(max(0, limit - 1))
         expect(page.locator(".markdown")).to_be_visible()
         expect(page.locator(".original-text")).to_contain_text("保留正文与来源")
         if limit:
-            expect(page.get_by_text(f"本次评论采集上限：{limit} 条。")).to_be_visible()
-            expect(page.get_by_text(f"已评分 2 / {limit} 条", exact=False)).to_be_visible()
+            expect(page.get_by_text(f"本次评论采集上限：{limit} 条（含回复）。")).to_be_visible()
+            expect(
+                page.get_by_text(f"已采集 {limit} 条（含回复），1 条优质评论", exact=False)
+            ).to_be_visible()
         else:
-            expect(page.get_by_text("本次已关闭评论采集，帖子内容已保存。")).to_be_visible()
+            expect(page.get_by_text("本次已关闭评论采集。", exact=False)).to_be_visible()
             expect(page.get_by_text("未生成评论评分", exact=False)).to_have_count(0)
             page.set_viewport_size({"width": 390, "height": 844})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -327,8 +330,8 @@ def check_comment_capture_limit(page: Page, base: str) -> None:
         if limit == 3:
             original_note_url = page.url
     page.goto(original_note_url)
-    expect(page.locator(".comment")).to_have_count(3)
-    expect(page.get_by_text("本次评论采集上限：3 条。")).to_be_visible()
+    expect(page.locator(".comment")).to_have_count(2)
+    expect(page.get_by_text("本次评论采集上限：3 条（含回复）。")).to_be_visible()
 
 
 def check_xhs_pagination(page: Page, base: str) -> None:
@@ -342,9 +345,8 @@ def check_xhs_pagination(page: Page, base: str) -> None:
     job = page.locator(".job-card").filter(has_text="https://xhslink.cn/o/offline").first
     expect(job.locator(".job-status.success")).to_be_visible(timeout=20000)
     job.get_by_role("link", name="阅读笔记").click()
-    expect(page.locator(".comment")).to_have_count(12)
-    expect(page.locator(".comment").nth(10)).to_contain_text("分页读者")
-    expect(page.get_by_text("已评分 2 / 12 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment")).to_have_count(11)
+    expect(page.get_by_text("已采集 12 条（含回复），1 条优质评论", exact=False)).to_be_visible()
     expect(page.locator(".comment .pill")).to_have_count(1)
 
 
@@ -358,8 +360,8 @@ def check_heybox_capture(page: Page, base: str) -> None:
     job.get_by_role("link", name="阅读笔记").click()
     expect(page.get_by_role("heading", name="离线小黑盒笔记")).to_be_visible()
     expect(page.locator(".article-content")).to_contain_text("保存游戏攻略")
-    expect(page.locator(".comment")).to_have_count(12)
-    expect(page.get_by_text("已评分 2 / 12 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment")).to_have_count(11)
+    expect(page.get_by_text("已采集 12 条（含回复），1 条优质评论", exact=False)).to_be_visible()
     expect(page.locator(".comment .pill")).to_have_count(1)
     page.set_viewport_size({"width": 390, "height": 844})
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -377,8 +379,8 @@ def check_bilibili_capture(page: Page, base: str) -> None:
     job.get_by_role("link", name="阅读笔记").click()
     expect(page.get_by_role("heading", name="离线视频笔记")).to_be_visible()
     expect(page.locator(".original-text")).to_contain_text("字幕（中文）")
-    expect(page.locator(".comment")).to_have_count(23)
-    expect(page.get_by_text("已评分 2 / 23 条", exact=False)).to_be_visible()
+    expect(page.locator(".comment")).to_have_count(22)
+    expect(page.get_by_text("已采集 23 条（含回复），1 条优质评论", exact=False)).to_be_visible()
 
 
 def check_youtube_capture(page: Page, base: str) -> None:
@@ -393,7 +395,7 @@ def check_youtube_capture(page: Page, base: str) -> None:
     expect(page.locator(".original-text")).to_contain_text("First save the source.")
     expect(page.locator(".original-text")).to_contain_text("字幕（en，自动字幕）")
     expect(page.locator(".comment")).to_have_count(3)
-    expect(page.get_by_text("已评分 2 / 3 条", exact=False)).to_be_visible()
+    expect(page.get_by_text("已采集 4 条（含回复），1 条优质评论", exact=False)).to_be_visible()
     expect(page.locator(".comment").last).to_contain_text("Modern comment")
     page.set_viewport_size({"width": 390, "height": 844})
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")

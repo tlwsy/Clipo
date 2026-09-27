@@ -33,6 +33,10 @@ def requests(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
         assert request.headers["x-s"].startswith("XYS_")
         assert request.headers["x-t"].isdigit()
         assert request.headers["x-s-common"]
+        if request.url.path.endswith("/sub/page"):
+            return httpx.Response(
+                200, json={"success": True, "data": {"comments": [], "has_more": False}}
+            )
         cursor = request.url.params["cursor"]
         fixture = (
             "xiaohongshu-comments-page2.json"
@@ -53,7 +57,11 @@ def test_signed_pagination_keeps_html_comments_and_merges_unique_api_rows(
     assert content.comments[10].author == "分页读者"
     assert content.comments[10].likes == 15 and content.comments[10].replies == 2
     assert content.capture_warnings == [] and content.raw_html == HTML
-    assert [request.url.params["cursor"] for request in requests] == ["offline-cursor", "page2"]
+    assert [
+        request.url.params["cursor"]
+        for request in requests
+        if not request.url.path.endswith("/sub/page")
+    ] == ["offline-cursor", "page2"]
     assert all(request.url.params["note_id"] == "64abc123" for request in requests)
     assert len({request.headers["user-agent"] for request in requests}) == 1
 
@@ -64,7 +72,9 @@ def test_pagination_stops_at_capture_limit(
 ) -> None:
     content = xiaohongshu.XiaohongshuExtractor(lambda _: COOKIE, max_comments=limit).extract(URL)
     assert len(content.comments) == limit
-    assert len(requests) == expected_requests
+    assert (
+        sum(not request.url.path.endswith("/sub/page") for request in requests) == expected_requests
+    )
 
 
 @pytest.mark.parametrize("cookie,token", [(None, "offline"), (COOKIE, "")])

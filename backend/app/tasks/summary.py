@@ -56,6 +56,8 @@ class SummaryQueue:
                     update={
                         "comments": [
                             CapturedComment(
+                                source_id=row.source_id,
+                                parent_source_id=row.parent_source_id,
                                 author=row.author,
                                 content=row.content,
                                 likes=row.likes,

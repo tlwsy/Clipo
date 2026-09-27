@@ -2166,3 +2166,44 @@ input[aria-invalid="true"] {
     font-size: 21px;
   }
 }
+
+.comment-thread {
+  border-left: 3px solid var(--border, #d6dce5);
+  padding-left: 1rem;
+  margin: 1.25rem 0;
+}
+.comment-thread .comment + .comment {
+  margin-left: 1rem;
+}
+.comment-heading {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.comment-heading small {
+  margin-left: auto;
+}
+.comment-insights {
+  padding: 1rem;
+  border: 1px solid var(--border, #d6dce5);
+  border-radius: 12px;
+}
+.comment-source {
+  display: inline-block;
+  margin: 0 0.4rem;
+}
+.unscored-comments {
+  margin-top: 1.5rem;
+}
+.unscored-comments summary {
+  cursor: pointer;
+}
+.comment {
+  scroll-margin-top: 5rem;
+  overflow-wrap: anywhere;
+}
+
+.comment-text {
+  white-space: pre-wrap;
+}

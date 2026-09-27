@@ -201,6 +201,7 @@ class SummaryRepository(NoteRepository):
                 self.add_tag(note.id, name)
         # A scoring failure must not erase earlier valid scores.
         if result.comment_score_error is None:
+            note.comment_insights = [item.model_dump() for item in result.comment_insights]
             scores = {score.index: score for score in result.comment_scores}
             for position, comment in enumerate(self.comments(note.id)):
                 score = scores.get(position)

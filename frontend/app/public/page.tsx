@@ -145,25 +145,42 @@ export default function PublicNotePage() {
               publicView
             />
           </section>
-          {note.comments.length > 0 && (
+          {(note.comment_insights ?? []).length > 0 && (
             <section className="original-section">
-              <h2>评论</h2>
-              {note.comments.map((comment, index) => (
-                <div className="comment" key={index}>
-                  <strong>{comment.author || "匿名"}</strong>
-                  {comment.is_valuable && <span className="pill">高价值</span>}
-                  <p>{comment.content}</p>
-                  <small>
-                    {comment.likes} 赞 · {comment.replies} 回复 ·{" "}
-                    {comment.ai_score === null
-                      ? "未评分"
-                      : `AI 评分 ${comment.ai_score}`}
-                  </small>
-                  {comment.ai_reason && (
-                    <p className="muted">{comment.ai_reason}</p>
-                  )}
-                </div>
-              ))}
+              <h2>AI 评论精华</h2>
+              <p className="muted">
+                依据优质评论整合；评论观点不代表已核实事实。
+              </p>
+              <ul>
+                {note.comment_insights!.map((item, index) => (
+                  <li key={index}>{item.text}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {note.comments.some((comment) => comment.is_valuable) && (
+            <section className="original-section">
+              <h2>优质评论</h2>
+              {note.comments
+                .filter((comment) => comment.is_valuable)
+                .map((comment, index) => (
+                  <div className="comment" key={index}>
+                    <strong>{comment.author || "匿名"}</strong>
+                    {comment.is_valuable && (
+                      <span className="pill">高价值</span>
+                    )}
+                    <p>{comment.content}</p>
+                    <small>
+                      {comment.likes} 赞 · {comment.replies} 回复 ·{" "}
+                      {comment.ai_score === null
+                        ? "未评分"
+                        : `AI 评分 ${comment.ai_score}`}
+                    </small>
+                    {comment.ai_reason && (
+                      <p className="muted">{comment.ai_reason}</p>
+                    )}
+                  </div>
+                ))}
             </section>
           )}
         </article>

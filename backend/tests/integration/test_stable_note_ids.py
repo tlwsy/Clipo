@@ -36,6 +36,21 @@ def test_stable_ids_migration_preserves_dependents_and_search(
                 command.check(config)
             else:
                 command.downgrade(config, target)
+        if target != "head":
+            with app.state.engine.connect() as connection:
+                assert (
+                    connection.scalar(
+                        text("SELECT content FROM comments WHERE note_id = :id"), {"id": note_id}
+                    )
+                    == "保留已有评论"
+                )
+                assert (
+                    connection.scalar(
+                        text("SELECT note_id FROM capture_jobs WHERE id = :id"), {"id": job_id}
+                    )
+                    == note_id
+                )
+            continue
         note = client.get(f"/api/v1/notes/{note_id}", headers=auth).json()
         assert note["comments"][0]["content"] == "保留已有评论"
         assert note["tags"][0]["name"] == "迁移保留"

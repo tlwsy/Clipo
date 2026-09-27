@@ -28,6 +28,7 @@ def read_public_note(repository: SharingRepository, note_id: int) -> PublicNoteR
         blocks=content.blocks,
         summary_markdown=note.summary_markdown,
         key_points=note.key_points,
+        comment_insights=note.comment_insights,
         comments=[
             PublicComment.model_validate(comment) for comment in repository.comments(note.id)
         ],

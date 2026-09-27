@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Clipo contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Read Heybox posts and paginated top-level comments via its official web API."""
+"""Read Heybox posts and paginated comments and embedded replies via its official web API."""
 
 import re
 import time
@@ -167,13 +167,16 @@ def parse_heybox(
         published_at=timestamp(link.get("create_at")),
         raw_html=html,
         comment_capture_limit=max_comments,
-        extractor_version=2,
+        extractor_version=3,
         capture_warnings=warnings,
     )
 
 
 def _append_comments(
-    content: CapturedContent, result: dict[str, Any], seen: set[str], limit: int
+    content: CapturedContent,
+    result: dict[str, Any],
+    seen: set[str],
+    limit: int,
 ) -> None:
     if not limit:
         return
@@ -186,21 +189,48 @@ def _append_comments(
         floor = obj(group).get("comment")
         if not isinstance(floor, list) or not floor:
             continue
-        row = obj(floor[0])
-        identifier = str(row.get("commentid", ""))
-        body = html_text(text(row.get("text")))
-        key = identifier or body
-        if not body or key in seen:
-            continue
-        seen.add(key)
-        content.comments.append(
-            CapturedComment(
-                author=text(obj(row.get("user")).get("username")) or None,
-                content=body,
-                likes=count(row.get("up")),
-                replies=count(row.get("child_num", row.get("reply_num"))),
+        root_id = str(obj(floor[0]).get("commentid", ""))[:200]
+        for item_index, raw in enumerate(floor):
+            if len(content.comments) >= limit:
+                break
+            row = obj(raw)
+            identifier = str(row.get("commentid", ""))
+            body = html_text(text(row.get("text")))
+            key = identifier or body
+            if not body or key in seen:
+                continue
+            seen.add(key)
+            content.comments.append(
+                CapturedComment(
+                    source_id=identifier[:200] or None,
+                    parent_source_id=root_id if item_index > 0 else None,
+                    author=text(obj(row.get("user")).get("username")) or None,
+                    content=body,
+                    likes=count(row.get("up")),
+                    replies=count(row.get("child_num", row.get("reply_num"))),
+                )
             )
-        )
+            nested = row.get("children", row.get("replies", []))
+            if isinstance(nested, list) and item_index == 0:
+                for child in nested:
+                    if len(content.comments) >= limit:
+                        break
+                    child = obj(child)
+                    child_id = str(child.get("commentid", ""))
+                    child_text = html_text(text(child.get("text")))
+                    child_key = child_id or child_text
+                    if not child_text or child_key in seen:
+                        continue
+                    seen.add(child_key)
+                    content.comments.append(
+                        CapturedComment(
+                            source_id=child_id[:200] or None,
+                            parent_source_id=identifier[:200] or root_id or None,
+                            author=text(obj(child.get("user")).get("username")) or None,
+                            content=child_text,
+                            likes=count(child.get("up")),
+                        )
+                    )
 
 
 class XiaoheiheExtractor:

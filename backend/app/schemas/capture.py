@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.extractors.base import CapturedContent
+from app.llm.orchestrator import CommentInsight
 from app.schemas.payload import MAX_UPLOAD_BYTES, CapturePayload
 from app.security.urls import UnsafeURL, normalize_url
 
@@ -63,6 +64,8 @@ class SourceResponse(BaseModel):
 
 
 class CommentResponse(BaseModel):
+    source_id: str | None = Field(default=None, max_length=200)
+    parent_source_id: str | None = Field(default=None, max_length=200)
     model_config = ConfigDict(from_attributes=True)
     id: int
     author: str | None
@@ -132,6 +135,7 @@ class NoteResponse(BaseModel):
     is_favorite: bool
     status: Literal["ready", "original_only"]
     summary_error: str | None
+    comment_insights: list[CommentInsight] = Field(default_factory=list)
     comment_score_error: str | None
     created_at: datetime
     updated_at: datetime

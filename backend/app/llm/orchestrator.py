@@ -28,6 +28,11 @@ class CommentScore(BaseModel):
     reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 
 
+class CommentInsight(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+    indices: list[Annotated[int, Field(ge=0, strict=True)]] = Field(min_length=1, max_length=100)
+
+
 class CommentScores(BaseModel):
     comment_scores: list[CommentScore] = Field(max_length=100)
 
@@ -39,6 +44,7 @@ class SummaryResult:
     comment_scores: list[CommentScore] = field(default_factory=list)
     comment_score_threshold: float = 0.6
     comment_score_error: str | None = None
+    comment_insights: list[CommentInsight] = field(default_factory=list)
 
 
 @dataclass
@@ -95,8 +101,22 @@ def parse_summary(value: str) -> Summary:
 def comment_payload(content: CapturedContent, limit: int) -> list[dict[str, Any]]:
     """Bound total serialized comment input to 8000 UTF-8 bytes, 1000 per text."""
     payload: list[dict[str, Any]] = []
-    for position, comment in select_comments(content.comments, limit):
+    selected = select_comments(content.comments, limit)
+    for position, comment in selected:
         candidate = {"index": position, "content": truncate_text(comment.content, 1000)}
+        if comment.parent_source_id:
+            parent_position = next(
+                (
+                    i
+                    for i, row in enumerate(content.comments)
+                    if row.source_id == comment.parent_source_id
+                ),
+                None,
+            )
+            if parent_position is not None:
+                candidate["parent_context"] = truncate_text(
+                    content.comments[parent_position].content, 600
+                )
         size = len(json.dumps([*payload, candidate], ensure_ascii=False).encode("utf-8"))
         if size > 8000:
             break
@@ -132,6 +152,7 @@ def summarize(
                     "title": content.title[:1000],
                     "text": truncate_text(content.text, config.token_budget),
                     "comments": comments,
+                    "comment_score_threshold": config.comment_score_threshold,
                 },
                 ensure_ascii=False,
             ),
@@ -152,8 +173,22 @@ def summarize(
             data = _decode_output(value)
             last_summary = _validate_summary(data)
             scores = _validate_scores(data, {row["index"] for row in comments}) if comments else []
+            valuable = {
+                score.index for score in scores if score.score >= config.comment_score_threshold
+            }
+            insights = []
+            raw_insights = data.get("comment_insights", [])
+            if isinstance(raw_insights, list):
+                for row in raw_insights[:12]:
+                    try:
+                        insight = CommentInsight.model_validate(row)
+                        if insight.text.strip() and set(insight.indices) <= valuable:
+                            insights.append(insight)
+                    except ValueError:
+                        continue
             return SummaryResult(
                 last_summary,
+                comment_insights=insights,
                 comment_scores=scores,
                 comment_score_threshold=config.comment_score_threshold,
             )

@@ -1120,6 +1120,10 @@ export interface components {
         };
         /** CapturedComment */
         CapturedComment: {
+            /** Source Id */
+            source_id?: string | null;
+            /** Parent Source Id */
+            parent_source_id?: string | null;
             /** Author */
             author?: string | null;
             /** Content */
@@ -1179,8 +1183,19 @@ export interface components {
             /** Selection */
             selection?: string | null;
         };
+        /** CommentInsight */
+        CommentInsight: {
+            /** Text */
+            text: string;
+            /** Indices */
+            indices: number[];
+        };
         /** CommentResponse */
         CommentResponse: {
+            /** Source Id */
+            source_id?: string | null;
+            /** Parent Source Id */
+            parent_source_id?: string | null;
             /** Id */
             id: number;
             /** Author */
@@ -1469,6 +1484,8 @@ export interface components {
             status: "ready" | "original_only";
             /** Summary Error */
             summary_error: string | null;
+            /** Comment Insights */
+            comment_insights?: components["schemas"]["CommentInsight"][];
             /** Comment Score Error */
             comment_score_error: string | null;
             /**
@@ -1515,6 +1532,10 @@ export interface components {
         };
         /** PayloadComment */
         PayloadComment: {
+            /** Source Id */
+            source_id?: string | null;
+            /** Parent Source Id */
+            parent_source_id?: string | null;
             /** Author */
             author?: string | null;
             /** Content */
@@ -1605,6 +1626,8 @@ export interface components {
             summary_markdown: string | null;
             /** Key Points */
             key_points: string[];
+            /** Comment Insights */
+            comment_insights?: components["schemas"]["CommentInsight"][];
             /** Comments */
             comments: components["schemas"]["PublicComment"][];
         };

@@ -238,7 +238,7 @@ def check_browser(base: str, auth: str, token: dict, temp: Path) -> None:
             assert sorted(tag["name"] for tag in note["tags"]) == ["测试", "浏览器"]
             assert note["status"] == "original_only"
             for url, title, count in [
-                ("https://www.xiaohongshu.com/explore/fixture123", "平台 DOM 直取验收", 12),
+                ("https://www.xiaohongshu.com/explore/fixture123", "平台 DOM 直取验收", 13),
                 ("https://www.xiaoheihe.cn/app/bbs/link/fixture", "小黑盒 DOM 验收", 2),
             ]:
                 page.goto(url)
@@ -249,8 +249,11 @@ def check_browser(base: str, auth: str, token: dict, temp: Path) -> None:
                 note = wait_note(base, auth, title)
                 assert len(note["comments"]) == count
                 assert note["content"]["images"]
-                assert "不采集楼中楼" not in json.dumps(note, ensure_ascii=False)
-                if count == 12:
+                if count == 13:
+                    assert (
+                        note["comments"][1]["parent_source_id"] == note["comments"][0]["source_id"]
+                    )
+                    assert note["comments"][1]["content"] == "楼中楼补充使用参数"
                     assert note["comments"][0]["likes"] == 12000
                     assert note["content"]["capture_warnings"] == []
             # Boundaries: disabled comments, cap warning, unknown/login DOM, missing metadata.

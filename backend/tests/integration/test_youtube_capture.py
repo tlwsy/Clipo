@@ -24,7 +24,7 @@ def test_youtube_captions_and_comments_flow_to_model_with_cached_limits(
             "platform_cookies": {"xiaohongshu": "a=private", "xiaoheihe": "pkey=private"},
         },
     )
-    for limit, cached, comments in [(3, False, 3), (1, True, 1), (0, True, 0), (4, False, 3)]:
+    for limit, cached, comments in [(3, False, 3), (1, True, 1), (0, True, 0), (4, False, 4)]:
         client.put("/api/v1/settings", headers=auth, json={"capture": {"max_comments": limit}})
         job = client.post("/api/v1/captures", headers=auth, json={"url": URL}).json()
         queue = app.state.capture_queue.huey

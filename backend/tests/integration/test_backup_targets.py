@@ -102,6 +102,8 @@ def test_scheduled_local_backup_retention_and_download_expiration(
         assert len(json.loads(archive.read("library.json"))["notes"]) == 1
     with app.state.session_factory.begin() as db:
         BackupRepository(db, 1).backup_job(job["id"]).updated_at = utcnow() - timedelta(days=10)
+    now = utcnow()
+    monkeypatch.setattr("app.tasks.backup.utcnow", lambda: now)
     queue.cleanup()
     assert client.get(f"/api/v1/backups/{job['id']}/download", headers=auth).status_code == 410
     assert files[0].exists()

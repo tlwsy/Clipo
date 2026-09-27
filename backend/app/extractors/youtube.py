@@ -204,7 +204,7 @@ class YoutubeExtractor:
             images=images[-1:],
             raw_html=html,
             comment_capture_limit=self.max_comments,
-            extractor_version=1,
+            extractor_version=2,
         )
         self.captions(content, identifier, player, requests)
         if self.max_comments:
@@ -363,10 +363,34 @@ class YoutubeExtractor:
                 continue
             seen.add(key)
             content.comments.append(
-                CapturedComment(author=author or None, content=body, likes=likes, replies=replies)
+                CapturedComment(
+                    source_id=key[:200],
+                    author=author or None,
+                    content=body,
+                    likes=likes,
+                    replies=replies,
+                )
             )
             if len(content.comments) >= self.max_comments:
                 return
+            for child in nodes(thread.get("replies", {})):
+                reply = obj(child.get("commentRenderer"))
+                reply_id = text(reply.get("commentId"))
+                reply_body = runs(reply.get("contentText"))
+                if not reply_id or not reply_body or reply_id in seen:
+                    continue
+                seen.add(reply_id)
+                content.comments.append(
+                    CapturedComment(
+                        source_id=reply_id[:200],
+                        parent_source_id=key[:200],
+                        author=runs(reply.get("authorText")) or None,
+                        content=reply_body,
+                        likes=exact_count(runs(reply.get("voteCount"))),
+                    )
+                )
+                if len(content.comments) >= self.max_comments:
+                    return
 
     def comments(
         self,
@@ -379,6 +403,8 @@ class YoutubeExtractor:
         response = data
         seen: set[str] = set()
         visited: set[str] = set()
+        reply_pages: list[tuple[str, str]] = []
+        reply_visited: set[str] = set()
         sorted_top = False
         deadline = time.monotonic() + 180
         if not root:
@@ -398,8 +424,31 @@ class YoutubeExtractor:
                         raise ExtractionError("无法切换 YouTube 热评排序，请反馈适配问题", False)
                 if not token:
                     self.append_comments(content, root, response, seen)
+                    for node in nodes(root, skip_replies=True):
+                        thread = obj(node.get("commentThreadRenderer"))
+                        old = obj(obj(thread.get("comment")).get("commentRenderer"))
+                        parent = text(old.get("commentId"))
+                        if not parent:
+                            vm = obj(thread.get("commentViewModel"))
+                            vm = obj(vm.get("commentViewModel")) or vm
+                            entity_key = text(vm.get("commentKey"))
+                            for item in nodes(response):
+                                if item.get("entityKey") == entity_key and entity_key:
+                                    entity = obj(
+                                        obj(item.get("payload")).get("commentEntityPayload")
+                                    )
+                                    parent = text(obj(entity.get("properties")).get("commentId"))
+                                    break
+                        replies = obj(thread.get("replies"))
+                        for item in nodes(replies):
+                            reply_token = continuation(item)
+                            if parent and reply_token and (parent, reply_token) not in reply_pages:
+                                reply_pages.append((parent, reply_token))
                     if len(content.comments) >= self.max_comments:
                         return
+                    self.collect_replies(
+                        content, reply_pages, config, requests, seen, deadline, reply_visited
+                    )
                     token = continuation(root)
                 if not token:
                     return
@@ -419,3 +468,37 @@ class YoutubeExtractor:
             content.capture_warnings.append("YouTube 热评分页提前结束，已保留取得的评论。")
         except ExtractionError as exc:
             content.capture_warnings.append(f"YouTube 热评未完整取得：{exc}；已有内容已保存。")
+
+    def collect_replies(
+        self,
+        content: CapturedContent,
+        pages: list[tuple[str, str]],
+        config: dict[str, Any],
+        requests: PlatformRequests,
+        seen: set[str],
+        deadline: float,
+        visited: set[str] | None = None,
+    ) -> None:
+        visited = set() if visited is None else visited
+        while pages and len(content.comments) < self.max_comments:
+            parent, token = pages.pop(0)
+            if token in visited:
+                continue
+            if len(visited) >= 10 or time.monotonic() >= deadline:
+                content.capture_warnings.append("YouTube 回复分页达到请求上限，部分回复未取得。")
+                return
+            visited.add(token)
+            response = self.next_page(token, config, requests)
+            wrappers = []
+            for node in nodes(response):
+                if "commentRenderer" in node:
+                    wrappers.append({"commentThreadRenderer": {"comment": node}})
+                elif "commentViewModel" in node and "commentKey" in obj(node["commentViewModel"]):
+                    wrappers.append({"commentThreadRenderer": node})
+            start = len(content.comments)
+            self.append_comments(content, wrappers, response, seen)
+            for comment in content.comments[start:]:
+                comment.parent_source_id = parent[:200]
+            next_token = continuation(response)
+            if next_token and next_token not in visited:
+                pages.append((parent, next_token))

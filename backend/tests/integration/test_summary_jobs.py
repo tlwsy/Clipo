@@ -35,6 +35,7 @@ class Model:
                 "summary_markdown": "新的摘要内容",
                 "key_points": ["新要点"],
                 "suggested_tags": ["新标签"],
+                "comment_insights": [{"text": "整合的操作建议", "indices": [0]}],
                 "comment_scores": (
                     [{"index": 0, "score": 0.85, "reason": "补充经验"}] if self.scores else []
                 ),
@@ -86,6 +87,7 @@ def test_regenerate_in_place_preserves_content_and_organization(
         app.state.capture_queue.summaries.run(1, job["id"])
     after = client.get(f"/api/v1/notes/{note_id}", headers=auth).json()
     assert after["summary_markdown"] == "新的摘要内容"
+    assert after["comment_insights"] == [{"text": "整合的操作建议", "indices": [0]}]
     for field in ("id", "url", "title", "content", "source", "created_at", "is_favorite"):
         assert before[field] == after[field]
     assert {tag["name"] for tag in after["tags"]} == {"手动标签", "新标签"}

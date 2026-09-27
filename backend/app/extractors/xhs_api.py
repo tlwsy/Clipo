@@ -32,7 +32,11 @@ class XhsClient:
         self.signer = Xhshow()
 
     def get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
-        if path not in ("/api/sns/web/v2/comment/page", "/api/sns/web/v1/user/selfinfo"):
+        if path not in (
+            "/api/sns/web/v2/comment/page",
+            "/api/sns/web/v2/comment/sub/page",
+            "/api/sns/web/v1/user/selfinfo",
+        ):
             raise ValueError("Unsupported XHS endpoint")
         # The signer's query builder only escapes '='. Reject query delimiters rather than
         # permit a page-provided token/cursor to inject other parameters into signed requests.
@@ -78,6 +82,19 @@ class XhsClient:
                 "note_id": note_id,
                 "cursor": cursor,
                 "top_comment_id": "",
+                "image_formats": "jpg,webp,avif",
+                "xsec_token": token,
+            },
+        )
+
+    def replies(self, note_id: str, root_id: str, token: str, cursor: str) -> dict[str, Any]:
+        return self.get(
+            "/api/sns/web/v2/comment/sub/page",
+            {
+                "note_id": note_id,
+                "root_comment_id": root_id,
+                "num": "20",
+                "cursor": cursor,
                 "image_formats": "jpg,webp,avif",
                 "xsec_token": token,
             },

@@ -24,6 +24,8 @@ CHUNK_BYTES = 256 * 1024
 
 
 class PayloadComment(BaseModel):
+    source_id: str | None = Field(default=None, max_length=200)
+    parent_source_id: str | None = Field(default=None, max_length=200)
     model_config = ConfigDict(extra="forbid")
     author: str | None = Field(default=None, max_length=500)
     content: str = Field(min_length=1, max_length=20000)

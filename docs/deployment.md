@@ -24,9 +24,15 @@ docker compose logs -f app
 
 Compose 用 PostgreSQL 连接覆盖 `.env` 中的 `CLIPO_DATABASE_URL`。本地源码开发默认 SQLite。手动设置的 `POSTGRES_PASSWORD` 若包含 `@`、`:`、`/` 等 URL 保留字符，需先处理数据库连接串的 URL 编码；配置脚本生成的十六进制密码不受此限制。
 
-数据使用 Docker 命名卷 `pgdata` 和 `appdata` 持久化。`docker compose down` 保留数据，带 `--volumes` 则会删除卷；保存好 `.env` 中的 `CLIPO_SECRET_KEY`，恢复数据库时需要相同密钥解密已保存的 API Key。
+数据使用 Docker 命名卷 `pgdata` 和 `appdata` 持久化。`docker compose down` 保留数据，带 `--volumes` 则会删除卷；保存好 `.env` 中的 `CLIPO_SECRET_KEY`，恢复数据库时需要相同密钥解密已保存的 API Key 和平台 Cookie。
 
 当前开发机已通过 Docker Desktop/Compose 的镜像构建、启动、空 PostgreSQL 迁移、健康检查和静态首页检查，PostgreSQL 16 专项测试已通过；Phase 6 另在独立空 Compose 中验证设置向导、创建账号、内容直传到 worker 落库、摘要降级、中文检索和备份下载；未在该容器中请求真实平台或模型。最新范围见 [构建进度](progress.md)。
+
+### 升级时数据与 Cookie 是否保留
+
+在同一 Compose 项目下执行 `docker compose up --build -d`，会复用 `pgdata`（笔记、评论、账号及加密 Cookie/模型配置）和 `appdata`（队列、本地备份）命名卷；正常重建镜像、替换容器或 `docker compose down` 不会清除这些数据。启动时自动执行数据库迁移。
+
+保留原 `.env`，尤其是 `CLIPO_SECRET_KEY`；更换密钥会使已有 Cookie/API Key 无法解密。不要执行 `docker compose down -v` 或删除数据卷。更换目录、`-p` 或 `COMPOSE_PROJECT_NAME` 可能创建另一组卷，表现为新实例，需要连接原卷。平台自身过期或撤销 Cookie 不属于升级丢失。
 
 ## 不使用 Docker
 

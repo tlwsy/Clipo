@@ -9,6 +9,8 @@ from app.content import CapturedBlock, bounded_blocks
 
 
 class CapturedComment(BaseModel):
+    source_id: str | None = Field(default=None, max_length=200)
+    parent_source_id: str | None = Field(default=None, max_length=200)
     author: str | None = None
     content: str
     likes: int = 0

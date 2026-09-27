@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import { NoteComments } from "../../components/note-comments";
 import { ArticleContent } from "@/components/article-content";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
@@ -181,64 +182,7 @@ function Reader() {
           {(note.comments.length > 0 ||
             ["xiaohongshu", "xiaoheihe", "bilibili", "youtube"].includes(
               note.source.platform,
-            )) && (
-            <section className="original-section">
-              <h2>评论</h2>
-              {["xiaohongshu", "xiaoheihe", "bilibili", "youtube"].includes(
-                note.source.platform,
-              ) && (
-                <p className="muted">
-                  {note.content.comment_capture_limit === 0
-                    ? "本次已关闭评论采集，帖子内容已保存。"
-                    : note.comments.length
-                      ? "采集到的评论可能不完整。"
-                      : "页面未提供可采集的评论，帖子内容已保存。"}
-                </p>
-              )}
-              {note.content.comment_capture_limit != null &&
-                note.content.comment_capture_limit > 0 && (
-                  <p className="muted">
-                    本次评论采集上限：{note.content.comment_capture_limit} 条。
-                  </p>
-                )}
-              {note.comments.length > 0 && (
-                <p className="muted">
-                  已评分{" "}
-                  {
-                    note.comments.filter((comment) => comment.ai_score !== null)
-                      .length
-                  }{" "}
-                  / {note.comments.length} 条，
-                  {
-                    note.comments.filter((comment) => comment.is_valuable)
-                      .length
-                  }{" "}
-                  条高价值。 仅对筛选后的候选评论评分，未评分不代表低价值。
-                </p>
-              )}
-              {note.comment_score_error && (
-                <p className="notice" role="status">
-                  {note.comment_score_error}
-                </p>
-              )}
-              {note.comments.map((comment) => (
-                <div className="comment" key={comment.id}>
-                  <strong>{comment.author || "匿名"}</strong>
-                  {comment.is_valuable && <span className="pill">高价值</span>}
-                  <p>{comment.content}</p>
-                  <small>
-                    {comment.likes} 赞 · {comment.replies} 回复 ·{" "}
-                    {comment.ai_score === null
-                      ? "未评分"
-                      : `AI 评分 ${comment.ai_score}`}
-                  </small>
-                  {comment.ai_reason && (
-                    <p className="muted">{comment.ai_reason}</p>
-                  )}
-                </div>
-              ))}
-            </section>
-          )}
+            )) && <NoteComments note={note} />}
         </article>
       )}
     </>

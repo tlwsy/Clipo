@@ -91,7 +91,7 @@ export async function collectPage(maxComments = 100, selectedText = "") {
           ".author a[href*='/user/profile/']",
         ],
         comments:
-          ".comments-container .comment-item, .comments-container .parent-comment",
+          ".comments-container .comment-item, .comments-container .parent-comment, .comments-container .comment-item-sub",
         commentText: [".content .note-text", ".content", ".comment-content"],
         commentAuthor: [".author .name", ".user-name", ".name"],
         likes: [".like .count", ".like-wrapper .count"],
@@ -494,17 +494,26 @@ export async function collectPage(maxComments = 100, selectedText = "") {
             throw new Error("页面已切换，请在目标帖子重新保存");
           const before = comments.size;
           for (const node of root.querySelectorAll(profile.comments)) {
-            if (
-              node.parentElement?.closest(profile.comments) ||
-              node.closest(".sub-comments, .reply-list, .replies")
-            )
-              continue;
             const value = text(first(node, profile.commentText));
             if (!value || !visible(node)) continue;
             const name = text(first(node, profile.commentAuthor));
             const id = node.dataset.commentId || node.id || name + "\n" + value;
+            const parent = node.parentElement?.closest(profile.comments);
+            const parentName = parent
+              ? text(first(parent, profile.commentAuthor))
+              : "";
+            const parentText = parent
+              ? text(first(parent, profile.commentText))
+              : "";
+            const parentId = parent
+              ? parent.dataset.commentId ||
+                parent.id ||
+                parentName + "\n" + parentText
+              : null;
             if (!comments.has(id))
               comments.set(id, {
+                source_id: id.slice(0, 200),
+                parent_source_id: parentId?.slice(0, 200) || null,
                 author: name.slice(0, 500) || null,
                 content: value.slice(0, 20000),
                 likes: count(text(first(node, profile.likes))),
@@ -543,7 +552,7 @@ export async function collectPage(maxComments = 100, selectedText = "") {
       }
       if (!complete)
         warnings.push(
-          `已读取 ${comments.size} 条页面顶层评论；受采集上限、加载时间和页面可见性限制，可能不完整。可展开评论后重新保存。`,
+          `已读取 ${comments.size} 条页面评论及回复；受采集上限、加载时间和页面可见性限制，可能不完整。可展开评论后重新保存。`,
         );
     }
     if (profile && !limit) warnings.push("已按设置关闭评论采集");

@@ -223,7 +223,10 @@ class CaptureRepository(UserRepository):
         ):
             return None
         if content.platform in ("xiaohongshu", "xiaoheihe", "bilibili", "youtube"):
-            if content.platform in ("xiaohongshu", "xiaoheihe") and content.extractor_version < 2:
+            if (
+                content.extractor_version
+                < {"xiaohongshu": 3, "xiaoheihe": 3, "bilibili": 2, "youtube": 2}[content.platform]
+            ):
                 return None
             limit = self.capture_settings().max_comments if max_comments is None else max_comments
             # Legacy XHS cache entries were extracted with the fixed 100-comment ceiling.
@@ -232,7 +235,10 @@ class CaptureRepository(UserRepository):
                 return None
             # Trim only the returned copy; retain the wider cache for later captures.
             content = content.model_copy(
-                update={"comments": content.comments[:limit], "comment_capture_limit": limit}
+                update={
+                    "comments": content.comments[:limit],
+                    "comment_capture_limit": limit,
+                }
             )
         return content
 
@@ -307,6 +313,7 @@ class CaptureRepository(UserRepository):
             status="ready" if summary else "original_only",
             summary_error=result.error,
             comment_score_error=result.comment_score_error,
+            comment_insights=[item.model_dump() for item in result.comment_insights],
         )
         self.db.add(note)
         self.db.flush()

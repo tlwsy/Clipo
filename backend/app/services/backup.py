@@ -77,7 +77,10 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                     "",
                     *note.content.images,
                     "",
-                    "## 评论",
+                    "## AI 评论精华",
+                    *[f"- {item.text}" for item in note.comment_insights],
+                    "",
+                    "## 评论（完整原始数据，含隐藏评论）",
                     "",
                 ]
                 for comment in note.comments:

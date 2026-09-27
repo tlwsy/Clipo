@@ -32,6 +32,7 @@ def read_note(repository: NoteRepository, note_id: int) -> NoteResponse:
         status=note.status,
         summary_error=note.summary_error,
         comment_score_error=note.comment_score_error,
+        comment_insights=note.comment_insights,
         created_at=note.created_at,
         updated_at=note.updated_at,
         is_favorite=note.is_favorite,
