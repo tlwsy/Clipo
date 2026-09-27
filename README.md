@@ -73,30 +73,44 @@
 
 ## 🚀 快速上手
 
-### 方式一：Docker 极速部署（推荐，开箱即用）
+### ⚡ 方式一：一行命令极速安装（推荐）
 
-Clipo 提供已构建好的官方 Docker 容器镜像（`ghcr.io/tlwsy/clipo:latest`），**无需在本地安装 Node.js/Python，也无需在本地花费时间编译构建**，一键拉取镜像即可秒级启动！
+#### 选项 A：一行 Docker 命令（单容器模式，开箱即用）
 
-#### 选项 A：极速部署（无需 Clone 源码，仅需单目录）
-
-只需在服务器创建一个目录并下载配置文件，即可直接启动：
+无需任何额外配置或下载仓库源码，内置轻量 SQLite 数据库与任务队列，复制并在终端执行即可秒级启动：
 
 ```bash
-mkdir clipo && cd clipo
+docker run -d \
+  --name clipo \
+  -p 8000:8000 \
+  -v clipo_data:/app/data \
+  -e CLIPO_SECRET_KEY=$(openssl rand -hex 32) \
+  --restart unless-stopped \
+  ghcr.io/tlwsy/clipo:latest
+```
 
-# 1. 下载官方 compose 编排文件与配置模板
-curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env
+启动后在浏览器打开 `http://localhost:8000` 即可进入初始化设置向导！所有笔记数据和队列状态自动保存在 Docker 命名卷 `clipo_data` 中。
 
-# 2. 生成随机加密主密钥与数据库密码（或手动编辑 .env 文件）
-sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env
-sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env
+---
 
-# 3. 直接拉取官方预构建镜像并启动（FastAPI 应用 + PostgreSQL 16）
+#### 选项 B：一行命令拉起 Docker Compose（生产环境，含 PostgreSQL 16）
+
+一条复合命令自动创建目录、下载官方 compose 文件与环境模板、生成安全随机密钥并拉取官方镜像启动：
+
+```bash
+mkdir -p clipo && cd clipo && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env && \
+sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env && \
+sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env && \
 docker compose up -d
 ```
 
-#### 选项 B：克隆仓库快速启动
+启动完成后同样访问 `http://localhost:8000` 即可。
+
+---
+
+### 📦 方式二：克隆仓库快速启动
 
 如果你已经克隆了本代码仓库：
 
@@ -118,7 +132,7 @@ docker compose logs -f app
 首次访问将自动引导进入**设置向导**，创建管理员账户并配置模型接入点即可开始使用！
 
 > 💡 **镜像与升级说明**：
-> - **一键升级**：服务更新只需执行 `docker compose pull && docker compose up -d`，系统启动时会自动执行数据库增量迁移，数据卷持久化保留。
+> - **一键升级**：Compose 升级仅需执行 `docker compose pull && docker compose up -d`；单容器模式执行 `docker pull ghcr.io/tlwsy/clipo:latest` 并重启容器即可。启动时系统会自动执行增量数据迁移，数据卷持久化保留。
 > - **二次开发**：若需要自行修改源码调试，可执行 `docker compose up --build -d` 从本地源码重新构建容器。详细部署与反向代理配置见 [部署指南](docs/deployment.md)。
 
 ---

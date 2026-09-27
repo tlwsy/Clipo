@@ -2,14 +2,47 @@
 
 当前版本提供账号、模型配置、平台网页采集、Huey worker、AI 摘要、标签检索、PWA 离线、浏览器扩展、Shortcut 与笔记库备份恢复。当前源码部署不依赖预先发布的镜像。
 
-## Docker Compose
+## 快速部署
+
+### 1. 单容器极简部署（一行 Docker 命令，开箱即用）
+
+若无需配置独立数据库，可直接使用内置轻量 SQLite 与任务队列的官方镜像运行单容器：
+
+```bash
+docker run -d \
+  --name clipo \
+  -p 8000:8000 \
+  -v clipo_data:/app/data \
+  -e CLIPO_SECRET_KEY=$(openssl rand -hex 32) \
+  --restart unless-stopped \
+  ghcr.io/tlwsy/clipo:latest
+```
+
+数据自动保存在命名卷 `clipo_data` 中，浏览器访问 `http://localhost:8000` 即可使用。
+
+---
+
+### 2. Docker Compose（生产环境，含 PostgreSQL 16）
+
+#### 选项 A：一行命令一键拉取启动（无需 Clone 源码）
+
+```bash
+mkdir -p clipo && cd clipo && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env && \
+sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env && \
+sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env && \
+docker compose up -d
+```
+
+#### 选项 B：克隆仓库快速启动
 
 在仓库根目录执行：
 
 ```bash
 python3 scripts/init_env.py        # 生成 .env 与随机密钥，不覆盖已有文件
 # 按实际部署地址修改 .env 中的 CLIPO_BASE_URL
-docker compose up -d
+docker compose up -d               # 默认拉取官方预构建镜像启动
 docker compose logs -f app
 ```
 
