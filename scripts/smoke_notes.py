@@ -63,18 +63,14 @@ def main() -> None:
             expect(panel.get_by_role("status")).to_contain_text("摘要生成失败", timeout=20000)
             expect(page.locator(".original-text")).to_contain_text("保留完整原文")
             page.goto(base + "/settings/#llm")
-            # Configure through the authenticated API; no real model endpoint is contacted.
-            page.evaluate("""async () => {
-                const session = await fetch('/api/v1/auth/refresh', {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body:'{}'
-                }).then(r => r.json());
-                const response = await fetch('/api/v1/settings', {
-                    method:'PUT', headers: {'Content-Type':'application/json',
-                        Authorization:'Bearer ' + session.access_token},
-                    body:JSON.stringify({llm:{api_key:'offline-only',model:'offline'}})
-                });
-                if (!response.ok) throw new Error('Fixture configuration failed');
-            }""")
+            expect(page.locator("#llm")).to_be_visible()
+            # Use the fixture token; a raw refresh would race the page's cookie rotation.
+            response = context.request.put(
+                base + "/api/v1/settings",
+                headers={"Authorization": "Bearer " + token},
+                data={"llm": {"api_key": "offline-only", "model": "offline"}},
+            )
+            assert response.status == 200, f"Fixture configuration failed: HTTP {response.status}"
             page.goto(base + f"/notes/?id={note_id}")
             panel.get_by_role("button", name="重试摘要", exact=True).click()
             expect(panel.get_by_role("status")).to_have_text("摘要已更新", timeout=20000)

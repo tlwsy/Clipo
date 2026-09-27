@@ -52,6 +52,8 @@ jobs:
       - run: make build
       - name: Install Chromium
         run: uv run --no-project --with playwright python -m playwright install --with-deps chromium
+      - name: Browser PWA install and update
+        run: uv run --no-project --with playwright python scripts/smoke_capture.py --pwa-only
       - name: Browser export and empty-instance restore
         run: uv run --no-project --with playwright python scripts/smoke_backup.py
       - name: Browser summary and public sharing

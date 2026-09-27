@@ -1,5 +1,11 @@
 # 构建进度
 
+## PR 浏览器 CI 的续期竞态修复（2026-09-28）
+
+- PR #1 的 [CI 36335504173](https://github.com/tlwsy/Clipo/actions/runs/36335504173) 在 `Browser summary and public sharing` 报 `Fixture configuration failed`；同提交的 push 检查成功。旧脚本在进入设置页后直接请求 `/auth/refresh`，绕过页面的并发续期协调，可能与页面抢用一次性刷新令牌。
+- `smoke_notes.py` 等待设置面板就绪，并使用临时实例初始化时取得的独立 Access Token 配置固定模型，取消脚本额外的 Cookie 续期；配置失败仅报告 HTTP 状态。CI 同时加入 `smoke_capture.py --pwa-only`，覆盖首次安装和跨窗口更新刷新。
+- 本次 `make lint`、`make test` 通过（后端 **450**、前端 **41**、扩展 **5**）；actionlint 1.7.12、Chromium 摘要/公开分享和 PWA 专项通过。仅修改验收脚本及 CI，浏览器使用上一节点构建的相同前端产物，本节点未重新本地构建；推送后的全新构建、PostgreSQL 与镜像验收以本提交 GitHub Actions 结果为准。
+
 ## PWA 更新提示与刷新修复（2026-09-28）
 
 - 修复首次安装 Service Worker 被误认为有新版本、旧等待状态残留导致“刷新应用”无响应的问题。更新检测跟踪实际安装/接管状态，首次接管不提示升级；其他窗口先激活更新后，当前页面仍可点击刷新。
