@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Clipo contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { refreshApplication, watchServiceWorkerUpdates } from "@/lib/pwa";
 import packageInfo from "@/package.json";
 
 export function Pwa() {
-  const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
+  const registration = useRef<ServiceWorkerRegistration>();
+  const refreshCleanup = useRef<() => void>();
+  const [workerUpdate, setWorkerUpdate] = useState(false);
   const [newVersion, setNewVersion] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   useEffect(() => {
     if (
       process.env.NODE_ENV !== "production" ||
@@ -14,27 +18,26 @@ export function Pwa() {
     )
       return;
     let active = true;
-    let registration: ServiceWorkerRegistration | undefined;
-    const inspect = () => {
-      if (active && registration?.waiting) setWaiting(registration.waiting);
-    };
+    let stopWatching: (() => void) | undefined;
     void navigator.serviceWorker
       .register("/sw.js", { scope: "/", updateViaCache: "none" })
       .then((value) => {
-        registration = value;
-        inspect();
-        value.addEventListener("updatefound", () =>
-          value.installing?.addEventListener("statechange", inspect),
+        if (!active) return;
+        registration.current = value;
+        stopWatching = watchServiceWorkerUpdates(
+          value,
+          navigator.serviceWorker,
+          setWorkerUpdate,
         );
       })
       .catch(() => undefined);
     const check = () => {
-      void registration?.update().catch(() => undefined);
+      void registration.current?.update().catch(() => undefined);
       void fetch("/api/v1/meta/version", { cache: "no-store" })
         .then((response) => (response.ok ? response.json() : null))
         .then((meta) => {
-          if (active && meta?.version && meta.version !== packageInfo.version)
-            setNewVersion(true);
+          if (active && meta?.version)
+            setNewVersion(meta.version !== packageInfo.version);
         })
         .catch(() => undefined);
     };
@@ -43,24 +46,26 @@ export function Pwa() {
     return () => {
       active = false;
       clearInterval(interval);
+      stopWatching?.();
+      refreshCleanup.current?.();
+      registration.current = undefined;
     };
   }, []);
-  if (!waiting && !newVersion) return null;
+  if (!workerUpdate && !newVersion && !refreshing) return null;
   function refresh() {
-    if (waiting) {
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => location.reload(),
-        { once: true },
-      );
-      waiting.postMessage({ type: "SKIP_WAITING" });
-    } else location.reload();
+    if (refreshCleanup.current) return;
+    setRefreshing(true);
+    refreshCleanup.current = refreshApplication(
+      registration.current,
+      navigator.serviceWorker,
+      () => location.reload(),
+    );
   }
   return (
     <div className="update-notice" role="status">
       有新版本，刷新后使用。{" "}
-      <button className="inline-button" onClick={refresh}>
-        刷新应用
+      <button className="inline-button" onClick={refresh} disabled={refreshing}>
+        {refreshing ? "正在刷新…" : "刷新应用"}
       </button>
     </div>
   );
