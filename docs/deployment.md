@@ -9,7 +9,7 @@
 ```bash
 python3 scripts/init_env.py        # 生成 .env 与随机密钥，不覆盖已有文件
 # 按实际部署地址修改 .env 中的 CLIPO_BASE_URL
-docker compose up --build -d
+docker compose up -d
 docker compose logs -f app
 ```
 
@@ -30,7 +30,7 @@ Compose 用 PostgreSQL 连接覆盖 `.env` 中的 `CLIPO_DATABASE_URL`。本地�
 
 ### 升级时数据与 Cookie 是否保留
 
-在同一 Compose 项目下执行 `docker compose up --build -d`，会复用 `pgdata`（笔记、评论、账号及加密 Cookie/模型配置）和 `appdata`（队列、本地备份）命名卷；正常重建镜像、替换容器或 `docker compose down` 不会清除这些数据。启动时自动执行数据库迁移。
+在同一 Compose 项目下执行 `docker compose pull && docker compose up -d`（如需从本地源码构建使用 `--build`），会复用 `pgdata`（笔记、评论、账号及加密 Cookie/模型配置）和 `appdata`（队列、本地备份）命名卷；正常拉取镜像、替换容器或 `docker compose down` 不会清除这些数据。启动时自动执行数据库迁移。
 
 保留原 `.env`，尤其是 `CLIPO_SECRET_KEY`；更换密钥会使已有 Cookie/API Key 无法解密。不要执行 `docker compose down -v` 或删除数据卷。更换目录、`-p` 或 `COMPOSE_PROJECT_NAME` 可能创建另一组卷，表现为新实例，需要连接原卷。平台自身过期或撤销 Cookie 不属于升级丢失。
 
@@ -79,15 +79,17 @@ location / {
 
 拉取主分支最新版：
 
+`docker-compose.yml` 默认已配置使用官方预构建镜像 `image: ${CLIPO_IMAGE:-ghcr.io/tlwsy/clipo:latest}`。日常部署直接执行：
+
 ```bash
-docker pull ghcr.io/tlwsy/clipo:latest
+docker compose up -d
 ```
 
-仓库默认 Compose 使用 `build: .` 从源码构建。若要使用预构建镜像，在 `app` 服务中将 `build: .` 替换为 `image: ghcr.io/tlwsy/clipo:latest`，保留其他配置、项目名、数据卷和 `.env`，随后执行：
+升级至最新镜像仅需执行：
 
 ```bash
 docker compose pull app
-docker compose up -d --no-build
+docker compose up -d
 ```
 
 ### 源码部署升级

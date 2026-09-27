@@ -73,29 +73,53 @@
 
 ## 🚀 快速上手
 
-### 方式一：Docker Compose（推荐，生产就绪）
+### 方式一：Docker 极速部署（推荐，开箱即用）
 
-Clipo 提供开箱即用的 Docker Compose 编排，内置自动化迁移与健康检查。
+Clipo 提供已构建好的官方 Docker 容器镜像（`ghcr.io/tlwsy/clipo:latest`），**无需在本地安装 Node.js/Python，也无需在本地花费时间编译构建**，一键拉取镜像即可秒级启动！
+
+#### 选项 A：极速部署（无需 Clone 源码，仅需单目录）
+
+只需在服务器创建一个目录并下载配置文件，即可直接启动：
 
 ```bash
-# 1. 克隆代码仓库
+mkdir clipo && cd clipo
+
+# 1. 下载官方 compose 编排文件与配置模板
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env
+
+# 2. 生成随机加密主密钥与数据库密码（或手动编辑 .env 文件）
+sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env
+sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env
+
+# 3. 直接拉取官方预构建镜像并启动（FastAPI 应用 + PostgreSQL 16）
+docker compose up -d
+```
+
+#### 选项 B：克隆仓库快速启动
+
+如果你已经克隆了本代码仓库：
+
+```bash
 git clone https://github.com/tlwsy/Clipo.git
 cd Clipo
 
-# 2. 初始化环境配置与随机主密钥（不会覆盖已有配置）
+# 1. 初始化本地环境配置与随机主密钥（不覆盖已有 .env）
 python3 scripts/init_env.py
 
-# 3. 构建并启动服务（FastAPI 应用 + PostgreSQL 16）
-docker compose up --build -d
+# 2. 直接拉取官方预构建镜像并后台启动（无需本地编译）
+docker compose up -d
 
-# 4. 查看运行状态
+# 3. 查看运行状态
 docker compose logs -f app
 ```
 
 服务启动后，使用浏览器访问 `http://localhost:8000`。
 首次访问将自动引导进入**设置向导**，创建管理员账户并配置模型接入点即可开始使用！
 
-> **升级提示**：更新服务仅需拉取最新代码并执行 `docker compose up --build -d`。数据卷持久化保存，系统启动时会自动执行数据库迁移。详细部署与反向代理配置见 [部署指南](docs/deployment.md)。
+> 💡 **镜像与升级说明**：
+> - **一键升级**：服务更新只需执行 `docker compose pull && docker compose up -d`，系统启动时会自动执行数据库增量迁移，数据卷持久化保留。
+> - **二次开发**：若需要自行修改源码调试，可执行 `docker compose up --build -d` 从本地源码重新构建容器。详细部署与反向代理配置见 [部署指南](docs/deployment.md)。
 
 ---
 

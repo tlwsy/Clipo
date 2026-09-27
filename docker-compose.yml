@@ -1,5 +1,6 @@
 services:
   app:
+    image: ${CLIPO_IMAGE:-ghcr.io/tlwsy/clipo:latest}
     build: .
     env_file: .env
     environment:
