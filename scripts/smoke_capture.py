@@ -6,6 +6,7 @@ Run after `make build`: uv run --no-project --with playwright python scripts/smo
 Install Chromium with `uv run --no-project --with playwright playwright install chromium` if needed.
 """
 
+import argparse
 import json
 import os
 import re
@@ -524,6 +525,44 @@ def check_shortcut_settings(page: Page, base: str) -> None:
     page.goto(base + "/")
 
 
+def check_pwa_updates(page: Page, base: str, static: Path) -> None:
+    # A changed SW must wait until the user accepts the update.
+    script = static / "sw.js"
+    original = script.read_text()
+    try:
+        script.write_text(original + "\n// browser acceptance update\n")
+        page.evaluate("async () => (await navigator.serviceWorker.ready).update()")
+        expect(page.get_by_role("button", name="刷新应用")).to_be_visible(timeout=20000)
+        with page.expect_navigation(wait_until="networkidle"):
+            page.get_by_role("button", name="刷新应用").click()
+        expect(page.get_by_role("button", name="刷新应用")).to_have_count(0)
+
+        # A second window can activate the update before this window's button is clicked.
+        script.write_text(original + "\n// browser acceptance update from another window\n")
+        page.evaluate("async () => (await navigator.serviceWorker.ready).update()")
+        expect(page.get_by_role("button", name="刷新应用")).to_be_visible(timeout=20000)
+        other = page.context.new_page()
+        try:
+            other.goto(page.url)
+            other.wait_for_function("navigator.serviceWorker.controller !== null")
+            other.evaluate("""async () => {
+                const registration = await navigator.serviceWorker.getRegistration();
+                registration.waiting.postMessage({type: 'SKIP_WAITING'});
+            }""")
+            page.wait_for_function("""async () => {
+                const registration = await navigator.serviceWorker.ready;
+                return !registration.waiting && registration.active.state === 'activated';
+            }""")
+            expect(page.get_by_role("button", name="刷新应用")).to_be_visible()
+            with page.expect_navigation(wait_until="networkidle"):
+                page.get_by_role("button", name="刷新应用").click()
+            expect(page.get_by_role("button", name="刷新应用")).to_have_count(0)
+        finally:
+            other.close()
+    finally:
+        script.write_text(original)
+
+
 def check_offline_notes(page: Page, base: str, static: Path) -> None:
     context = page.context
     page.goto(base + "/")
@@ -578,18 +617,7 @@ def check_offline_notes(page: Page, base: str, static: Path) -> None:
     page.once("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="取消失败操作").click()
     expect(page.locator(".offline-status")).not_to_contain_text("操作待同步")
-    # A changed SW must wait until the user accepts the update.
-    script = static / "sw.js"
-    original = script.read_text()
-    try:
-        script.write_text(original + "\n// browser acceptance update\n")
-        page.evaluate("async () => (await navigator.serviceWorker.ready).update()")
-        expect(page.get_by_role("button", name="刷新应用")).to_be_visible(timeout=20000)
-        with page.expect_navigation(wait_until="networkidle"):
-            page.get_by_role("button", name="刷新应用").click()
-        expect(page.get_by_role("button", name="刷新应用")).to_have_count(0)
-    finally:
-        script.write_text(original)
+    check_pwa_updates(page, base, static)
     page.goto(base + "/")
     expect(page.locator(".note-card").first).to_be_visible()
     page.set_viewport_size({"width": 390, "height": 844})
@@ -609,6 +637,9 @@ def check_offline_notes(page: Page, base: str, static: Path) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--pwa-only", action="store_true", help="仅验证首次安装与 PWA 更新")
+    args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="clipo-capture-browser-") as directory:
         temp = Path(directory)
         shutil.copytree(ROOT / "backend/app/static", temp / "static")
@@ -672,6 +703,15 @@ def main() -> None:
                     errors = []
                     page.on("pageerror", lambda error: errors.append(str(error)))
                     page.goto(base)
+                    page.evaluate("navigator.serviceWorker.ready")
+                    page.wait_for_function("navigator.serviceWorker.controller !== null")
+                    expect(page.get_by_role("button", name="刷新应用")).to_have_count(0)
+                    if args.pwa_only:
+                        check_pwa_updates(page, base, temp / "static")
+                        assert not errors, errors
+                        print("Chromium PWA 首次安装、按钮刷新与跨窗口更新通过，无页面脚本错误。")
+                        browser.close()
+                        return
                     page.get_by_label("用户名").fill("smoke-admin")
                     page.get_by_label("邮箱").fill("smoke@example.com")
                     page.get_by_label("密码", exact=True).fill("smoke-password-12345")
@@ -784,7 +824,9 @@ def main() -> None:
                                     "tags, favorites and Chinese search",
                                     "Shortcut pairing, cancel, claim, revoke, expiry and guide",
                                     "offline reload, queued writes, replay and cancel failure",
-                                    "service worker update prompt and logout cache cleanup",
+                                    "first install without an update prompt",
+                                    "accepted and cross-window service worker updates",
+                                    "logout cache cleanup",
                                 ],
                                 "console_errors": errors,
                             },
