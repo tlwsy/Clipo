@@ -40,6 +40,8 @@ B 站和 YouTube 支持视频简介、公开可取得的字幕和热评，字幕
 
 ### 使用 Docker Compose（推荐）
 
+主分支每次推送通过 CI 与容器验证后，会自动发布 `ghcr.io/tlwsy/clipo:latest`（同 `:main`）；正式版本使用版本号或 `:stable`。下方默认从源码构建，预构建镜像的使用与升级见[部署指南](docs/deployment.md#自动构建的-ghcr-镜像)。
+
 ```bash
 # 获取源码（已下载源码可跳过）
 git clone https://github.com/tlwsy/Clipo.git

@@ -58,7 +58,7 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:${{ env.TAG }}
-            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:stable
           cache-from: type=gha
       - name: Publish release
         env:

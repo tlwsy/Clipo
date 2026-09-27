@@ -67,6 +67,31 @@ location / {
 
 ## 备份与升级
 
+### 自动构建的 GHCR 镜像
+
+每次推送任意分支会运行 CI：检查通过后构建 Docker 镜像，并启动临时 Compose 验证首次部署。推送 `main` 时，部署验证通过后将同一个已测试镜像发布到 `ghcr.io/tlwsy/clipo`：
+
+- `latest`、`main`：主分支最新通过验证的提交；主分支已前进时，旧任务不覆盖这两个标签。
+- `sha-完整提交哈希`：该次主分支提交对应的镜像，用于固定部署版本。
+- `v*`、`stable`：由独立 Release 流程发布的正式版本。版本发布不覆盖主分支的 `latest`。
+
+功能分支和 PR 构建验证但不发布镜像。检查、构建或部署验证失败时不会发布；仅推送代码不会自动更新你正在运行的容器。当前构建平台为 `linux/amd64`。
+
+拉取主分支最新版：
+
+```bash
+docker pull ghcr.io/tlwsy/clipo:latest
+```
+
+仓库默认 Compose 使用 `build: .` 从源码构建。若要使用预构建镜像，在 `app` 服务中将 `build: .` 替换为 `image: ghcr.io/tlwsy/clipo:latest`，保留其他配置、项目名、数据卷和 `.env`，随后执行：
+
+```bash
+docker compose pull app
+docker compose up -d --no-build
+```
+
+### 源码部署升级
+
 设置页已提供 JSON/Markdown 导出、JSON 恢复和自动备份，见[备份与恢复](backup.md)。完整实例（含账号和配置）还需数据库备份：
 
 ```bash
