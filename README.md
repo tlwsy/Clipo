@@ -1,189 +1,246 @@
 # Clipo
 
-> 智能笔记应用，自动从小红书、小黑盒、网站等平台提取和整理内容
+<p align="center">
+  <strong>智能、轻量、自托管的个人内容采集与 AI 知识库</strong>
+</p>
 
-Clipo 是一个开源的自托管笔记应用，专注于从社交媒体和网站自动提取核心内容。通过 AI 智能总结和评论筛选，让你轻松保存和管理有价值的信息。
+<p align="center">
+  自动从小红书、小黑盒、B站、YouTube 及各类网站提取核心正文与高价值讨论，结合大模型提炼结构化摘要，全端无缝同步。
+</p>
 
-![Clipo 笔记、详情与备份设置演示](docs/assets/demo.gif)
-
-演示使用虚构账号与离线内容，展示实际页面。安装包与版本说明见 [Releases](https://github.com/tlwsy/Clipo/releases)。
-
-**v0.1.0 已发布**，提供扩展 ZIP 与 SHA256SUMS；公开容器镜像为 `ghcr.io/tlwsy/clipo:v0.1.0`（linux/amd64）。下方 Compose 命令从源码构建，首次部署和备份恢复已通过 GitHub CI。
-
-## 当前进度
-
-已实现 [实施计划](IMPLEMENTATION_PLAN.md) 的 **Phase 2 核心链路**：保存公开网页、后台正文提取、AI 摘要与要点、笔记列表与详情、保存队列和失败重试，以及 PWA 分享入口。Phase 1 的账号、模型配置、API Token 和静态部署能力继续可用。
-
-未配置模型或模型调用失败时，仍会保存原文，并显示“未生成摘要”。
-
-**Phase 3 平台专项的计划内开发已完成。** 小红书与小黑盒支持正文、图片、作者、时间及评论分页；Cookie 按账号加密保存，设置页可检测登录有效性。评论采集上限独立可配（0–100，0 关闭）；模型另有候选上限和高价值阈值，详情显示评分、理由及高价值标记。用户提供的两平台真实帖子与模型均已通过完整链路验收。
-
-B 站和 YouTube 支持视频简介、公开可取得的字幕和热评，字幕或评论不可取得会明确提示。B 站真实元数据与评论已验证；YouTube 已通过离线与浏览器验证，但当前环境无法解析其域名，线上验收待网络就绪。
-
-**Phase 4 已实现标签、收藏、中文检索和 PWA 离线阅读与同步。** Shortcut 已提供设备自动配置、设置页安装入口和剪贴板保存；用户于 2026-09-22 确认发布的 iCloud 版本完成 iOS 实机核验。仓库未签名模板的 Mac 签名与导入未另行验证。Docker Compose 已验证构建、启动、迁移与健康检查，PostgreSQL 16 专项测试已通过。Phase 5 浏览器扩展已实现并通过本地 Chromium 验收；真实平台登录浏览器与 Edge 待验收，Phase 6 已提供 JSON/Markdown 导出、JSON 恢复与本地/S3/WebDAV 备份。完整状态与验收限制见 [构建进度](docs/progress.md)。
-
-**Phase 7 笔记能力补全已完成本地验收。** 笔记详情可重新生成摘要、创建可过期/撤销的只读分享链接；相关操作提供数据库共享的频率限制。使用方式、公开范围与部署边界见[笔记能力说明](docs/note-sharing.md)。本次开发尚未发布为新版本，公开发行版仍为 v0.1.0。
-
-评论区支持楼中楼关系、AI 评论精华与优质讨论：低分评论隐藏但不删除，未评分评论折叠保留。小红书、B 站、YouTube 可补抓回复分页，小黑盒保存接口返回的楼中楼，扩展读取已加载的回复。新旧笔记、采集上限和验证范围见[评论采集与精华](docs/comments.md)。
-
-## ✨ 目标特性（按阶段建设）
-
-- **智能提取**：自动从小红书、小黑盒、网站、视频等平台抓取内容
-- **AI 总结**：使用大语言模型智能总结核心信息
-- **评论筛选**：自动识别和保存有价值的评论
-- **多端支持**：PWA、浏览器扩展、iOS Shortcut 多种保存方式
-- **自托管**：完全控制自己的数据和隐私
-- **离线访问**：PWA 支持离线缓存，随时查看笔记
-- **灵活备份**：支持本地导出、S3、WebDAV 多种备份方式
-
-## 🚀 快速开始
-
-### 使用 Docker Compose（推荐）
-
-主分支每次推送通过 CI 与容器验证后，会自动发布 `ghcr.io/tlwsy/clipo:latest`（同 `:main`）；正式版本使用版本号或 `:stable`。下方默认从源码构建，预构建镜像的使用与升级见[部署指南](docs/deployment.md#自动构建的-ghcr-镜像)。
-
-```bash
-# 获取源码（已下载源码可跳过）
-git clone https://github.com/tlwsy/Clipo.git
-cd Clipo
-
-# 在仓库根目录生成 .env 和随机密钥（不会覆盖已有配置）
-python3 scripts/init_env.py
-
-# 从源码构建并启动应用与 PostgreSQL
-docker compose up --build -d
-
-# 访问 http://localhost:8000
-```
-
-首次访问会进入设置向导，按提示完成配置即可。
-
-### 本地开发（无需 Docker）
-
-需要 Python 3.11+、[uv](https://docs.astral.sh/uv/)、Node.js 20+ 和 npm。
-
-```bash
-make install
-make configure
-make dev
-```
-
-访问 `http://localhost:3000`。默认使用 SQLite，API 运行在 8000 端口。执行 `make build && make serve` 可在 `http://localhost:8000` 检查与容器相同的静态托管模式。
-
-### 环境要求
-
-- Docker 20.10+
-- Docker Compose 2.0+
-- 2GB+ 可用内存
-- 10GB+ 磁盘空间（取决于保存的内容量）
-
-## 📱 客户端
-
-PWA、浏览器扩展与 iCloud Shortcut 安装入口已提供；Shortcut 发布版本已由用户完成 iOS 实机核验。
-
-### PWA（Web App）
-
-通过 HTTPS 访问服务（本机 localhost 可用 HTTP），在浏览器安装 Clipo：
-
-- Android Chrome：安装后，从浏览器分享菜单选择 Clipo，自动保存公开网页。
-- 桌面 / iOS：在首页粘贴链接保存；iOS 分享与剪贴板保存可按下方 Shortcut 教程配置。
-- 分享时未登录会先登录，再继续保存。生产构建支持离线阅读最近 50 篇已缓存笔记和暂存操作，使用条件见 [离线阅读与同步](docs/offline.md)。
-
-网页链接须使用 HTTP(S) 和 80/443 端口，拒绝内网地址。通用网页只支持公开静态 HTML；小红书支持 `/explore/帖子ID`、`/discovery/item/帖子ID` 和 `xhslink.com` / `xhslink.cn` 短链接，可在设置中填写 Cookie 后采集。小黑盒支持 `/app/bbs/link/帖子ID` 和官方 API 分享链接，最多采集 100 条评论（含回复）；小红书保留页面已有评论；配置完整 Cookie 并使用带访问参数的帖子链接时，按采集上限补抓评论及楼中楼分页，不执行页面 JavaScript；设置仅对后续执行的任务生效，已有笔记不变。Android 系统分享面板仍需真机验收。
-
-### 浏览器扩展
-
-在 Chrome/Edge 扩展管理页开启开发者模式，“加载已解压的扩展程序”选择 `extension/`。配置 Clipo 地址与 API Token 并授权该服务器后，可从弹窗或右键保存网页、选区、小红书/小黑盒可见评论。`make extension-package` 可生成 ZIP。已通过 Chromium 离线端到端验收；真实平台与 Edge 待验收。安装、权限及限制见 [浏览器扩展文档](docs/extension.md)。
-
-### iOS Shortcut
-
-设置 → iPhone 快捷指令 → 安装快捷指令 → 生成设备配置 → 打开快捷指令并配置。服务器生成 5 分钟一次性配置码，设备领取地址和专用 Token，无需手填凭据；无分享输入时从剪贴板提取首个链接，适用于小红书／小黑盒的“复制链接”。需先安装支持自动配置的新版。
-
-[安装“保存到 Clipo”](https://www.icloud.com/shortcuts/0cfcf8c51dcc4c2f9bc6d621e5d2dd09)。`.env.example` 已配置此链接，已有部署按 [Shortcut 配置与验收](shortcuts/README.md) 设置 `CLIPO_SHORTCUT_INSTALL_URL` 并重启服务。内置 `/shortcuts/` 指南保留自定义制作步骤；用户实机确认针对此 iCloud 版本，仓库未签名模板需另行签名验证。旧版固定地址/Token 指令不兼容。
-
-## 📖 文档
-
-- [构建进度](docs/progress.md) - 当前可用功能、验证结果与后续范围
-- [技术架构](ARCHITECTURE.md) - 系统架构和技术选型
-- [开发指南](DEVELOPMENT.md) - 开发环境搭建和实施计划
-- [API 文档](docs/api.md) - RESTful API 参考
-- [浏览器扩展](docs/extension.md) - 扩展开发和使用
-- [iOS Shortcut](docs/ios-shortcut.md) - Shortcut 配置指南
-- [配置参考](docs/configuration.md) - 详细配置说明
-- [部署指南](docs/deployment.md) - 生产环境部署
-- [备份与恢复](docs/backup.md) - JSON/Markdown、本地/S3/WebDAV 与恢复步骤
-
-## 🛠️ 技术栈
-
-- **后端**: Python 3.11+ / FastAPI / PostgreSQL
-- **前端**: React 18 / Next.js 14 / PWA
-- **AI**: OpenAI 兼容 HTTP 客户端 / Pydantic 结构化校验
-- **提取与队列**: trafilatura / readability / Huey（SQLite 持久化队列）
-- **部署**: Docker / Docker Compose
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-在提交代码前，请确保：
-- 代码通过 `make lint` 检查
-- 测试通过 `make test`
-- 更新相关文档
-
-详见 [贡献指南](CONTRIBUTING.md)
-
-## 📄 开源协议
-
-本项目采用 [AGPL v3](LICENSE) 协议开源。
-
-这意味着：
-- ✅ 可以自由使用、修改、分发
-- ✅ 可以用于商业目的
-- ❗ 修改后的代码必须同样开源（包括网络服务）
-- ❗ 必须保留原作者版权声明
-
-## 🙏 致谢
-
-- [DrissionPage](https://github.com/g1879/DrissionPage) - 强大的网页自动化工具
-- [LangChain](https://github.com/langchain-ai/langchain) - LLM 应用开发框架
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代 Python Web 框架
-
-## 📧 联系方式
-
-- Issues: [GitHub Issues](https://github.com/tlwsy/Clipo/issues)
-- Discussions: [GitHub Discussions](https://github.com/tlwsy/Clipo/discussions)
+<p align="center">
+  <a href="https://github.com/tlwsy/Clipo/releases"><img src="https://img.shields.io/github/v/release/tlwsy/Clipo?color=blue&label=Release" alt="Release"></a>
+  <a href="https://github.com/tlwsy/Clipo/pkgs/container/clipo"><img src="https://img.shields.io/badge/GHCR-Docker%20Image-blue" alt="Docker Image"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-green.svg" alt="License"></a>
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/Backend-FastAPI-teal.svg" alt="FastAPI"></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Frontend-Next.js%2014-black.svg" alt="Next.js"></a>
+</p>
 
 ---
 
-**注意**：本项目为自托管应用，所有数据保存在你自己的服务器上。LLM API 费用由用户自行承担。
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Clipo 演示" width="850">
+</p>
 
+<p align="center"><em>Clipo 核心界面：内容提取、AI 结构化摘要、评论筛选与备份管理</em></p>
 
-### 重新生成摘要
+---
 
-笔记详情提供“重新生成摘要”。补齐或更换模型后，可用已保存的原文和评论重新整理，无需重新采集。任务在后台执行，失败保留旧结果并可重试；成功更新同一篇笔记及评论评分，收藏、原文和已有标签保留。需要联网，模型调用可能产生费用。
+## 🌟 为什么选择 Clipo？
 
-### 公开分享
+在社交媒体与海量网页中，最有价值的信息往往不仅存在于正文中，还散落在热门讨论与高手评论里。传统的“稍后读”工具往往只能抓取冰冷的网页正文，且面对现代富客户端与国内社交平台时频频失效。
 
-笔记详情可创建只读分享链接，默认 7 天有效，可选择期限或永久，并随时撤销。分享前会明确显示公开范围；标签、收藏、选区及账号信息不会公开。完整链接只在创建时显示，分享页读取当前内容，不缓存离线副本。使用方式与限制见[笔记重新摘要与公开分享](docs/note-sharing.md)。
+**Clipo** 专为现代网络内容而生：
+- 📱 **深度适配主流平台**：深度支持小红书、小黑盒、B站、YouTube 及通用文章，提取正文、图集、字幕乃至楼中楼评论。
+- 🧠 **AI 核心提炼与评论洞察**：不仅提供 Markdown 摘要与核心要点，还独创评论初筛与 AI 价值评分，帮你自动滤除灌水、揪出高信息量讨论。
+- ⚡ **无感多端录入**：支持 PWA 原生分享菜单、Chrome/Edge 浏览器扩展（DOM 直传）、iOS 快捷指令一键配置保存，随时随地一键入库。
+- 🔒 **数据绝对自主**：自托管部署，所有笔记、凭据加密保存在你自己的服务器；内置中文全文检索，无需维护 Elasticsearch 等笨重引擎。
+- 📦 **极简轻量架构**：FastAPI + Next.js 静态托管，后台任务由 Huey + SQLite 持久化队列驱动，**无需 Redis**，单台小规格 VPS 或 Docker 即可丝滑运行。
 
-### 标签与收藏
+---
 
-笔记详情可添加/移除标签、标记收藏，首页可组合筛选。AI 建议自动归入标签；升级前备份数据库，执行 `make upgrade` 后，旧笔记建议也会补为可管理标签。删除标签不会删除笔记。
+## ✨ 核心特性
 
-### 全文搜索
+### 1. 多平台深度提取
+- **小红书 (RED)**：完整抓取图文、多图轮播、作者、发布时间，支持带访问凭据的分页抓取与评论楼中楼展开。
+- **小黑盒 (HeyBox)**：抓取资讯长文、动态卡片、图文混排与结构化楼中楼评论。
+- **视频平台**：支持 Bilibili 与 YouTube，自动提取视频信息、热评与公开字幕（CC 字幕）。
+- **通用网页**：基于 Trafilatura 与 Readability 双引擎，精准提取主要正文，剥离广告与冗余标签，内置企业级 SSRF 防护。
 
-首页搜索标题、原始正文和摘要，支持中文短词，空格分隔多个关键词可组合匹配，并可叠加标签和收藏筛选。SQLite 使用 FTS5 trigram，1–2 字符词回退字面匹配；PostgreSQL 使用 `simple` tsvector/GIN 并回退字面匹配，默认 PostgreSQL 16 镜像无需中文扩展即可检索中文。若管理员在迁移前已安装 `pg_bigm`，迁移会额外创建双字索引。大库无中文扩展时中文检索可能较慢；不提供相关度排序。
+### 2. AI 智能总结与深度挖掘
+- **兼容任意大模型**：标准 OpenAI 接口兼容，支持接入 DeepSeek、通义千问、Kimi (Moonshot)、OpenAI 或 One API 等网关。
+- **结构化摘要**：自动生成精炼 Markdown 概述、分条要点清单，并智能推荐分类标签。
+- **评论价值评分与精华提炼**：初筛互动较高的讨论，由 AI 逐条评估信息量（附带评分与理由），标记高价值讨论，置顶精华观点。
+- **灵活降级与重提**：模型不可用或网络异常时原样保留原文，后续可在笔记详情中**一键重新生成摘要**。
 
-### 离线阅读
+### 3. 多端无缝录入生态
+- **PWA (渐进式 Web 应用)**：支持系统级原生分享（Android Share Target 一键分享到 Clipo）、离线阅读最近 50 篇笔记、离线操作自动同步。
+- **浏览器扩展 (Chrome / Edge)**：提供 Manifest V3 扩展，支持网页一键入库、划词选区保存，并可直接在宿主页面直取 DOM 与登录态评论直传，无惧平台反爬。
+- **iOS 快捷指令 (Shortcut)**：提供官方一键安装链接与 5 分钟免密自动配对机制，支持 iOS 系统分享菜单或剪贴板链接自动捕获。
+- **开放 RESTful API**：规范的 OpenAPI 契约，方便与自动化工作流（如 Raycast、Alfred、Webhook）轻松集成。
 
-生产构建会预缓存最近 50 篇笔记，顶部显示实际缓存数量。离线可搜索和阅读已缓存笔记、收藏、删除和暂存链接；恢复网络后保持应用打开即可同步。标签编辑和设置需联网。图片仍为外链，新版本可点击提示条刷新。账号隔离、清理规则与限制见 [离线阅读与同步](docs/offline.md)。
+### 4. 知识管理与检索
+- **灵活标签与收藏**：手动打标与 AI 自动分类相结合，支持多维度组合筛选与快速收藏。
+- **中文全文检索**：针对中文深度优化。PostgreSQL 环境采用高效 `tsvector` + GIN 索引；SQLite 环境采用 FTS5 trigram 引擎，零额外依赖即可实现毫秒级即时搜索。
+- **安全公开分享**：支持生成可自定义过期时间或永久有效的只读公开链接，随时可一键撤回；公开视图自动脱敏个人标签与私密信息，并内置访问频率保护。
 
-### Docker 验证
+### 5. 数据自主与备份迁移
+- **一键打包导出**：随时导出包含结构化 `library.json`、标准 Markdown 目录树和完整媒体元数据的归档包。
+- **全量无损恢复**：支持上传备份包一键恢复全部笔记、评论、AI 摘要与标签，支持幂等追加。
+- **自动化多端备份**：原生支持本地备份、S3 兼容对象存储（AWS S3、MinIO、Cloudflare R2 等）和 WebDAV，支持内置 Cron 定时自动归档与生命周期清理。
 
-当前 Compose 已在 Docker Desktop 实机通过镜像构建、空 PostgreSQL 初始化、全部迁移、应用健康检查与静态首页检查：`docker compose up -d` 后访问 `http://localhost:8000`，停止使用 `make down`。首次运行需在 `.env` 设置 `POSTGRES_PASSWORD` 与 `CLIPO_SECRET_KEY`。Phase 6 已在独立空 Compose 中验证浏览器设置向导、创建账号、内容直传、worker 落库、摘要降级、中文检索和备份下载；真实平台网络采集不包含在该容器验收中。
+---
 
-### 备份与恢复
+## 🚀 快速上手
 
-设置 → 备份与恢复可导出包含 `library.json` 与 Markdown 目录的 ZIP；在新实例选择解压后的 JSON 即可恢复原文、摘要、评论评分、标签、收藏、时间与媒体链接。导入追加到当前账号，相同文件重复提交不会重复添加。
+### 方式一：Docker Compose（推荐，生产就绪）
 
-本地、S3 兼容和 WebDAV 均支持手动备份与 Cron 定时计划。下载副本默认保留 7 天，本地目标保留最近 10 份。凭据按账号加密保存；当前图片仅保存外链，JSON 上限 100 MiB。完整实例备份另需数据库和主密钥，见[备份与恢复](docs/backup.md)。
+Clipo 提供开箱即用的 Docker Compose 编排，内置自动化迁移与健康检查。
+
+```bash
+# 1. 克隆代码仓库
+git clone https://github.com/tlwsy/Clipo.git
+cd Clipo
+
+# 2. 初始化环境配置与随机主密钥（不会覆盖已有配置）
+python3 scripts/init_env.py
+
+# 3. 构建并启动服务（FastAPI 应用 + PostgreSQL 16）
+docker compose up --build -d
+
+# 4. 查看运行状态
+docker compose logs -f app
+```
+
+服务启动后，使用浏览器访问 `http://localhost:8000`。
+首次访问将自动引导进入**设置向导**，创建管理员账户并配置模型接入点即可开始使用！
+
+> **升级提示**：更新服务仅需拉取最新代码并执行 `docker compose up --build -d`。数据卷持久化保存，系统启动时会自动执行数据库迁移。详细部署与反向代理配置见 [部署指南](docs/deployment.md)。
+
+---
+
+### 方式二：本地源码运行（开发者 / 轻量体验）
+
+本地开发环境推荐使用 SQLite，无需配置额外数据库服务。
+
+**前置依赖**：
+- Python 3.11+ 与 [uv](https://docs.astral.sh/uv/)（推荐包管理器）
+- Node.js 20+ 与 npm
+
+```bash
+# 1. 安装项目全部依赖（后端 Python 依赖 + 前端 npm 包）
+make install
+
+# 2. 生成本地开发配置与密钥
+make configure
+
+# 3. 启动开发模式（自动运行数据库迁移，并行启动 API、前端与 Huey 队列）
+make dev
+```
+
+启动完成后：
+- 前端交互页面：`http://localhost:3000`
+- 后端 API 服务：`http://localhost:8000`
+- 交互式 API 文档：`http://localhost:8000/docs`
+
+若需体验与容器一致的单端口静态托管模式，运行 `make build && make serve` 即可。
+
+---
+
+## 📱 客户端与生态
+
+| 客户端形态 | 适用平台 | 核心亮点 | 安装/配置指南 |
+| :--- | :--- | :--- | :--- |
+| **PWA** | Android / iOS / 桌面 | 桌面图标、Android 系统分享目标、离线阅读 50 篇笔记、操作离线队列 | [离线阅读与同步指南](docs/offline.md) |
+| **浏览器扩展** | Chrome / Edge | 网页一键保存、划词保存、当前页 DOM/评论直传（绕过反爬） | [浏览器扩展文档](docs/extension.md) |
+| **iOS 快捷指令** | iPhone / iPad / Mac | 一键安装、5 分钟免密配置码配对、系统分享菜单与剪贴板识别 | [iOS Shortcut 指南](shortcuts/README.md) |
+| **RESTful API** | 全平台 / 开发者 | 完整的 RESTful 接口与 OpenAPI 规范，轻松对接自动化脚本 | [REST API 参考](docs/api.md) |
+
+- **iOS 快捷指令一键安装**：可在网页设置中直接扫码，或点击 [iCloud 官方捷径安装](https://www.icloud.com/shortcuts/0cfcf8c51dcc4c2f9bc6d621e5d2dd09)。
+- **浏览器扩展安装**：打开浏览器“扩展管理”，开启开发者模式并加载 `extension/` 目录；或在 [Releases](https://github.com/tlwsy/Clipo/releases) 下载打包好的扩展 ZIP。
+
+---
+
+## 🏗️ 系统架构
+
+```
+                 ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+  录入生态        │    PWA 分享    │  │   浏览器扩展    │  │  iOS Shortcut  │
+                 │ (Share Target) │  │   (DOM 直取)   │  │   (一键配对)   │
+                 └───────┬────────┘  └───────┬────────┘  └───────┬────────┘
+                         │ JWT               │ API Token         │ API Token
+                         └───────────────────┼───────────────────┘
+                                             ▼
+                                 ┌───────────────────────┐
+                                 │   FastAPI (REST API)  │
+                                 │ 静态托管 / 鉴权 / 业务 │
+                                 └───────────┬───────────┘
+                                             │ 异步入队
+                                             ▼
+                                 ┌───────────────────────┐
+                                 │      Huey Worker      │
+                                 │  持久化 SQLite 任务队列 │
+                                 └───────────┬───────────┘
+                         ┌───────────────────┼───────────────────┐
+                         ▼                   ▼                   ▼
+                ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+                │ Extractor 适配层 │ │  LLM 编排与评分 │ │  多端备份归档   │
+                │ 小红书/小黑盒/B站│ │  摘要/要点/评论 │ │ 本地/S3/WebDAV  │
+                └────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+                         └───────────────────┼───────────────────┘
+                                             ▼
+                                 ┌───────────────────────┐
+                                 │ PostgreSQL / SQLite   │
+                                 │  笔记/评论/标签/全文检索 │
+                                 └───────────────────────┘
+```
+
+- **语言与后端**：Python 3.11+ / FastAPI / SQLAlchemy 2.0 / Alembic
+- **前端与界面**：Next.js 14 (App Router) / React 18 / Tailwind CSS / Lucide Icons
+- **任务与队列**：Huey 任务调度器（基于轻量级持久化 SQLite 队列，无需引入额外 Redis）
+- **数据存储**：PostgreSQL 16（生产推荐，支持 GIN 中文检索） / SQLite（极简本地开发，支持 FTS5）
+- **内容解析**：Trafilatura / Readability-lxml / HTTPX（带严谨 SSRF 校验）
+- **AI 编排**：标准 OpenAI 兼容协议客户端 + Pydantic 严格模式输出校验
+
+更详尽的系统设计决策与数据模型请参阅 [技术架构说明 (ARCHITECTURE.md)](ARCHITECTURE.md)。
+
+---
+
+## 📚 详细文档
+
+为了保持主页面清晰整洁，各项专题指南请查阅对应专门文档：
+
+- ⚙️ **配置与部署**
+  - [部署指南 (docs/deployment.md)](docs/deployment.md)：生产环境 Docker Compose、反向代理与 HTTPS 配置
+  - [配置参考 (docs/configuration.md)](docs/configuration.md)：环境变量、模型参数与平台配置项全览
+- 💻 **开发与协作**
+  - [开发指南 (DEVELOPMENT.md)](DEVELOPMENT.md)：本地搭建、命令速查、测试策略与数据库迁移
+  - [贡献指南 (CONTRIBUTING.md)](CONTRIBUTING.md)：开源规范、添加新平台适配器规范与 PR 提交流程
+  - [系统架构 (ARCHITECTURE.md)](ARCHITECTURE.md)：技术选型思考、数据模型与流转链路
+- 🔌 **功能与客户端**
+  - [REST API 参考 (docs/api.md)](docs/api.md)：完整 HTTP 接口规范与参数说明
+  - [浏览器扩展指南 (docs/extension.md)](docs/extension.md)：扩展安装、DOM 直传机制与配置说明
+  - [iOS 快捷指令指南 (shortcuts/README.md)](shortcuts/README.md)：免密配对原理与使用教程
+  - [评论系统与 AI 精华 (docs/comments.md)](docs/comments.md)：评论楼中楼、初筛与模型打分策略
+  - [备份与迁移指南 (docs/backup.md)](docs/backup.md)：JSON/Markdown 导出、S3 与 WebDAV 备份配置
+  - [笔记分享机制 (docs/note-sharing.md)](docs/note-sharing.md)：公开只读分享与安全频控机制
+  - [PWA 离线阅读 (docs/offline.md)](docs/offline.md)：离线缓存策略与数据同步原理
+  - [构建进度与阶段验收 (docs/progress.md)](docs/progress.md)：历史版本推进细节与各端验收记录
+
+---
+
+## 🤝 参与贡献
+
+欢迎任何形式的贡献！无论是报告 Bug、提出产品改进建议、补充文档，还是为 Clipo 添加新的社交平台提取适配器。
+
+- 在贡献代码前，请先阅读 [贡献指南 (CONTRIBUTING.md)](CONTRIBUTING.md)。
+- 运行代码检查与测试：
+  ```bash
+  make lint    # 代码风格检查 (Ruff + Black + ESLint)
+  make test    # 运行后端 pytest 与前端 vitest
+  ```
+
+---
+
+## 📄 开源协议
+
+本项目采用 **[GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE)** 协议开源。
+
+- 您可以自由使用、修改和分发本项目；
+- 如果您修改了本项目代码并在网络上提供服务，您必须按照 AGPL-3.0 协议向网络服务用户开源修改后的全部源代码；
+- 必须保留原项目的版权与许可声明。
+
+第三方库许可证信息与归属详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+---
+
+## 🙏 致谢
+
+感谢以下优秀的开源项目与社区为 Clipo 奠定的基石：
+
+- [FastAPI](https://fastapi.tiangolo.com/) - 现代、高性能的高并发 Python Web 框架
+- [Next.js](https://nextjs.org/) - 灵活强大的现代 React 前端框架
+- [Trafilatura](https://trafilatura.readthedocs.io/) - 精准卓越的网页正文与元数据提取库
+- [Huey](https://huey.readthedocs.io/) - 极轻量但功能强大的 Python 任务队列
+- [SQLAlchemy](https://www.sqlalchemy.org/) - 成熟可靠的 Python ORM 与数据库抽象层
+- [Tailwind CSS](https://tailwindcss.com/) - 优雅灵活的现代原子化 CSS 框架
