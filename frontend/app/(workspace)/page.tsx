@@ -2,8 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AppShell, useAccount } from "@/components/app-shell";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { useNoteListSnapshot } from "@/components/note-list-state";
+import { useAccount } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { Icon } from "@/components/icon";
 import { loadNotes, loadTags } from "@/lib/notes";
@@ -11,30 +18,91 @@ import { api, errorMessage, type Schema } from "@/lib/api";
 
 function Notes() {
   const user = useAccount();
-  const [items, setItems] = useState<Schema["NoteItem"][]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [draft, setDraft] = useState("");
+  const snapshot = useNoteListSnapshot();
+  const restored = useRef(snapshot.current);
+  const [items, setItems] = useState<Schema["NoteItem"][]>(
+    restored.current?.items ?? [],
+  );
+  const [cursor, setCursor] = useState<string | null>(
+    restored.current?.cursor ?? null,
+  );
+  const [query, setQuery] = useState(restored.current?.query ?? "");
+  const [draft, setDraft] = useState(restored.current?.draft ?? "");
   const generation = useRef(0);
-  const [tags, setTags] = useState<Schema["TagResponse"][]>([]);
-  const [tag, setTag] = useState("");
-  const [favorite, setFavorite] = useState(false);
-  const [busy, setBusy] = useState(true);
+  const pages = useRef(restored.current?.pages ?? 1);
+  const filters = useRef({
+    query,
+    tag: restored.current?.tag ?? "",
+    favorite: restored.current?.favorite ?? false,
+  });
+  const [tags, setTags] = useState<Schema["TagResponse"][]>(
+    restored.current?.tags ?? [],
+  );
+  const [tag, setTag] = useState(restored.current?.tag ?? "");
+  const [favorite, setFavorite] = useState(restored.current?.favorite ?? false);
+  const [busy, setBusy] = useState(!restored.current);
   const [error, setError] = useState("");
+  useLayoutEffect(() => {
+    snapshot.current = {
+      items,
+      cursor,
+      query,
+      draft,
+      tags,
+      tag,
+      favorite,
+      pages: pages.current,
+      scrollY: snapshot.current?.scrollY ?? 0,
+    };
+  }, [snapshot, items, cursor, query, draft, tags, tag, favorite]);
+  useLayoutEffect(() => {
+    const position = restored.current?.scrollY ?? 0;
+    window.scrollTo({ top: position, behavior: "instant" });
+    // Next's navigation effects run during the same commit. Restore after them,
+    // while the complete cached list already supplies the required page height.
+    const frame = requestAnimationFrame(() =>
+      window.scrollTo({ top: position, behavior: "instant" }),
+    );
+    const remember = () => {
+      if (snapshot.current && window.location.pathname === "/")
+        snapshot.current.scrollY = window.scrollY;
+    };
+    window.addEventListener("scroll", remember, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", remember);
+    };
+  }, [snapshot]);
   const load = useCallback(
     async (next?: string) => {
       const current = ++generation.current;
       setBusy(true);
       setError("");
       try {
-        const page = await loadNotes(
-          `/notes?limit=24&q=${encodeURIComponent(query)}${tag ? `&tag_id=${tag}` : ""}${favorite ? "&favorite=true" : ""}${next ? `&cursor=${encodeURIComponent(next)}` : ""}`,
-        );
+        const changed =
+          filters.current.query !== query ||
+          filters.current.tag !== tag ||
+          filters.current.favorite !== favorite;
+        filters.current = { query, tag, favorite };
+        const total = next || changed ? 1 : pages.current;
+        let nextCursor = next;
+        let loaded = 0;
+        const collected: Schema["NoteItem"][] = [];
+        do {
+          const page = await loadNotes(
+            `/notes?limit=24&q=${encodeURIComponent(query)}${tag ? `&tag_id=${tag}` : ""}${favorite ? "&favorite=true" : ""}${nextCursor ? `&cursor=${encodeURIComponent(nextCursor)}` : ""}`,
+          );
+          if (current !== generation.current) return;
+          collected.push(...page.items);
+          nextCursor = page.next_cursor ?? undefined;
+          loaded++;
+        } while (nextCursor && loaded < total);
         if (current !== generation.current) return;
+        pages.current = next ? pages.current + 1 : loaded;
         setItems((previous) =>
-          next ? [...previous, ...page.items] : page.items,
+          next ? [...previous, ...collected] : collected,
         );
-        setCursor(page.next_cursor);
+        setCursor(nextCursor ?? null);
       } catch (cause) {
         if (current === generation.current) setError(errorMessage(cause));
       } finally {
@@ -49,12 +117,16 @@ function Notes() {
       .catch((cause) => setError(errorMessage(cause)));
   }, []);
   useEffect(() => {
+    const requests = generation;
     void load();
     const refresh = () => {
       void load();
     };
     window.addEventListener("clipo:synced", refresh);
-    return () => window.removeEventListener("clipo:synced", refresh);
+    return () => {
+      requests.current++;
+      window.removeEventListener("clipo:synced", refresh);
+    };
   }, [load]);
   return (
     <>
@@ -234,8 +306,8 @@ function Notes() {
 }
 export default function HomePage() {
   return (
-    <AppShell>
+    <>
       <Notes />
-    </AppShell>
+    </>
   );
 }

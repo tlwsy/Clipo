@@ -29,6 +29,10 @@ export async function timedApi<T>(
     authenticated?: boolean;
   } = {},
 ): Promise<T> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    connection(false);
+    throw new TypeError("当前处于离线状态");
+  }
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
   try {

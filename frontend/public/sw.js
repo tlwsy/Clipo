@@ -43,6 +43,12 @@ async function networkFirst(request, key) {
     clearTimeout(timer);
   }
 }
+async function shell(request, key) {
+  // HTML and RSC belong to the same installed build. Serving the cached shell
+  // avoids a network round trip; the update prompt activates the next build.
+  const cached = await (await caches.open(CACHE)).match(key);
+  return cached ?? networkFirst(request, key);
+}
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   // Private API data is managed by the account-scoped IndexedDB store, never Cache Storage.
@@ -54,10 +60,10 @@ self.addEventListener("fetch", (event) => {
     return;
   if (event.request.mode === "navigate") {
     const path = url.pathname.endsWith("/") ? url.pathname : `${url.pathname}/`;
-    event.respondWith(networkFirst(event.request, path));
+    event.respondWith(shell(event.request, path));
   } else if (event.request.headers.get("RSC") === "1") {
     const path = url.pathname.replace(/\/$/, "");
-    event.respondWith(networkFirst(event.request, `${path}/index.txt`));
+    event.respondWith(shell(event.request, `${path}/index.txt`));
   } else if (
     url.pathname.startsWith("/_next/static/") ||
     PRECACHE.includes(url.pathname)

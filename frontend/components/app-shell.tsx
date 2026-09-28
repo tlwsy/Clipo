@@ -52,17 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener("clipo:unauthorized", redirect);
     async function load() {
       try {
-        const meta = await timedApi<Schema["VersionResponse"]>(
-          "/meta/version",
-          {
-            authenticated: false,
-          },
-        );
-        if (!active) return;
-        if (!meta.setup_completed) {
-          router.replace("/setup/");
-          return;
-        }
+        // Login checks setup status when authentication is unavailable. Normal
+        // launches need only the account request, and navigation keeps this layout.
         const account = await timedApi<Schema["UserResponse"]>("/auth/me");
         await rememberAccount(account).catch(() => undefined);
         if (active) setUser(account);

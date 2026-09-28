@@ -5,16 +5,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
-import { NoteComments } from "../../components/note-comments";
+import { NoteComments } from "@/components/note-comments";
 import { ArticleContent } from "@/components/article-content";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
 import { NoteSharing } from "@/components/note-sharing";
-import { AppShell } from "@/components/app-shell";
+import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
 
 function Reader() {
+  const snapshot = useNoteListSnapshot();
   const [note, setNote] = useState<Schema["NoteResponse"] | null>(null);
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState(false);
@@ -44,7 +45,11 @@ function Reader() {
     setError("");
     try {
       await changeNote(note.id, "DELETE");
-      router.replace("/");
+      if (snapshot.current)
+        snapshot.current.items = snapshot.current.items.filter(
+          (item) => item.id !== note.id,
+        );
+      router.replace("/", { scroll: false });
     } catch (cause) {
       setError(errorMessage(cause));
       setDeleting(false);
@@ -53,7 +58,7 @@ function Reader() {
   return (
     <>
       <div className="reader-toolbar">
-        <Link href="/" className="text-link">
+        <Link href="/" scroll={false} className="text-link">
           ← 全部笔记
         </Link>
         {note && (
@@ -190,8 +195,8 @@ function Reader() {
 }
 export default function NotePage() {
   return (
-    <AppShell>
+    <>
       <Reader />
-    </AppShell>
+    </>
   );
 }
