@@ -1548,6 +1548,12 @@ input[aria-invalid="true"] {
   color: var(--green);
   flex-shrink: 0;
 }
+.note-card-meta span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .note-card h2 {
   font-size: 19px;
   margin: 20px 0 12px;
@@ -1663,6 +1669,7 @@ input[aria-invalid="true"] {
   gap: 16px;
   color: var(--muted);
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 .reader-meta a,
 .markdown a {

@@ -24,6 +24,9 @@ def fingerprint(data: dict) -> str:
 
 def submit(repository: CaptureRepository, request: CaptureRequest, key: str | None) -> CaptureJob:
     payload = request.payload.model_dump(mode="json") if request.payload else None
+    # Keep hashes compatible with pending requests created before site_name existed.
+    if payload is not None and payload.get("site_name") is None:
+        payload.pop("site_name", None)
     job = repository.create_job(
         request.url,
         key,

@@ -86,6 +86,16 @@ function deletion(id = 1): Operation {
 }
 
 describe("account-scoped offline notes", () => {
+  it("keeps site metadata when the offline list is built from cached details", async () => {
+    const captured = note(1);
+    captured.source.site_name = "知识站";
+    await saveNotes(owner.generation, [captured]);
+    vi.stubGlobal("navigator", { onLine: false });
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    expect((await loadNotes("/notes")).items[0].site_name).toBe("知识站");
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it("preserves nested article blocks when reading a cached note offline", async () => {
     const captured = note(1);
     captured.content.blocks = [

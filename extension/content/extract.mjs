@@ -562,6 +562,18 @@ export async function collectPage(maxComments = 100, selectedText = "") {
       url: originalUrl,
       payload: {
         title: title.slice(0, 2000),
+        site_name:
+          [
+            'meta[property="og:site_name" i], meta[name="og:site_name" i]',
+            'meta[name="application-name" i]',
+          ]
+            .flatMap((selector) =>
+              Array.from(document.head.querySelectorAll(selector)),
+            )
+            .map((node) =>
+              clean(node.content).replace(/\s+/g, " ").slice(0, 200),
+            )
+            .find(Boolean) || null,
         text: originalText,
         ...(blocks ? { blocks, content_version: 1 } : {}),
         author: author.slice(0, 500) || null,

@@ -29,6 +29,10 @@ export async function timedApi<T>(
     authenticated?: boolean;
   } = {},
 ): Promise<T> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    connection(false);
+    throw new TypeError("当前处于离线状态");
+  }
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
   try {
@@ -139,6 +143,7 @@ export async function loadNotes(path: string): Promise<Schema["NotePage"]> {
         title: note.title,
         url: note.url,
         platform: note.source.platform,
+        site_name: note.source.site_name ?? note.content.site_name,
         author: note.source.author,
         summary_excerpt: (
           note.summary_markdown ||

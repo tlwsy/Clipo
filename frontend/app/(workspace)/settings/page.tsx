@@ -4,7 +4,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
-import { AppShell, useAccount } from "@/components/app-shell";
+import { useAccount } from "@/components/app-shell";
 import { CaptureSettings } from "@/components/capture-settings";
 import { BackupSettings } from "@/components/backup-settings";
 import { Icon } from "@/components/icon";
@@ -294,8 +294,8 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <AppShell>
+    <>
       <SettingsContent />
-    </AppShell>
+    </>
   );
 }

@@ -3,11 +3,10 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/app-shell";
 
 export default function ShortcutGuidePage() {
   return (
-    <AppShell>
+    <>
       <div className="page-heading">
         <div>
           <span className="eyebrow">SAVE FROM YOUR IPHONE</span>
@@ -144,6 +143,6 @@ export default function ShortcutGuidePage() {
           服务器配置和本地请求契约已验证。苹果设备上的导入、文件保存、剪贴板、唤起和通知仍需实机测试。
         </div>
       </section>
-    </AppShell>
+    </>
   );
 }

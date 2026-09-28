@@ -6,6 +6,7 @@ from typing import Protocol
 from pydantic import BaseModel, Field, field_validator
 
 from app.content import CapturedBlock, bounded_blocks
+from app.extractors.site_name import clean_site_name
 
 
 class CapturedComment(BaseModel):
@@ -20,6 +21,7 @@ class CapturedComment(BaseModel):
 class CapturedContent(BaseModel):
     url: str
     platform: str = "web"
+    site_name: str | None = Field(default=None, max_length=200)
     title: str
     text: str
     author: str | None = None
@@ -36,6 +38,7 @@ class CapturedContent(BaseModel):
     selection: str | None = None
 
     _blocks = field_validator("blocks", mode="before")(bounded_blocks)
+    _site_name = field_validator("site_name")(clean_site_name)
 
 
 class ExtractionError(Exception):

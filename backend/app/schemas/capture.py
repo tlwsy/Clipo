@@ -57,6 +57,7 @@ class JobPage(BaseModel):
 class SourceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     platform: str
+    site_name: str | None = None
     origin_url: str
     author: str | None
     author_url: str | None
@@ -107,6 +108,7 @@ class NoteItem(BaseModel):
     title: str
     url: str
     platform: str
+    site_name: str | None = None
     author: str | None
     summary_excerpt: str
     status: Literal["ready", "original_only"]

@@ -39,7 +39,8 @@ export function OfflineStatus() {
       void syncOffline().then(prefetchNotes);
     };
     update();
-    connect();
+    // Let the visible page finish its requests before caching up to 50 articles.
+    const initial = setTimeout(connect, 1500);
     window.addEventListener("online", connect);
     window.addEventListener("offline", update);
     window.addEventListener("clipo:connection", update);
@@ -51,6 +52,7 @@ export function OfflineStatus() {
     }, 5000);
     return () => {
       active = false;
+      clearTimeout(initial);
       clearInterval(interval);
       clearInterval(retry);
       window.removeEventListener("online", connect);

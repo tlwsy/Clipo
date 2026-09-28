@@ -3,7 +3,6 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppShell } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { localCaptures } from "@/lib/notes";
 import { api, ApiError, errorMessage, type Schema } from "@/lib/api";
@@ -224,8 +223,8 @@ function Queue() {
 }
 export default function JobsPage() {
   return (
-    <AppShell>
+    <>
       <Queue />
-    </AppShell>
+    </>
   );
 }
