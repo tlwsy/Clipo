@@ -967,6 +967,8 @@ export interface components {
         };
         /** CapturePayload */
         CapturePayload: {
+            /** Site Name */
+            site_name?: string | null;
             /** Title */
             title: string;
             /** Text */
@@ -1148,6 +1150,8 @@ export interface components {
              * @default web
              */
             platform: string;
+            /** Site Name */
+            site_name?: string | null;
             /** Title */
             title: string;
             /** Text */
@@ -1429,6 +1433,8 @@ export interface components {
             url: string;
             /** Platform */
             platform: string;
+            /** Site Name */
+            site_name?: string | null;
             /** Author */
             author: string | null;
             /** Summary Excerpt */
@@ -1753,6 +1759,8 @@ export interface components {
         SourceResponse: {
             /** Platform */
             platform: string;
+            /** Site Name */
+            site_name?: string | null;
             /** Origin Url */
             origin_url: string;
             /** Author */

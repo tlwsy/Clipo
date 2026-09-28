@@ -50,6 +50,7 @@ def test_export_import_roundtrip_preserves_library_and_is_idempotent(
         note.content = {
             **note.content,
             "raw_html": "<p>原始快照</p>",
+            "site_name": "导出站名",
             "images": ["https://example.com/image.jpg"],
             "selection": "摘录",
         }

@@ -8,6 +8,7 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.content import CapturedBlock, bounded_blocks
+from app.extractors.site_name import clean_site_name
 from app.security.urls import UnsafeURL, normalize_url
 
 
@@ -35,6 +36,7 @@ class PayloadComment(BaseModel):
 
 class CapturePayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    site_name: str | None = Field(default=None, max_length=200)
     title: str = Field(min_length=1, max_length=2000)
     text: str = Field(min_length=1, max_length=8_000_000)
     blocks: list[CapturedBlock] = Field(default_factory=list, max_length=10000)
@@ -55,6 +57,7 @@ class CapturePayload(BaseModel):
     )
 
     _blocks = field_validator("blocks", mode="before")(bounded_blocks)
+    _site_name = field_validator("site_name")(clean_site_name)
 
     @field_validator("title", "text")
     @classmethod

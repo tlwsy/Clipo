@@ -14,6 +14,7 @@ import { useAccount } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { Icon } from "@/components/icon";
 import { loadNotes, loadTags } from "@/lib/notes";
+import { sourceName } from "@/lib/source-name";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 function Notes() {
@@ -261,7 +262,7 @@ function Notes() {
             key={note.id}
           >
             <div className="note-card-meta">
-              <span>{new URL(note.url).hostname}</span>
+              <span title={sourceName(note)}>{sourceName(note)}</span>
               <span>
                 {note.status === "ready" ? "AI 已整理" : "未生成摘要"}
               </span>

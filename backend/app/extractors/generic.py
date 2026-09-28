@@ -16,6 +16,7 @@ from pydantic import SecretStr
 from readability import Document
 
 from app.extractors.base import CapturedContent, ExtractionError
+from app.extractors.site_name import site_name_from_html
 from app.security.urls import normalize_url, public_addresses
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -244,6 +245,7 @@ def parse_html(html: str, url: str) -> CapturedContent:
             pass
     return CapturedContent(
         url=url,
+        site_name=site_name_from_html(html),
         title=str(title)[:1000],
         text=text.strip(),
         author=author,

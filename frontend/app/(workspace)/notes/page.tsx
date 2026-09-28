@@ -13,6 +13,7 @@ import { NoteSharing } from "@/components/note-sharing";
 import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
+import { sourceName } from "@/lib/source-name";
 
 function Reader() {
   const snapshot = useNoteListSnapshot();
@@ -104,6 +105,7 @@ function Reader() {
             <span className="eyebrow">KEEP THE GOOD IDEAS</span>
             <h1>{note.title || "无标题笔记"}</h1>
             <div className="reader-meta">
+              <span>{sourceName({ ...note.source, url: note.url })}</span>
               <span>{note.source.author || "网页收藏"}</span>
               <time>
                 {new Date(note.created_at).toLocaleDateString("zh-CN")} 保存

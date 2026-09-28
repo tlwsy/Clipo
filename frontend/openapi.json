@@ -7882,6 +7882,18 @@
       },
       "CapturePayload": {
         "properties": {
+          "site_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Name"
+          },
           "title": {
             "type": "string",
             "maxLength": 2000,
@@ -8433,6 +8445,18 @@
             "type": "string",
             "title": "Platform",
             "default": "web"
+          },
+          "site_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Name"
           },
           "title": {
             "type": "string",
@@ -9302,6 +9326,17 @@
           "platform": {
             "type": "string",
             "title": "Platform"
+          },
+          "site_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Name"
           },
           "author": {
             "anyOf": [
@@ -10302,6 +10337,17 @@
           "platform": {
             "type": "string",
             "title": "Platform"
+          },
+          "site_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Name"
           },
           "origin_url": {
             "type": "string",

@@ -127,7 +127,7 @@ class BackupRepository(NoteRepository):
             )
         tags = {tag.name: tag.id for tag in self.list_tags()}
         for saved in archive.notes:
-            source = Source(user_id=self.user_id, **saved.source.model_dump())
+            source = Source(user_id=self.user_id, **saved.source.model_dump(exclude={"site_name"}))
             self.db.add(source)
             self.db.flush()
             values = saved.model_dump(exclude={"id", "source", "comments", "tags", "content"})

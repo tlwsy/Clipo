@@ -4,6 +4,8 @@ import re
 
 from sqlalchemy.sql.elements import ColumnElement
 
+from app.extractors.site_name import clean_site_name, site_name_from_html
+from app.models import Note
 from app.note_repository import NoteRepository
 from app.schemas.capture import (
     CommentResponse,
@@ -15,15 +17,24 @@ from app.schemas.capture import (
 )
 
 
+def site_name(note: Note) -> str | None:
+    return clean_site_name(note.content.get("site_name")) or site_name_from_html(
+        note.content.get("raw_html")
+    )
+
+
 def read_note(repository: NoteRepository, note_id: int) -> NoteResponse:
     note = repository.note(note_id)
     content = dict(note.content)
     content["raw_html"] = None
+    content["site_name"] = site_name(note)
+    source = SourceResponse.model_validate(repository.source(note))
+    source.site_name = content["site_name"]
     return NoteResponse(
         id=note.id,
         title=note.title,
         url=note.url,
-        source=SourceResponse.model_validate(repository.source(note)),
+        source=source,
         content=content,
         comments=[CommentResponse.model_validate(row) for row in repository.comments(note.id)],
         summary_markdown=note.summary_markdown,
@@ -64,6 +75,7 @@ def list_notes(
                 title=note.title,
                 url=note.url,
                 platform=source.platform,
+                site_name=site_name(note),
                 author=source.author,
                 summary_excerpt=" ".join(excerpt.split())[:160],
                 status=note.status,

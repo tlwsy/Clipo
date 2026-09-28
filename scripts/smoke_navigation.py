@@ -20,6 +20,7 @@ def check_return(page: Page, toolbar: bool) -> float:
     title = card.locator("h2").inner_text()
     card.click()
     expect(page.locator(".reader h1")).to_have_text(title)
+    expect(page.locator(".reader-meta")).to_contain_text("小黑盒")
     started = time.monotonic()
     if toolbar:
         page.locator(".reader-toolbar").get_by_role("link", name="全部笔记").click()
@@ -49,9 +50,14 @@ def main() -> None:
                 "/captures",
                 token,
                 {
-                    "url": f"https://example.com/navigation/{index}",
+                    "url": (
+                        "https://api.xiaoheihe.cn/v3/bbs/app/api/web/share?link_id=123"
+                        if index == 1
+                        else f"https://example.com/navigation/{index}"
+                    ),
                     "payload": {
                         "title": f"导航验收 {index:02}",
+                        "site_name": "知识站" if index == 0 else None,
                         "text": "用于验收浏览器列表分页、筛选和返回位置的离线内容。" * 5,
                         "tags": ["导航"],
                     },
@@ -88,6 +94,17 @@ def main() -> None:
             page.get_by_label("按标签筛选").select_option(tag_id)
             page.get_by_role("button", name="加载更多").click()
             expect(page.locator(".note-card")).to_have_count(30)
+            for title, name in [
+                ("导航验收 00", "知识站"),
+                ("导航验收 01", "小黑盒"),
+                ("导航验收 02", "example.com"),
+            ]:
+                expect(
+                    page.locator(".note-card")
+                    .filter(has_text=title)
+                    .locator(".note-card-meta span")
+                    .first
+                ).to_have_text(name)
             expect(page.locator(".offline-status")).to_contain_text("离线可读 30", timeout=20000)
             before_auth = requests.count("/api/v1/auth/me")
             before_prefetch = requests.count("/api/v1/notes?limit=50")
