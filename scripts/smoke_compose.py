@@ -10,7 +10,7 @@ import time
 import urllib.request
 import zipfile
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from playwright.sync_api import expect, sync_playwright
 from smoke_backup import request
@@ -28,10 +28,21 @@ def main() -> None:
         try:
             page = browser.new_page(viewport={"width": 1280, "height": 900})
             errors: list[str] = []
+            navigations: list[str] = []
             page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on(
+                "framenavigated",
+                lambda frame: (
+                    navigations.append(urlsplit(frame.url).path)
+                    if frame == page.main_frame
+                    else None
+                ),
+            )
             page.goto(base)
             page.get_by_label("用户名").fill("compose-test")
             page.get_by_label("邮箱").fill("compose@example.com")
+            assert "/login/" not in navigations, "未初始化实例应直接进入设置向导"
+            expect(page.get_by_label("用户名")).to_have_value("compose-test")
             page.get_by_label("密码", exact=True).fill("compose-test-password-123")
             page.get_by_role("button", name="下一步").click()
             with page.expect_response(

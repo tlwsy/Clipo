@@ -40,10 +40,25 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    let redirecting = false;
     const redirect = () => {
+      if (redirecting) return;
+      redirecting = true;
+      setUser(null);
       void clearOffline()
         .catch(() => undefined)
-        .finally(() => router.replace("/login/"));
+        .then(() =>
+          timedApi<Schema["VersionResponse"]>("/meta/version", {
+            authenticated: false,
+          }),
+        )
+        .then((meta) => {
+          if (active)
+            router.replace(meta.setup_completed ? "/login/" : "/setup/");
+        })
+        .catch(() => {
+          if (active) router.replace("/login/");
+        });
     };
     const accountChanged = (event: StorageEvent) => {
       if (event.key === "clipo:session") location.reload();
@@ -52,8 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener("clipo:unauthorized", redirect);
     async function load() {
       try {
-        // Login checks setup status when authentication is unavailable. Normal
-        // launches need only the account request, and navigation keeps this layout.
+        // Only unauthenticated launches check setup status. Normal launches
+        // need only the account request, and navigation keeps this layout.
         const account = await timedApi<Schema["UserResponse"]>("/auth/me");
         await rememberAccount(account).catch(() => undefined);
         if (active) setUser(account);
