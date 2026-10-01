@@ -14,7 +14,8 @@ import { useAccount } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { Icon } from "@/components/icon";
 import { loadNotes, loadTags } from "@/lib/notes";
-import { sourceName } from "@/lib/source-name";
+import { NoteCard } from "@/components/note-card";
+import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { api, errorMessage, type Schema } from "@/lib/api";
 
 function Notes() {
@@ -43,6 +44,14 @@ function Notes() {
   const [favorite, setFavorite] = useState(restored.current?.favorite ?? false);
   const [busy, setBusy] = useState(!restored.current);
   const [error, setError] = useState("");
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    setSelected([]);
+    setMessage("");
+  }, [query, tag, favorite]);
   useLayoutEffect(() => {
     snapshot.current = {
       items,
@@ -227,6 +236,16 @@ function Notes() {
         <h2>最近笔记</h2>
         <button
           className="inline-button"
+          onClick={() => {
+            setSelecting(!selecting);
+            setSelected([]);
+            setMessage("");
+          }}
+        >
+          {selecting ? "取消多选" : "多选笔记"}
+        </button>
+        <button
+          className="inline-button"
           disabled={busy}
           onClick={() => load()}
         >
@@ -254,40 +273,56 @@ function Notes() {
           </Link>
         </section>
       )}
+      {message && (
+        <p role="status" className="notice">
+          {message}
+        </p>
+      )}
+      {adding && (
+        <AddToCollectionDialog
+          noteIds={selected}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            setAdding(false);
+            setSelecting(false);
+            setSelected([]);
+            setMessage("空间归属已保存。");
+          }}
+        />
+      )}
       <div className="notes-grid">
         {items.map((note) => (
-          <Link
-            href={`/notes/?id=${note.id}`}
-            className="note-card"
+          <NoteCard
             key={note.id}
-          >
-            <div className="note-card-meta">
-              <span title={sourceName(note)}>{sourceName(note)}</span>
-              <span>
-                {note.status === "ready" ? "AI 已整理" : "未生成摘要"}
-              </span>
-            </div>
-            <h2>
-              {note.is_favorite ? "★ " : ""}
-              {note.title || "无标题笔记"}
-            </h2>
-            <div className="tag-list">
-              {note.tags.map((item) => (
-                <span className="subtle-badge" key={item.id}>
-                  {item.name}
-                </span>
-              ))}
-            </div>
-            <p>{note.summary_excerpt}</p>
-            <div className="note-card-footer">
-              <span>{note.author || "网页收藏"}</span>
-              <time>
-                {new Date(note.created_at).toLocaleDateString("zh-CN")}
-              </time>
-            </div>
-          </Link>
+            note={note}
+            selecting={selecting}
+            selected={selected.includes(note.id)}
+            disabled={!selected.includes(note.id) && selected.length >= 100}
+            onSelect={(checked) =>
+              setSelected((previous) =>
+                checked
+                  ? [...previous, note.id]
+                  : previous.filter((id) => id !== note.id),
+              )
+            }
+          />
         ))}
       </div>
+      {selecting && (
+        <div className="collection-selection-bar">
+          <span>已选 {selected.length} 篇（最多 100 篇）</span>
+          <button
+            className="button secondary small"
+            disabled={!selected.length}
+            onClick={() => setAdding(true)}
+          >
+            添加到空间
+          </button>
+          <button className="inline-button" onClick={() => setSelected([])}>
+            取消选择
+          </button>
+        </div>
+      )}
       {busy && (
         <p className="list-status" role="status">
           正在读取笔记…

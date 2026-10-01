@@ -9,6 +9,7 @@ import { NoteComments } from "@/components/note-comments";
 import { ArticleContent } from "@/components/article-content";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
+import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { NoteSharing } from "@/components/note-sharing";
 import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
@@ -21,6 +22,8 @@ function Reader() {
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [organizing, setOrganizing] = useState(false);
+  const [collectionMessage, setCollectionMessage] = useState("");
   const router = useRouter();
   useEffect(() => {
     let active = true;
@@ -125,6 +128,30 @@ function Reader() {
           </header>
           <NoteOrganization note={note} onChange={setNote} />
           <NoteSummary noteId={note.id} onChange={setNote} />
+          <div className="collection-actions">
+            <button
+              className="button secondary small"
+              onClick={() => {
+                setCollectionMessage("");
+                setOrganizing(true);
+              }}
+            >
+              管理所属空间
+            </button>
+            {collectionMessage && (
+              <span role="status">{collectionMessage}</span>
+            )}
+          </div>
+          {organizing && (
+            <AddToCollectionDialog
+              noteIds={[note.id]}
+              onClose={() => setOrganizing(false)}
+              onSaved={() => {
+                setOrganizing(false);
+                setCollectionMessage("空间归属已保存。");
+              }}
+            />
+          )}
           <NoteSharing noteId={note.id} />
           {(note.content.capture_warnings ?? []).map((warning, index) => (
             <p className="notice" role="status" key={index}>

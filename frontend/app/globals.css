@@ -1558,7 +1558,8 @@ input[aria-invalid="true"] {
   font-size: 19px;
   margin: 20px 0 12px;
 }
-.note-card > p {
+.note-card > p,
+.note-card-link > p {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.9;
@@ -2213,4 +2214,139 @@ input[aria-invalid="true"] {
 
 .comment-text {
   white-space: pre-wrap;
+}
+
+/* Q4 空间：沿用笔记卡片与操作按钮。 */
+.note-card-link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  color: inherit;
+}
+
+.note-selection {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.collection-card > a {
+  display: block;
+  color: inherit;
+  flex: 1;
+}
+.collection-symbol {
+  display: inline-flex;
+  padding: 10px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-radius: 12px;
+}
+.collection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+.collection-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  padding: 14px;
+  background: var(--surface, white);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  margin: 18px 0;
+}
+.collection-dialog {
+  color: inherit;
+  background: var(--surface, white);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 16px;
+  padding: 24px;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  margin: auto;
+  box-shadow: 0 20px 80px #0003;
+}
+.collection-dialog::backdrop {
+  background: #0006;
+}
+.collection-dialog h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.collection-dialog input:not([type="checkbox"]):not([type="radio"]),
+.collection-dialog select {
+  width: 100%;
+}
+.collection-form {
+  display: grid;
+  gap: 18px;
+}
+.collection-form > label {
+  margin-bottom: 0;
+  display: grid;
+  gap: 8px;
+}
+.collection-form fieldset {
+  padding: 12px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+}
+.collection-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.collection-colors label {
+  flex-direction: row;
+  margin: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.collection-colors input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--green);
+}
+.collection-colors span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.collection-options {
+  display: grid;
+  gap: 14px;
+  max-height: 45vh;
+  overflow: auto;
+  margin: 16px 0;
+}
+.collection-options label {
+  margin: 0;
+  min-height: 36px;
+  overflow-wrap: anywhere;
+}
+.collection-card h2,
+.page-heading h1 {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  .collection-dialog {
+    padding: 18px;
+  }
+  .collection-colors {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
