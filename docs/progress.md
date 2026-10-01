@@ -1,5 +1,14 @@
 # 构建进度
 
+## Q4 第二阶段完成：本机 Compose 升级验收（2026-10-01）
+
+- 分支 `feat/q4-annotations` 已完成计划第二阶段“编辑与标注系统”：后端与备份 `0d0d970`（`feat(annotations): add private annotations and reading preferences`）、阅读交互 `c7e53a6`（`feat(reader): add annotations and customizable reading styles`）。阶段范围包括原文高亮/批注、侧栏、阅读样式、资料库备份恢复及本地验收；使用及边界见 [标注指南](annotations.md)。第三阶段“单篇多格式导出”及后续阶段尚未实施。
+- 本次执行 `CLIPO_IMAGE=clipo-app docker compose build app` 成功（容器内重新静态构建），再执行 `CLIPO_IMAGE=clipo-app docker compose up -d --no-build --wait --wait-timeout 60 app`。保留原 PostgreSQL 数据卷，迁移至 `0018_annotations`，应用/数据库 healthy，健康接口和笔记静态页 HTTP 200，API 与 Huey worker 正常运行。
+- 在运行中 Compose 创建独立测试账号，通过真实 HTTP 提交离线内容直传并等待 worker；验证 emoji 标注及片段、全局样式/本文覆盖、公开页无私人批注、真实 worker 导出 JSON/Markdown 并再次导入、重建标注 ID、删除标注和清除本文覆盖。结束后清理测试账号、关联数据和导出文件，未请求真实站点或模型。
+- 首次容器业务脚本误用不存在的单项备份任务 GET 路径，返回 404；已清理该次测试数据并改用实际 `/backups` 列表查询，完整重跑通过。没有把该次脚本失败视为业务通过记录。
+- 本阶段最终代码检查和全量结果为 `make gen-api`、`make lint`、`make test`（后端 **495**、前端 **61**、扩展 **5**）通过，PostgreSQL 16 专项 **32** 项及标注/正文/双实例备份/完整采集与 PWA Chromium 验收通过，详细证据见下面节点。临时 PostgreSQL 专项容器已停止并自动删除，本机测试 Compose 保持运行。
+- 本收尾仅更新文档并升级测试容器，运行 `git diff --check`、核对迁移与健康状态；不将前节点全量测试记作本节点另一次运行。远端 CI、Android/iOS 实机长按选区、Safari/Edge 未在本阶段验收；未推送分支、创建 PR 或发布公共镜像。用户的未跟踪 `FEATURE_PLAN_2026Q4.md` 保持原样。
+
 ## Q4 编辑与标注：阅读页与浏览器验收（2026-10-01）
 
 - 新增正文选区工具栏、四色高亮/纯批注、重叠标注渲染、侧栏预览/编辑/删除/定位；保留富文本链接与强调，折叠正文定位会自动展开。新增四个阅读预设及字体、字号、字重、行/段距、宽度、对齐、背景/文字颜色调整，支持全局与本文范围和恢复跟随全局。
