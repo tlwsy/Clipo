@@ -8,7 +8,17 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from app.db.base import utcnow
 from app.errors import ClipoError
-from app.models import BackupJob, Collection, Comment, Note, NoteCollection, NoteTag, Source, Tag
+from app.models import (
+    Annotation,
+    BackupJob,
+    Collection,
+    Comment,
+    Note,
+    NoteCollection,
+    NoteTag,
+    Source,
+    Tag,
+)
 from app.note_repository import NoteRepository
 from app.schemas.backup import Archive, ArchiveCollection, ArchiveCollectionMember
 
@@ -161,16 +171,36 @@ class BackupRepository(NoteRepository):
             source = Source(user_id=self.user_id, **saved.source.model_dump(exclude={"site_name"}))
             self.db.add(source)
             self.db.flush()
-            values = saved.model_dump(exclude={"id", "source", "comments", "tags", "content"})
+            values = saved.model_dump(
+                exclude={
+                    "id",
+                    "source",
+                    "comments",
+                    "tags",
+                    "content",
+                    "annotations",
+                    "reading_preferences",
+                    "display_overrides",
+                }
+            )
             note = Note(
                 user_id=self.user_id,
                 source_id=source.id,
                 content=saved.content.model_dump(mode="json"),
+                display_overrides=saved.display_overrides.model_dump(exclude_none=True),
                 **values,
             )
             self.db.add(note)
             self.db.flush()
             restored_ids[saved.id] = note.id
+            for annotation in saved.annotations:
+                self.db.add(
+                    Annotation(
+                        note_id=note.id,
+                        user_id=self.user_id,
+                        **annotation.model_dump(exclude={"id"}),
+                    )
+                )
             for comment in saved.comments:
                 self.db.add(Comment(note_id=note.id, **comment.model_dump(exclude={"id"})))
             for name in {tag.name for tag in saved.tags}:
@@ -195,4 +225,8 @@ class BackupRepository(NoteRepository):
                         added_at=member.added_at,
                     )
                 )
+        # Append imports preserve the destination account's configured reading style.
+        settings = self.settings()
+        if not settings.reading_preferences:
+            settings.reading_preferences = archive.reading_preferences.model_dump(exclude_none=True)
         return len(archive.notes)

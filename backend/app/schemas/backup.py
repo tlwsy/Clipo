@@ -7,7 +7,9 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, SecretStr, mod
 
 from app.schemas.capture import NoteResponse, TagRequest
 from app.schemas.collection import CollectionCreate
+from app.schemas.reading import ReadingStylePatch
 from app.security.urls import normalize_url
+from app.services.annotations import annotation_texts, selected_text
 
 MAX_IMPORT_BYTES = 100 * 1024 * 1024
 
@@ -38,6 +40,7 @@ class Archive(BaseModel):
     tags: list[TagRequest]
     notes: list[ArchiveNote]
     collections: list[ArchiveCollection] = Field(default_factory=list)
+    reading_preferences: ReadingStylePatch = Field(default_factory=ReadingStylePatch)
 
     @model_validator(mode="after")
     def validate_references(self) -> "Archive":
@@ -54,6 +57,12 @@ class Archive(BaseModel):
             if len(set(members)) != len(members) or not set(members) <= note_ids:
                 raise ValueError("空间归属重复或引用缺失的笔记")
         for note in self.notes:
+            annotation_ids = [item.id for item in note.annotations]
+            if len(set(annotation_ids)) != len(annotation_ids):
+                raise ValueError("重复的标注")
+            texts = annotation_texts(note.content.text, note.content.blocks)
+            for annotation in note.annotations:
+                selected_text(texts, annotation)
             if len(note.source.platform) > 40:
                 raise ValueError("平台名称过长")
             for url in (

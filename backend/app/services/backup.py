@@ -41,6 +41,8 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                 "exported_at": utcnow().isoformat(),
                 "tags": [{"name": tag.name} for tag in repository.list_tags()],
             }
+            if preferences := repository.settings().reading_preferences:
+                header["reading_preferences"] = preferences
             collections = repository.archive_collections()
             note_collections: dict[int, list[str]] = {}
             if collections:
@@ -104,6 +106,21 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                             "",
                         ]
                     )
+                if note.annotations:
+                    lines.extend(["", "## 我的标注", ""])
+                    for item in note.annotations:
+                        lines.extend(
+                            [
+                                f"### 内容块 {item.block_index} · "
+                                f"{item.start_offset}–{item.end_offset}",
+                                "",
+                                item.selected_text,
+                                "",
+                                f"高亮：{item.highlight_color or '无'}",
+                                item.note_text or "",
+                                "",
+                            ]
+                        )
                 archive.writestr(f"markdown/{note.id}.md", "\n".join(lines))
                 count += 1
                 repository.db.expire_all()

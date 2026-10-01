@@ -4,6 +4,7 @@ import re
 
 from sqlalchemy.sql.elements import ColumnElement
 
+from app.annotation_repository import AnnotationRepository
 from app.extractors.site_name import clean_site_name, site_name_from_html
 from app.models import Note
 from app.note_repository import NoteRepository
@@ -36,6 +37,11 @@ def read_note(repository: NoteRepository, note_id: int) -> NoteResponse:
         url=note.url,
         source=source,
         content=content,
+        annotations=AnnotationRepository(repository.db, repository.user_id).annotations(note.id),
+        reading_preferences=AnnotationRepository(
+            repository.db, repository.user_id
+        ).reading_preferences(),
+        display_overrides=note.display_overrides,
         comments=[CommentResponse.model_validate(row) for row in repository.comments(note.id)],
         summary_markdown=note.summary_markdown,
         key_points=note.key_points,

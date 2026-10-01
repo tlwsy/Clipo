@@ -50,6 +50,9 @@ class Note(Base):
     title: Mapped[str] = mapped_column(Text)
     url: Mapped[str] = mapped_column(Text)
     content: Mapped[dict[str, Any]] = mapped_column(json_type)
+    display_overrides: Mapped[dict[str, Any]] = mapped_column(
+        json_type, default=dict, server_default="{}"
+    )
     summary_markdown: Mapped[str | None] = mapped_column(Text)
     key_points: Mapped[list[str]] = mapped_column(json_type, default=list)
     suggested_tags: Mapped[list[str]] = mapped_column(json_type, default=list)

@@ -98,10 +98,14 @@ class UserSettings(Base):
     )
     media_policy: Mapped[str] = mapped_column(String(32), default="thumbnail_only")
     backup_config: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
+    reading_preferences: Mapped[dict[str, Any]] = mapped_column(
+        json_type, default=dict, server_default="{}"
+    )
 
 
 # Import every mapped table so Alembic sees the complete metadata.
 from app.models.access import AccessBucket  # noqa: E402, F401
+from app.models.annotation import Annotation  # noqa: E402, F401
 from app.models.backup import BackupJob  # noqa: E402, F401
 from app.models.capture import (  # noqa: E402, F401
     CaptureJob,
