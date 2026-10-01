@@ -41,7 +41,16 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                 "exported_at": utcnow().isoformat(),
                 "tags": [{"name": tag.name} for tag in repository.list_tags()],
             }
+            collections = repository.archive_collections()
+            note_collections: dict[int, list[str]] = {}
+            if collections:
+                header["collections"] = [item.model_dump(mode="json") for item in collections]
+                for collection in collections:
+                    for member in collection.members:
+                        note_collections.setdefault(member.note_id, []).append(collection.name)
             output.write(json.dumps(header, ensure_ascii=False)[:-1] + ', "notes": [')
+            if output.tell() > MAX_IMPORT_BYTES - 2:
+                raise ClipoError(422, "archive_too_large", "导出超过 100 MiB，请使用数据库备份")
             for note_id in repository.note_ids():
                 note = read_note(repository, note_id)
                 note.content.raw_html = repository.note(note_id).content.get("raw_html")
@@ -56,6 +65,7 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                     f"来源：{note.url}",
                     "",
                     "标签：" + "、".join(tag.name for tag in note.tags),
+                    "空间：" + "、".join(note_collections.get(note_id, [])),
                     "",
                     "## 摘要",
                     "",

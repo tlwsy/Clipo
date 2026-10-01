@@ -20,6 +20,8 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 - 评论楼中楼与 AI 评论精华已实现，当前最新迁移为 `0016_comment_threads`；低分评论仅隐藏，完整数据保留，旧笔记补齐回复需重新采集。2026-09-27 本地 SQLite、全量测试和 Chromium 网页/扩展离线验收通过；新增回复接口真实平台、PostgreSQL 和 Docker 升级未在本次验收，见 `docs/comments.md`、`docs/progress.md`。
 
+- Q4 第一阶段已接入空间系统（CRUD、多对多归属、批量添加、单篇归属管理与备份恢复），最新迁移为 `0017_collections`；主要入口为 `collection_repository.py`、`api/v1/collections.py`、`frontend/app/(workspace)/collections/`。实现边界与本次验收见 `docs/collections.md`、`docs/progress.md`。后续标注、单篇多格式导出、语义搜索、回忆廊与多轮对话尚未实施。
+
 ## 代码位置与运行架构
 
 - `backend/app/main.py`：FastAPI 应用工厂 `create_app`、统一错误处理和静态文件挂载；ASGI 入口为 `app.asgi:app`。

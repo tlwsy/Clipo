@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from app.schemas.capture import NoteResponse, TagRequest
+from app.schemas.collection import CollectionCreate
 from app.security.urls import normalize_url
 
 MAX_IMPORT_BYTES = 100 * 1024 * 1024
@@ -17,6 +18,18 @@ class ArchiveNote(NoteResponse):
     updated_at: AwareDatetime
 
 
+class ArchiveCollectionMember(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    note_id: int = Field(strict=True, gt=0)
+    added_at: AwareDatetime
+
+
+class ArchiveCollection(CollectionCreate):
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
+    members: list[ArchiveCollectionMember]
+
+
 class Archive(BaseModel):
     model_config = ConfigDict(extra="forbid")
     format: Literal["clipo-library"] = "clipo-library"
@@ -24,6 +37,7 @@ class Archive(BaseModel):
     exported_at: AwareDatetime
     tags: list[TagRequest]
     notes: list[ArchiveNote]
+    collections: list[ArchiveCollection] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_references(self) -> "Archive":
@@ -31,6 +45,14 @@ class Archive(BaseModel):
         names = [tag.name for tag in self.tags]
         if len(set(ids)) != len(ids) or len(set(names)) != len(names):
             raise ValueError("重复的笔记或标签")
+        collection_names = [collection.name for collection in self.collections]
+        if len(set(collection_names)) != len(collection_names):
+            raise ValueError("重复的空间")
+        note_ids = set(ids)
+        for collection in self.collections:
+            members = [member.note_id for member in collection.members]
+            if len(set(members)) != len(members) or not set(members) <= note_ids:
+                raise ValueError("空间归属重复或引用缺失的笔记")
         for note in self.notes:
             if len(note.source.platform) > 40:
                 raise ValueError("平台名称过长")
