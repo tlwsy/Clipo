@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
 import { NoteComments } from "@/components/note-comments";
-import { ArticleContent } from "@/components/article-content";
+import { NoteReading } from "@/components/note-reading";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
@@ -199,14 +199,7 @@ function Reader() {
               )}
             </section>
           )}
-          <section className="original-section">
-            <h2>原始正文</h2>
-            <ArticleContent
-              text={note.content.text}
-              blocks={note.content.blocks}
-              images={note.content.images}
-            />
-          </section>
+          <NoteReading key={note.id} note={note} onChange={setNote} />
           {note.content.selection && (
             <section className="original-section">
               <h2>保存时的选区</h2>

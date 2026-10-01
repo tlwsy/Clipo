@@ -1,43 +1,15 @@
 // SPDX-FileCopyrightText: 2026 Clipo contributors
 // SPDX-License-Identifier: AGPL-3.0-or-later
 "use client";
-import { Fragment, useState, type ReactNode } from "react";
-import type { Schema } from "@/lib/api";
+import { useState } from "react";
+import { blockIndices, type Annotation } from "@/lib/annotations";
+import { AnnotatedText } from "./annotated-text";
 import {
   articleImages,
   articleUrl,
   steamCardUrl,
   type ArticleBlock,
 } from "@/lib/article";
-
-function InlineText({
-  spans,
-  text,
-}: {
-  spans?: Schema["ContentInline"][];
-  text: string;
-}) {
-  if (!spans?.length) return <>{text}</>;
-  return (
-    <>
-      {spans.map((span, index) => {
-        let child: ReactNode = span.text;
-        if (span.code) child = <code>{child}</code>;
-        if (span.bold) child = <strong>{child}</strong>;
-        if (span.italic) child = <em>{child}</em>;
-        if (span.strike) child = <del>{child}</del>;
-        const url = articleUrl(span.url);
-        if (url)
-          child = (
-            <a href={url} target="_blank" rel="noreferrer noopener">
-              {child}
-            </a>
-          );
-        return <Fragment key={index}>{child}</Fragment>;
-      })}
-    </>
-  );
-}
 
 function ArticleImage({
   url,
@@ -148,21 +120,38 @@ function GameCard({
 function Blocks({
   blocks,
   loadImages,
+  indices,
+  annotations,
+  annotatable,
   depth = 0,
 }: {
   blocks: ArticleBlock[];
   loadImages: boolean;
+  indices: Map<ArticleBlock, number>;
+  annotations: Map<number, Annotation[]>;
+  annotatable: boolean;
   depth?: number;
 }) {
   if (depth > 16) return <p className="notice">内容层级过深，请查看原网页。</p>;
   return (
     <>
       {blocks.map((block, index) => {
-        const body = <InlineText spans={block.inlines} text={block.text} />;
+        const blockIndex = indices.get(block)!;
+        const body = (
+          <AnnotatedText
+            spans={block.type === "code" ? undefined : block.inlines}
+            text={block.text}
+            annotations={annotations.get(blockIndex)}
+            blockIndex={annotatable ? blockIndex : undefined}
+          />
+        );
         const children = (
           <Blocks
             blocks={block.children ?? []}
             loadImages={loadImages}
+            indices={indices}
+            annotations={annotations}
+            annotatable={annotatable}
             depth={depth + 1}
           />
         );
@@ -201,7 +190,7 @@ function Blocks({
           case "code":
             return (
               <pre key={index}>
-                <code>{block.text}</code>
+                <code>{body}</code>
               </pre>
             );
           case "list":
@@ -248,7 +237,9 @@ function Blocks({
           case "details":
             return (
               <details key={index}>
-                <summary>{block.text || "展开内容"}</summary>
+                <summary>
+                  {block.text || block.inlines?.length ? body : "展开内容"}
+                </summary>
                 {children}
               </details>
             );
@@ -271,13 +262,25 @@ export function ArticleContent({
   blocks = [],
   images = [],
   publicView = false,
+  annotations = [],
+  annotatable = false,
 }: {
   text: string;
   blocks?: ArticleBlock[];
   images?: string[];
   publicView?: boolean;
+  annotations?: Annotation[];
+  annotatable?: boolean;
 }) {
   const [loadImages, setLoadImages] = useState(!publicView);
+  const indices = blockIndices(blocks);
+  const grouped = new Map<number, Annotation[]>();
+  for (const item of publicView ? [] : annotations) {
+    grouped.set(item.block_index, [
+      ...(grouped.get(item.block_index) ?? []),
+      item,
+    ]);
+  }
   const included = articleImages(blocks);
   const extraImages = images.filter((url) => !included.has(url));
   return (
@@ -297,9 +300,25 @@ export function ArticleContent({
           </div>
         )}
       {blocks.length ? (
-        <Blocks blocks={blocks} loadImages={loadImages} />
+        <Blocks
+          blocks={blocks}
+          loadImages={loadImages}
+          indices={indices}
+          annotations={grouped}
+          annotatable={annotatable && !publicView}
+        />
       ) : (
-        <div className="original-text">{text || "这篇内容没有文字正文。"}</div>
+        <div className="original-text">
+          {text ? (
+            <AnnotatedText
+              text={text}
+              annotations={grouped.get(0)}
+              blockIndex={annotatable && !publicView ? 0 : undefined}
+            />
+          ) : (
+            "这篇内容没有文字正文。"
+          )}
+        </div>
       )}
       {extraImages.length > 0 && (
         <div className="article-gallery" aria-label="原文图片">

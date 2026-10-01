@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.db.base import utcnow
 from app.errors import ClipoError
@@ -18,8 +18,12 @@ from app.services.annotations import annotation_texts, selected_text
 
 class AnnotationRepository(NoteRepository):
     def locked_note(self, note_id: int) -> Note:
+        # A no-op write also serializes read/modify/write on SQLite, where FOR UPDATE is ignored.
         row = self.db.scalar(
-            select(Note).where(Note.id == note_id, Note.user_id == self.user_id).with_for_update()
+            update(Note)
+            .where(Note.id == note_id, Note.user_id == self.user_id)
+            .values(updated_at=Note.updated_at)
+            .returning(Note)
         )
         if row is None:
             raise ClipoError(404, "note_not_found", "笔记不存在或已删除，请返回笔记列表")
@@ -80,6 +84,7 @@ class AnnotationRepository(NoteRepository):
                 Note.user_id == self.user_id,
             )
             .with_for_update()
+            .execution_options(populate_existing=True)
         )
         if row is None:
             raise ClipoError(404, "annotation_not_found", "标注不存在，请刷新笔记")
@@ -88,6 +93,8 @@ class AnnotationRepository(NoteRepository):
     def update_annotation(
         self, annotation_id: int, payload: AnnotationUpdate
     ) -> AnnotationResponse:
+        candidate = self.annotation(annotation_id)
+        self.locked_note(candidate.note_id)
         row = self.annotation(annotation_id)
         values = {
             "highlight_color": row.highlight_color,
@@ -112,7 +119,10 @@ class AnnotationRepository(NoteRepository):
 
     def save_preferences(self, payload: ReadingStylePatch) -> ReadingPreferences:
         row = self.db.scalar(
-            select(UserSettings).where(UserSettings.user_id == self.user_id).with_for_update()
+            update(UserSettings)
+            .where(UserSettings.user_id == self.user_id)
+            .values(reading_preferences=UserSettings.reading_preferences)
+            .returning(UserSettings)
         )
         assert row is not None
         row.reading_preferences = patch_preferences(row.reading_preferences, payload)

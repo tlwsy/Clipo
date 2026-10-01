@@ -2,6 +2,9 @@
 import copy
 import io
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+from time import sleep
 
 import pytest
 from alembic import command
@@ -9,6 +12,7 @@ from alembic.config import Config
 from app.annotation_repository import AnnotationRepository
 from app.backup_repository import BackupRepository
 from app.config import BACKEND_ROOT
+from app.errors import ClipoError
 from app.models import Annotation
 from app.repositories import IdentityRepository
 from app.schemas.annotation import AnnotationCreate
@@ -239,3 +243,38 @@ def test_annotations_migration_roundtrip(app: FastAPI, client: TestClient, auth:
         result = client.get(f"/api/v1/notes/{note_id}", headers=auth).json()
         assert result["content"]["text"] == "整理笔记" and result["annotations"] == []
         assert result["reading_preferences"]["font_size"] == 18
+
+
+def test_concurrent_creates_enforce_per_note_limit(
+    app: FastAPI, client: TestClient, auth: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app import annotation_repository
+
+    note_id = seed_note(app)
+    with app.state.session_factory.begin() as db:
+        db.add_all([Annotation(user_id=1, note_id=note_id, **BODY) for _ in range(999)])
+    original = annotation_repository.selected_text
+
+    def slow_validation(texts: list[str], payload: AnnotationCreate) -> str:
+        # Allow a competing writer to reach the limit check before this insert.
+        sleep(0.1)
+        return original(texts, payload)
+
+    monkeypatch.setattr(annotation_repository, "selected_text", slow_validation)
+    barrier = Barrier(2)
+
+    def create() -> int:
+        barrier.wait(timeout=5)
+        try:
+            with app.state.session_factory.begin() as db:
+                AnnotationRepository(db, 1).create_annotation(note_id, AnnotationCreate(**BODY))
+            return 201
+        except ClipoError as exc:
+            return exc.status
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(lambda _: create(), range(2))) == [201, 409]
+    assert (
+        len(client.get(f"/api/v1/notes/{note_id}/annotations", headers=auth).json()["annotations"])
+        == 1000
+    )

@@ -46,6 +46,7 @@ jobs:
           backend/tests/integration/test_xiaoheihe_capture.py
           backend/tests/integration/test_payload_capture.py
           backend/tests/integration/test_migrations.py
+          backend/tests/integration/test_annotations.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
         run: make gen-api && git diff --exit-code -- frontend/openapi.json frontend/lib/api-types.ts
@@ -60,6 +61,8 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_notes.py
       - name: Browser ordered articles and platform DOM
         run: uv run --no-project --with playwright python scripts/smoke_article.py
+      - name: Browser annotations and reading styles
+        run: uv run --no-project --with playwright python scripts/smoke_annotations.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:

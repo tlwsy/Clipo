@@ -20,7 +20,9 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 - 评论楼中楼与 AI 评论精华已实现，当前最新迁移为 `0016_comment_threads`；低分评论仅隐藏，完整数据保留，旧笔记补齐回复需重新采集。2026-09-27 本地 SQLite、全量测试和 Chromium 网页/扩展离线验收通过；新增回复接口真实平台、PostgreSQL 和 Docker 升级未在本次验收，见 `docs/comments.md`、`docs/progress.md`。
 
-- Q4 第一阶段已接入空间系统（CRUD、多对多归属、批量添加、单篇归属管理与备份恢复），最新迁移为 `0017_collections`；主要入口为 `collection_repository.py`、`api/v1/collections.py`、`frontend/app/(workspace)/collections/`。实现边界与本次验收见 `docs/collections.md`、`docs/progress.md`。后续标注、单篇多格式导出、语义搜索、回忆廊与多轮对话尚未实施。
+- Q4 第一阶段已接入空间系统（CRUD、多对多归属、批量添加、单篇归属管理与备份恢复），迁移为 `0017_collections`；主要入口为 `collection_repository.py`、`api/v1/collections.py`、`frontend/app/(workspace)/collections/`。实现边界与验收见 `docs/collections.md`、`docs/progress.md`。
+
+- Q4 第二阶段已接入私人高亮/批注、标注侧栏、全局及本文阅读样式、备份恢复，最新迁移为 `0018_annotations`；主要入口为 `annotation_repository.py`、`schemas/reading.py`、`api/v1/annotations.py`、`frontend/components/note-reading.tsx`。标注使用内容块前序编号及 UTF-16 偏移，仅对原始正文操作，不进入公开分享或离线写队列；边界及本次验证见 `docs/annotations.md`、`docs/progress.md`。后续单篇多格式导出、语义搜索、回忆廊与多轮对话尚未实施。
 
 ## 代码位置与运行架构
 
