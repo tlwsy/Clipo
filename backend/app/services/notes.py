@@ -58,8 +58,11 @@ def list_notes(
     tag_id: int | None,
     favorite: bool | None,
     search: ColumnElement[bool] | None = None,
+    collection_id: int | None = None,
 ) -> NotePage:
-    rows, next_cursor = repository.list_notes(cursor, limit, tag_id, favorite, search)
+    rows, next_cursor = repository.list_notes(
+        cursor, limit, tag_id, favorite, search, collection_id
+    )
     tags = repository.tags_for([note.id for note in rows])
     items = []
     for note in rows:

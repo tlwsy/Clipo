@@ -6,7 +6,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from app.capture_repository import CaptureRepository, decode_cursor, encode_cursor
 from app.db.base import utcnow
 from app.errors import ClipoError
-from app.models import Note, NoteTag, Tag
+from app.models import Collection, Note, NoteCollection, NoteTag, Tag
 
 
 class NoteRepository(CaptureRepository):
@@ -74,6 +74,7 @@ class NoteRepository(CaptureRepository):
         tag_id: int | None = None,
         favorite: bool | None = None,
         search: ColumnElement[bool] | None = None,
+        collection_id: int | None = None,
     ) -> tuple[list[Note], str | None]:
         query = select(Note).where(Note.user_id == self.user_id)
         if tag_id is not None:
@@ -82,6 +83,14 @@ class NoteRepository(CaptureRepository):
                     select(NoteTag.note_id)
                     .join(Tag)
                     .where(Tag.id == tag_id, Tag.user_id == self.user_id)
+                )
+            )
+        if collection_id is not None:
+            query = query.where(
+                Note.id.in_(
+                    select(NoteCollection.note_id)
+                    .join(Collection)
+                    .where(Collection.id == collection_id, Collection.user_id == self.user_id)
                 )
             )
         if favorite is not None:
