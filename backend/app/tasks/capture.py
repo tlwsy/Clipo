@@ -19,6 +19,7 @@ from app.models import CaptureJob, CaptureUpload
 from app.services.captures import browser_content
 from app.services.settings import load_platform_cookie
 from app.tasks.backup import BackupQueue
+from app.tasks.conversations import ConversationQueue
 from app.tasks.embeddings import EmbeddingQueue
 from app.tasks.memory import MemoryMaintenance
 from app.tasks.platform_checks import PlatformCheckQueue
@@ -118,6 +119,7 @@ class CaptureQueue:
         self.platform_checks = PlatformCheckQueue(self.huey, sessions, settings)
         self.backups = BackupQueue(self.huey, sessions, settings)
         self.summaries = SummaryQueue(self.huey, sessions, settings)
+        self.conversations = ConversationQueue(self.huey, sessions, settings)
         self.embeddings = EmbeddingQueue(self.huey, sessions, settings)
         self.memory = MemoryMaintenance(self.huey, sessions)
 
@@ -193,4 +195,5 @@ class CaptureQueue:
         self.platform_checks.recover()
         self.backups.recover()
         self.summaries.recover()
+        self.conversations.recover()
         self.embeddings.recover()

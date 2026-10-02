@@ -7,6 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, SecretStr, mod
 
 from app.schemas.capture import NoteResponse, TagRequest
 from app.schemas.collection import CollectionCreate
+from app.schemas.conversation import ConversationMessage
 from app.schemas.memory import MemoryHistory
 from app.schemas.reading import ReadingStylePatch
 from app.security.urls import normalize_url
@@ -19,6 +20,26 @@ class ArchiveNote(NoteResponse, MemoryHistory):
     model_config = ConfigDict(extra="forbid")
     created_at: AwareDatetime
     updated_at: AwareDatetime
+    conversations: list[ConversationMessage] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_conversations(self) -> "ArchiveNote":
+        previous = -1
+        if len(self.conversations) % 2:
+            raise ValueError("对话必须包含完整问答")
+        for question, answer in zip(self.conversations[::2], self.conversations[1::2], strict=True):
+            if (
+                question.role != "user"
+                or answer.role != "assistant"
+                or question.turn_index != answer.turn_index
+                or question.turn_index <= previous
+                or len(question.content) > 4000
+                or not question.content.strip()
+                or not answer.content.strip()
+            ):
+                raise ValueError("对话顺序或内容无效")
+            previous = question.turn_index
+        return self
 
 
 class ArchiveCollectionMember(BaseModel):

@@ -9,10 +9,12 @@ from pathlib import Path
 from app.backup_repository import BackupRepository
 from app.config import Settings
 from app.content import blocks_markdown
+from app.conversation_repository import ConversationRepository
 from app.db.base import utcnow
 from app.errors import ClipoError
 from app.memory_repository import MemoryGalleryRepository
 from app.schemas.backup import MAX_IMPORT_BYTES
+from app.schemas.conversation import ConversationMessage
 from app.services.notes import read_note
 
 
@@ -65,6 +67,13 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                     .history(note_id)
                     .model_dump(mode="json")
                 )
+                conversations = ConversationRepository(repository.db, repository.user_id).completed(
+                    note_id
+                )
+                data["conversations"] = [
+                    ConversationMessage.model_validate(row).model_dump(mode="json")
+                    for row in conversations
+                ]
                 output.write(json.dumps(data, ensure_ascii=False))
                 if output.tell() > MAX_IMPORT_BYTES - 2:
                     raise ClipoError(422, "archive_too_large", "导出超过 100 MiB，请使用数据库备份")
@@ -125,6 +134,17 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                                 "",
                                 f"高亮：{item.highlight_color or '无'}",
                                 item.note_text or "",
+                                "",
+                            ]
+                        )
+                if conversations:
+                    lines.extend(["", "## 私人 AI 对话", ""])
+                    for message in conversations:
+                        lines.extend(
+                            [
+                                "### " + ("我" if message.role == "user" else "AI"),
+                                "",
+                                message.content,
                                 "",
                             ]
                         )

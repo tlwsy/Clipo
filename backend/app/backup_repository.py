@@ -20,6 +20,7 @@ from app.models import (
     Source,
     Tag,
 )
+from app.models.conversation import NoteConversation
 from app.note_repository import NoteRepository
 from app.schemas.backup import Archive, ArchiveCollection, ArchiveCollectionMember
 
@@ -180,6 +181,7 @@ class BackupRepository(NoteRepository):
                     "tags",
                     "content",
                     "annotations",
+                    "conversations",
                     "reading_preferences",
                     "display_overrides",
                     "memory_dismissed_at",
@@ -201,6 +203,15 @@ class BackupRepository(NoteRepository):
             if saved.memory_dismissed_at:
                 MemoryGalleryRepository(self.db, self.user_id).dismiss(
                     note.id, saved.memory_dismissed_at
+                )
+            for message in saved.conversations:
+                self.db.add(
+                    NoteConversation(
+                        id=uuid.uuid4().hex,
+                        user_id=self.user_id,
+                        note_id=note.id,
+                        **message.model_dump(),
+                    )
                 )
             for annotation in saved.annotations:
                 self.db.add(

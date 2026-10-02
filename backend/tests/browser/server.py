@@ -122,6 +122,21 @@ class OfflineModel:
         return [1.0 if focus else 0.0, 0.0 if focus else 1.0] + [0.0] * (DIMENSIONS - 2)
 
     def complete(self, **kwargs: Any) -> str:
+        if kwargs.get("json_mode") is False:
+            messages = kwargs["messages"]
+            article = json.loads(messages[1]["content"].split("\n", 1)[1])
+            assert article["text"] and messages[-1]["role"] == "user"
+            answer = "根据原文，**保留出处，并定期回顾**。"
+            if len(messages) > 4:
+                assert messages[-2]["role"] == "assistant"
+                answer += "\n\n延续上轮回答：把观点变成下一次行动。"
+            if kwargs["model"] == "offline-hostile":
+                answer += (
+                    "\n<script>window.clipoXss=1</script>"
+                    "\n![远端图片](https://example.com/chat-track.jpg)"
+                    "\n[危险链接](javascript:alert%281%29)"
+                )
+            return answer
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
         if kwargs["model"] == "offline-no-scores":
             comments = []
@@ -174,6 +189,7 @@ if __name__ == "__main__":
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()
         queue.summaries.llm = OfflineModel()
+        queue.conversations.llm = OfflineModel()
         queue.embeddings.client = OfflineModel()
         queue.recover()
         Consumer(queue.huey, workers=1).run()

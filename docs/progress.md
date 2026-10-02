@@ -1,5 +1,12 @@
 # 构建进度
 
+## Q4 附加阶段：对话后端、持久任务与备份节点（2026-10-02）
+
+- 分支 `feat/q4-note-conversations` 接入迁移 `0021_note_conversations`、私人问答历史/提问/重试接口、单篇串行与请求幂等、后台模型调用、租约与恢复、共享数据库限流。按正文及最近最多 10 轮完整问答构造受限上下文，原文和摘要不变；错误不回显凭据与模型返回。
+- 资料库 JSON/Markdown 与定时备份包含完整问答，恢复映射新 ID 并可继续提问；旧备份默认为空，未完成任务不恢复。对话不进入公开分享、单篇导出及离线缓存。范围见 [私人 AI 对话](note-conversations.md)。
+- 本节点 `make gen-api`、`make lint`、`make build`、`make test` 通过：后端 **575**、前端 **78**、扩展 **5** 项；SQLite 对话/上下文/迁移专项 **23** 项、独立 PostgreSQL 16 + pgvector 对话/备份/迁移专项 **22** 项通过。另补充浏览器离线模型的对话分支并通过 Ruff/Black 检查，浏览器尚待下一节点运行。
+- 附加阶段尚未完成，继续实施前端、Chromium 和本机测试 Compose 升级验收。未请求真实模型或平台，未推送或发布；未跟踪的计划原稿保持原样。
+
 ## Q4 第五阶段完成：回忆廊 Compose 升级验收（2026-10-02）
 
 - 分支 `feat/q4-memory-gallery` 完成第五阶段本地实现与验收：后端 `d4d3243`（`feat(memory): add weighted gallery and private reading history`）、页面 `9df8915`（`feat(memory): add revisit cards and active reading tracking`）。包括候选/加权采样、7 天阅读排除、30 天移除、全屏卡片与键盘/触摸、阅读跟踪、过期清理、备份兼容和 CI 验收入口。操作与边界见 [回忆廊](memory-gallery.md)。

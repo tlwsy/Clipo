@@ -82,5 +82,8 @@ class NoteRateLimiter:
     def summary(self, user_id: int) -> None:
         self.consume([(f"summary:user:{user_id}", SUMMARY_LIMIT)])
 
+    def conversation(self, user_id: int) -> None:
+        self.consume([(f"conversation:user:{user_id}", 10)])
+
     def share(self, user_id: int) -> None:
         self.consume([(f"share:user:{user_id}", SHARE_LIMIT)])
