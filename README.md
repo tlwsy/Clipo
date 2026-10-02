@@ -48,6 +48,7 @@
 - **通用网页**：基于 Trafilatura 与 Readability 双引擎，精准提取主要正文，剥离广告与冗余标签，内置企业级 SSRF 防护。
 
 ### 2. AI 智能总结与深度挖掘
+- **AI 语义搜索（Q4 开发分支）**：后台生成笔记向量，支持含义检索与关键词混合排序；默认关闭，PostgreSQL 使用 pgvector，SQLite 提供本地回退。配置、数据库升级和验收边界见 [语义搜索指南](docs/semantic-search.md)。
 - **兼容任意大模型**：标准 OpenAI 接口兼容，支持接入 DeepSeek、通义千问、Kimi (Moonshot)、OpenAI 或 One API 等网关。
 - **结构化摘要**：自动生成精炼 Markdown 概述、分条要点清单，并智能推荐分类标签。
 - **评论价值评分与精华提炼**：初筛互动较高的讨论，由 AI 逐条评估信息量（附带评分与理由），标记高价值讨论，置顶精华观点。
@@ -102,12 +103,13 @@ docker run -d \
 一条复合命令自动创建目录、下载官方 compose 文件与环境模板、生成安全随机密钥并拉取官方镜像启动：
 
 ```bash
-mkdir -p clipo && cd clipo && \
+mkdir -p clipo/deploy && cd clipo && \
 curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/deploy/postgres.Dockerfile -o deploy/postgres.Dockerfile && \
 curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env && \
 sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env && \
 sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env && \
-docker compose up -d
+docker compose build db && docker compose up -d
 ```
 
 启动完成后同样访问 `http://localhost:8000` 即可。
@@ -125,7 +127,8 @@ cd Clipo
 # 1. 初始化本地环境配置与随机主密钥（不覆盖已有 .env）
 python3 scripts/init_env.py
 
-# 2. 直接拉取官方预构建镜像并后台启动（无需本地编译）
+# 2. 构建含 pgvector 的 PostgreSQL 16 镜像，拉取应用镜像并启动
+docker compose build db
 docker compose up -d
 
 # 3. 查看运行状态
@@ -136,7 +139,7 @@ docker compose logs -f app
 首次访问将自动引导进入**设置向导**，创建管理员账户并配置模型接入点即可开始使用！
 
 > 💡 **镜像与升级说明**：
-> - **一键升级**：Compose 升级仅需执行 `docker compose pull && docker compose up -d`；单容器模式执行 `docker pull ghcr.io/tlwsy/clipo:latest` 并重启容器即可。启动时系统会自动执行增量数据迁移，数据卷持久化保留。
+> - **升级**：更新仓库或下载最新 Compose/数据库 Dockerfile 后，执行 `docker compose pull app && docker compose build db && docker compose up -d`；单容器模式执行 `docker pull ghcr.io/tlwsy/clipo:latest` 并重启容器即可。启动时系统会自动执行增量数据迁移，数据卷持久化保留。Q4 开发分支尚未发布，验收本分支需按下条从源码构建应用。
 > - **二次开发**：若需要自行修改源码调试，可执行 `docker compose up --build -d` 从本地源码重新构建容器。详细部署与反向代理配置见 [部署指南](docs/deployment.md)。
 
 ---

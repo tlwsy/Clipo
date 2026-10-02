@@ -192,6 +192,9 @@ class BackupRepository(NoteRepository):
             )
             self.db.add(note)
             self.db.flush()
+            from app.embedding_repository import EmbeddingRepository
+
+            EmbeddingRepository(self.db, self.user_id).invalidate_note(note)
             restored_ids[saved.id] = note.id
             for annotation in saved.annotations:
                 self.db.add(

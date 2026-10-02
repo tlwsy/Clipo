@@ -12,7 +12,14 @@ from app.db.session import create_db_engine
 
 def include_object(obj: Any, name: str | None, kind: str, reflected: bool, compare_to: Any) -> bool:
     # Virtual tables/triggers and backend-specific expression indexes are migration-owned.
-    return not (name and (name.startswith("notes_search") or name.startswith("ix_notes_search")))
+    return not (
+        name
+        and (
+            name.startswith("notes_search")
+            or name.startswith("ix_notes_search")
+            or name == "ix_notes_embedding"
+        )
+    )
 
 
 config = context.config

@@ -3,7 +3,8 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, LargeBinary, String, Text, UniqueConstraint, false
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import JSON, ForeignKey, LargeBinary, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -48,6 +49,12 @@ class Note(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     source_id: Mapped[int] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(1536).with_variant(JSON(none_as_null=True), "sqlite"), deferred=True
+    )
+    embedding_key: Mapped[str | None] = mapped_column(String(64))
+    embedding_hash: Mapped[str | None] = mapped_column(String(64))
+    embedding_error: Mapped[str | None] = mapped_column(Text)
     url: Mapped[str] = mapped_column(Text)
     content: Mapped[dict[str, Any]] = mapped_column(json_type)
     display_overrides: Mapped[dict[str, Any]] = mapped_column(

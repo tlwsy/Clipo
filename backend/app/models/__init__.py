@@ -119,5 +119,6 @@ from app.models.capture import (  # noqa: E402, F401
     Tag,
 )
 from app.models.collection import Collection, NoteCollection  # noqa: E402, F401
+from app.models.embedding import EmbeddingJob  # noqa: E402, F401
 from app.models.sharing import SharedLink  # noqa: E402, F401
 from app.models.summary import SummaryJob, SummaryRequestKey  # noqa: E402, F401

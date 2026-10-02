@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        image: pgvector/pgvector:0.8.2-pg16
         env:
           POSTGRES_PASSWORD: clipo-ci-only
         ports: ['5432:5432']
@@ -48,6 +48,7 @@ jobs:
           backend/tests/integration/test_migrations.py
           backend/tests/integration/test_annotations.py
           backend/tests/integration/test_note_exports.py
+          backend/tests/integration/test_semantic_search.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
         run: make gen-api && git diff --exit-code -- frontend/openapi.json frontend/lib/api-types.ts
@@ -103,6 +104,7 @@ jobs:
           CLIPO_IMAGE: clipo-app:latest
         run: |
           python3 scripts/init_env.py
+          docker compose build db
           docker compose up -d --no-build --wait --wait-timeout 120
           uv run --no-project --with playwright python -m playwright install --with-deps chromium
           uv run --no-project --with playwright python scripts/smoke_compose.py --base-url http://127.0.0.1:8000

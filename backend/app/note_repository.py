@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Clipo contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from sqlalchemy import and_, delete, or_, select
+from sqlalchemy import Select, and_, delete, or_, select
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.capture_repository import CaptureRepository, decode_cursor, encode_cursor
@@ -76,6 +76,30 @@ class NoteRepository(CaptureRepository):
         search: ColumnElement[bool] | None = None,
         collection_id: int | None = None,
     ) -> tuple[list[Note], str | None]:
+        query = self.filtered_notes(tag_id, favorite, collection_id)
+        if search is not None:
+            query = query.where(search)
+        if cursor:
+            created, identifier = decode_cursor(cursor)
+            if type(identifier) is not int:
+                raise ClipoError(422, "invalid_cursor", "分页游标不匹配，请从第一页重新加载")
+            query = query.where(
+                or_(
+                    Note.created_at < created,
+                    and_(Note.created_at == created, Note.id < identifier),
+                )
+            )
+        rows = list(
+            self.db.scalars(query.order_by(Note.created_at.desc(), Note.id.desc()).limit(limit + 1))
+        )
+        return rows[:limit], encode_cursor(rows[limit - 1]) if len(rows) > limit else None
+
+    def filtered_notes(
+        self,
+        tag_id: int | None = None,
+        favorite: bool | None = None,
+        collection_id: int | None = None,
+    ) -> Select[tuple[Note]]:
         query = select(Note).where(Note.user_id == self.user_id)
         if tag_id is not None:
             query = query.where(
@@ -95,19 +119,4 @@ class NoteRepository(CaptureRepository):
             )
         if favorite is not None:
             query = query.where(Note.is_favorite == favorite)
-        if search is not None:
-            query = query.where(search)
-        if cursor:
-            created, identifier = decode_cursor(cursor)
-            if type(identifier) is not int:
-                raise ClipoError(422, "invalid_cursor", "分页游标不匹配，请从第一页重新加载")
-            query = query.where(
-                or_(
-                    Note.created_at < created,
-                    and_(Note.created_at == created, Note.id < identifier),
-                )
-            )
-        rows = list(
-            self.db.scalars(query.order_by(Note.created_at.desc(), Note.id.desc()).limit(limit + 1))
-        )
-        return rows[:limit], encode_cursor(rows[limit - 1]) if len(rows) > limit else None
+        return query

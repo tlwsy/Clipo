@@ -19,6 +19,7 @@ from app.models import CaptureJob, CaptureUpload
 from app.services.captures import browser_content
 from app.services.settings import load_platform_cookie
 from app.tasks.backup import BackupQueue
+from app.tasks.embeddings import EmbeddingQueue
 from app.tasks.platform_checks import PlatformCheckQueue
 from app.tasks.summary import SummaryQueue
 from app.upload_repository import UploadRepository
@@ -116,12 +117,14 @@ class CaptureQueue:
         self.platform_checks = PlatformCheckQueue(self.huey, sessions, settings)
         self.backups = BackupQueue(self.huey, sessions, settings)
         self.summaries = SummaryQueue(self.huey, sessions, settings)
+        self.embeddings = EmbeddingQueue(self.huey, sessions, settings)
 
         @self.huey.task(name="clipo.capture")
         def capture(user_id: int, job_id: str):
             delay = self.pipeline.run(user_id, job_id)
             if delay is not None:
                 capture.schedule(args=(user_id, job_id), delay=delay)
+            self.embeddings.dispatch_pending(user_id)
 
         self.capture = capture
 
@@ -188,3 +191,4 @@ class CaptureQueue:
         self.platform_checks.recover()
         self.backups.recover()
         self.summaries.recover()
+        self.embeddings.recover()
