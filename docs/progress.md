@@ -1,5 +1,14 @@
 # 构建进度
 
+## Q4 第五阶段完成：回忆廊 Compose 升级验收（2026-10-02）
+
+- 分支 `feat/q4-memory-gallery` 完成第五阶段本地实现与验收：后端 `d4d3243`（`feat(memory): add weighted gallery and private reading history`）、页面 `9df8915`（`feat(memory): add revisit cards and active reading tracking`）。包括候选/加权采样、7 天阅读排除、30 天移除、全屏卡片与键盘/触摸、阅读跟踪、过期清理、备份兼容和 CI 验收入口。操作与边界见 [回忆廊](memory-gallery.md)。
+- 本次 `CLIPO_IMAGE=clipo-app docker compose build app` 和 `CLIPO_IMAGE=clipo-app docker compose up -d --no-build --wait --wait-timeout 90 app` 成功；本机测试 Compose 保留原数据卷并迁移到 `0020_memory_gallery`，应用/PostgreSQL 16 healthy，API 与 Huey worker 进程正常。
+- 在实际 Compose 创建两个隔离测试账号，真实 HTTP 内容直传与 worker 完成 3 篇无模型笔记，添加标注后进入回忆候选；验证阅读/移除排除、401/404、账号隔离和原文保留。Chromium 390px 验证登录、推荐理由、收藏、打开阅读后时长落库及再次进入排除；截图已检查，无脚本错误或横向溢出。
+- 实际 worker 完成资料库 ZIP 导出与另一账号的追加恢复，阅读秒数、最近打开和移除时间均保留，恢复后沿用排除期限；测试结束清理两个账号、级联数据和导出目录，数据库确认无残留测试账号。独立 PostgreSQL 专项容器已停止并自动删除，本机测试 Compose 继续运行。
+- 本阶段最终全量为后端 **554**、前端 **78**、扩展 **5**，PostgreSQL 回忆/备份/迁移专项 **20** 项，回忆/完整采集与 PWA/备份/导航 Chromium、契约生成、lint 与静态构建均通过，分别见下方节点。本收尾仅同步文档并更新/验收部署，不把前节点结果记录为又一次全量运行。
+- 计划五个核心阶段已完成本地实现与验收，附加阶段多轮 AI 对话尚未实施。未请求真实平台或模型，未推送、执行远端 CI 或发布；Android/iOS 实机、Safari/Edge 和大规模候选性能尚待验收。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 原稿保持原样。
+
 ## Q4 回忆廊：页面、阅读跟踪与 Chromium 节点（2026-10-02）
 
 - 在后端 `d4d3243`（`feat(memory): add weighted gallery and private reading history`）之上接入主导航 `/memory/` 全屏卡片、推荐理由、进度、跳过/打开/收藏/30 天移除、方向键与 Esc、左滑跳过/右滑收藏并前进、空状态及联网重试。使用原生 modal dialog 保留键盘焦点，内容按文本安全渲染，适配桌面和 390px 布局。
@@ -415,7 +424,7 @@
 
 ## 当前阶段与后续节点
 
-Q4 功能优化已完成前四阶段的本地实现与验收：空间系统、私人标注与阅读样式、单篇多格式导出、AI 语义搜索。本机测试 Compose 已升级至 `0019_semantic_search` 并通过业务与浏览器验收；下一阶段为回忆廊，多轮 AI 对话尚未实施。真实嵌入供应商的质量/费用、大规模检索性能及其他浏览器/移动端实机仍保留独立验收边界。
+Q4 功能优化的五个核心阶段已完成本地实现与验收：空间系统、私人标注与阅读样式、单篇多格式导出、AI 语义搜索、回忆廊。本机测试 Compose 已升级至 `0020_memory_gallery` 并通过业务与浏览器验收；下一步为附加阶段多轮 AI 对话，尚未实施。真实嵌入供应商的质量/费用、大规模检索/候选性能及其他浏览器/移动端实机仍保留独立验收边界。
 
 **Phase 7：重新生成摘要、公开分享及访问保护开发与本地验收完成。Phase 6 开发、验收及发布已完成；Phase 5 真实登录平台与 Edge 待验收项继续保留。**
 

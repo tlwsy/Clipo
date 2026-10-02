@@ -26,7 +26,9 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 - Q4 第三阶段已接入单篇 Markdown/HTML 下载及 PDF 打印预览，支持摘要、有价值评论、私人标注开关；主要入口为 `services/note_export.py`、`api/v1/exports.py`、`frontend/components/export-menu.tsx` 和 `pdf-export-dialog.tsx`。无需新迁移，图片保留外部引用，导出需要联网。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Safari/Edge 与移动端系统打印待实机验证，详见 `docs/note-export.md`、`docs/progress.md`。后续语义搜索的实现与验收见下方第四阶段记录。
 
-- Q4 第四阶段已完成 AI 语义搜索：后台向量生成/补齐、语义与全文 RRF 融合、自动搜索与关键词分页、索引设置和离线降级；最新迁移为 `0019_semantic_search`。主要入口为 `embedding_repository.py`、`search_repository.py`、`services/embeddings.py`、`tasks/embeddings.py`、`api/v1/search.py` 和 `frontend/components/semantic-settings.tsx`。默认关闭，复用账号模型服务，要求 1536 维嵌入；PostgreSQL 使用 pgvector 0.8+/HNSW，SQLite 为流式精确回退。2026-10-02 SQLite、PostgreSQL 16、Chromium 和本机测试 Compose 验收通过；没有调用真实嵌入供应商，质量、额度与大规模性能待真实样本验证，未推送或发布。使用及实现边界见 `docs/semantic-search.md`、`docs/progress.md`；下一阶段为回忆廊，多轮对话仍未实施。
+- Q4 第四阶段已完成 AI 语义搜索：后台向量生成/补齐、语义与全文 RRF 融合、自动搜索与关键词分页、索引设置和离线降级；该阶段迁移为 `0019_semantic_search`。主要入口为 `embedding_repository.py`、`search_repository.py`、`services/embeddings.py`、`tasks/embeddings.py`、`api/v1/search.py` 和 `frontend/components/semantic-settings.tsx`。默认关闭，复用账号模型服务，要求 1536 维嵌入；PostgreSQL 使用 pgvector 0.8+/HNSW，SQLite 为流式精确回退。2026-10-02 SQLite、PostgreSQL 16、Chromium 和本机测试 Compose 验收通过；没有调用真实嵌入供应商，质量、额度与大规模性能待真实样本验证，未推送或发布。使用及实现边界见 `docs/semantic-search.md`、`docs/progress.md`。
+
+- Q4 第五阶段已完成回忆廊：按保存年限加权的随机推荐、最近 7 天阅读排除、30 天移除、全屏卡片/键盘/触摸交互、可见且聚焦时的阅读增量记录、过期清理及备份恢复；最新迁移为 `0020_memory_gallery`。主要入口为 `memory_repository.py`、`api/v1/memory.py`、`tasks/memory.py`、`frontend/components/memory-gallery.tsx` 和 `frontend/lib/memory.ts`。推荐/移除需联网，阅读记录不进入离线队列，不出现在公开分享中。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Android/iOS 实机、Safari/Edge 与大规模候选性能待验收。详见 `docs/memory-gallery.md`、`docs/progress.md`；五个核心阶段已完成本地实现与验收，下一步是附加阶段多轮 AI 对话，尚未实施。
 
 ## 代码位置与运行架构
 
