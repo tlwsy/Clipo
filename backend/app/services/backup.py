@@ -11,6 +11,7 @@ from app.config import Settings
 from app.content import blocks_markdown
 from app.db.base import utcnow
 from app.errors import ClipoError
+from app.memory_repository import MemoryGalleryRepository
 from app.schemas.backup import MAX_IMPORT_BYTES
 from app.services.notes import read_note
 
@@ -58,7 +59,13 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                 note.content.raw_html = repository.note(note_id).content.get("raw_html")
                 if count:
                     output.write(",")
-                output.write(note.model_dump_json())
+                data = note.model_dump(mode="json")
+                data.update(
+                    MemoryGalleryRepository(repository.db, repository.user_id)
+                    .history(note_id)
+                    .model_dump(mode="json")
+                )
+                output.write(json.dumps(data, ensure_ascii=False))
                 if output.tell() > MAX_IMPORT_BYTES - 2:
                     raise ClipoError(422, "archive_too_large", "导出超过 100 MiB，请使用数据库备份")
                 lines = [

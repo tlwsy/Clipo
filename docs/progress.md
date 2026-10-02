@@ -1,5 +1,12 @@
 # 构建进度
 
+## Q4 回忆廊：后端、迁移与备份节点（2026-10-02）
+
+- 新分支 `feat/q4-memory-gallery` 接入迁移 `0020_memory_gallery`、回忆候选/阅读上报/30 天移除接口、按保存年限加权且无重复的流式采样、每日 UTC 03:00 过期清理。候选包含从未打开的笔记，排除最近 7 天打开，要求标注、非空摘要或阅读超过 120 秒。所有读写限定账号，阅读原子累计且不修改正文更新时间。
+- 资料库 JSON 同时保存私人阅读历史与移除时间，恢复后映射新的笔记 ID；旧备份缺少字段时使用空历史。详情预加载、公开分享、导出与备份不触发阅读记录。使用与实现边界见 [回忆廊](memory-gallery.md)。
+- 本节点 `make gen-api`、`make lint`、`make build`、`make test` 通过：后端 **554**、前端 **73**、扩展 **5** 项。SQLite 回忆/备份/迁移定向 **22** 项、独立 PostgreSQL 16 + pgvector 的回忆/备份/迁移 **20** 项通过，包括边界、账号隔离、并发累计、上限、过期清理、备份恢复、升级/回滚/重复升级和模型一致性。
+- 第五阶段尚未完成，页面、阅读跟踪、Chromium 与本机测试 Compose 升级继续推进；未请求真实平台或模型，未推送或发布。未跟踪的计划原稿保留原样。
+
 ## Q4 第四阶段完成：语义搜索 Compose 升级验收（2026-10-02）
 
 - 分支 `feat/q4-semantic-search` 完成第四阶段的本地实现与验收：后端 `083a469`（`feat(search): add durable embeddings and hybrid note search`）、页面与浏览器 `3bcc55f`（`feat(search): add semantic search settings and progressive results`）。范围包括持久化后台生成/补齐、pgvector、SQLite 回退、RRF 搜索、渐进结果、配置/索引状态和恢复边界；指南见 [AI 语义搜索](semantic-search.md)。下一阶段为回忆廊，多轮对话仍未实施。

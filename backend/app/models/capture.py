@@ -72,6 +72,8 @@ class Note(Base):
     )
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    last_viewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
+    reading_duration_seconds: Mapped[int] = mapped_column(default=0, server_default="0")
 
 
 class Comment(Base):

@@ -8,6 +8,7 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from app.db.base import utcnow
 from app.errors import ClipoError
+from app.memory_repository import MemoryGalleryRepository
 from app.models import (
     Annotation,
     BackupJob,
@@ -181,6 +182,7 @@ class BackupRepository(NoteRepository):
                     "annotations",
                     "reading_preferences",
                     "display_overrides",
+                    "memory_dismissed_at",
                 }
             )
             note = Note(
@@ -196,6 +198,10 @@ class BackupRepository(NoteRepository):
 
             EmbeddingRepository(self.db, self.user_id).invalidate_note(note)
             restored_ids[saved.id] = note.id
+            if saved.memory_dismissed_at:
+                MemoryGalleryRepository(self.db, self.user_id).dismiss(
+                    note.id, saved.memory_dismissed_at
+                )
             for annotation in saved.annotations:
                 self.db.add(
                     Annotation(

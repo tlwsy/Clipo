@@ -7,6 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, SecretStr, mod
 
 from app.schemas.capture import NoteResponse, TagRequest
 from app.schemas.collection import CollectionCreate
+from app.schemas.memory import MemoryHistory
 from app.schemas.reading import ReadingStylePatch
 from app.security.urls import normalize_url
 from app.services.annotations import annotation_texts, selected_text
@@ -14,7 +15,7 @@ from app.services.annotations import annotation_texts, selected_text
 MAX_IMPORT_BYTES = 100 * 1024 * 1024
 
 
-class ArchiveNote(NoteResponse):
+class ArchiveNote(NoteResponse, MemoryHistory):
     model_config = ConfigDict(extra="forbid")
     created_at: AwareDatetime
     updated_at: AwareDatetime

@@ -20,6 +20,7 @@ from app.services.captures import browser_content
 from app.services.settings import load_platform_cookie
 from app.tasks.backup import BackupQueue
 from app.tasks.embeddings import EmbeddingQueue
+from app.tasks.memory import MemoryMaintenance
 from app.tasks.platform_checks import PlatformCheckQueue
 from app.tasks.summary import SummaryQueue
 from app.upload_repository import UploadRepository
@@ -118,6 +119,7 @@ class CaptureQueue:
         self.backups = BackupQueue(self.huey, sessions, settings)
         self.summaries = SummaryQueue(self.huey, sessions, settings)
         self.embeddings = EmbeddingQueue(self.huey, sessions, settings)
+        self.memory = MemoryMaintenance(self.huey, sessions)
 
         @self.huey.task(name="clipo.capture")
         def capture(user_id: int, job_id: str):
