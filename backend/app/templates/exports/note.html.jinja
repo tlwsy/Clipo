@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="{{ csp }}">
+  <title>{{ note.title or '无标题笔记' }}</title>
+  <style>{% include 'print.css' %}</style>
+</head>
+<body>
+  <header>
+    <p class="brand">Clipo · 笔记导出</p>
+    <h1>{{ note.title or '无标题笔记' }}</h1>
+    <dl class="metadata">
+      {% for label, value in metadata %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}
+      <div><dt>原网页</dt><dd>{% if note.url | safe_url %}<a href="{{ note.url | safe_url }}" rel="noreferrer noopener">{{ note.url }}</a>{% endif %}</dd></div>
+    </dl>
+  </header>
+  <main>
+    {% if options.include_summary %}
+    <section class="summary" aria-label="AI 摘要">
+      <h2>AI 摘要</h2>
+      {{ (note.summary_markdown or '未生成摘要，原文已保存。') | summary_html }}
+      {% if note.key_points %}<h3>值得记住的要点</h3><ul>{% for point in note.key_points %}<li>{{ point }}</li>{% endfor %}</ul>{% endif %}
+    </section>
+    {% endif %}
+    <section class="original" aria-label="正文">
+      <h2>正文</h2>
+      {{ body }}
+      {% if extra_images %}<div class="gallery">
+      {% for url in extra_images %}<figure><img src="{{ url | safe_url }}" alt="原文图片 {{ loop.index }}" referrerpolicy="no-referrer"></figure>{% endfor %}
+      </div>{% endif %}
+    </section>
+    {% if note.content.selection %}<section><h2>保存时的选区</h2><p class="paragraph">{{ note.content.selection }}</p></section>{% endif %}
+    {% if options.include_comments %}
+    <section aria-label="有价值评论">
+      <h2>有价值评论</h2>
+      {% for comment in comments %}
+      <article class="comment">
+        <h3>{{ comment.author or '匿名' }}</h3>
+        <p class="paragraph">{{ comment.content }}</p>
+        <p class="muted">点赞 {{ comment.likes }} · 回复 {{ comment.replies }}{% if comment.ai_score is not none %} · AI 评分 {{ comment.ai_score }}{% endif %}</p>
+        {% if comment.parent_source_id %}<p class="muted">此条为回复，仅导出已标记为有价值的评论。</p>{% endif %}
+      </article>
+      {% else %}<p>暂无标记为有价值的评论。</p>{% endfor %}
+    </section>
+    {% endif %}
+    {% if options.include_annotations %}
+    <section aria-label="我的标注与笔记">
+      <h2>我的标注与笔记</h2>
+      {% for item in annotations %}
+      <article class="annotation">
+        <h3>标注 {{ loop.index }} · {{ colors.get(item.highlight_color, '无') }}高亮</h3>
+        <blockquote class="paragraph">{{ item.selected_text }}</blockquote>
+        {% if item.note_text %}<p class="paragraph">{{ item.note_text }}</p>{% endif %}
+        <p class="muted">内容块 {{ item.block_index }} · UTF-16 偏移 {{ item.start_offset }}–{{ item.end_offset }}</p>
+        {% if item.id not in valid_ids %}<p class="muted">原文位置已失效，仅保留保存时的片段与批注。</p>{% endif %}
+      </article>
+      {% else %}<p>暂无私人标注。</p>{% endfor %}
+    </section>
+    {% endif %}
+  </main>
+  <footer>由 Clipo 导出 · 图片为原网站引用，离线或防盗链限制可能导致图片不可用。</footer>
+</body>
+</html>

@@ -1,0 +1,64 @@
+# {{ note.title | replace('\n', ' ') | replace('\r', ' ') | md or '无标题笔记' }}
+
+原网页：{{ note.url | md_link(note.url) }}
+{% for label, value in metadata %}
+{{ label }}：{{ value | md }}
+{% endfor %}
+{% if options.include_summary %}
+## AI 摘要
+
+{{ (note.summary_markdown or '未生成摘要，原文已保存。') | md_summary }}
+{% if note.key_points %}
+### 值得记住的要点
+{% for point in note.key_points %}
+- {{ point | md }}
+{% endfor %}
+{% endif %}
+{% endif %}
+## 正文
+
+{{ body }}
+{% if extra_images %}
+### 原文图片
+{% for url in extra_images %}
+{{ ('原文图片 ' ~ loop.index) | md_link(url, true) }}
+{% endfor %}
+{% endif %}
+{% if note.content.selection %}
+### 保存时的选区
+
+{{ note.content.selection | md }}
+{% endif %}
+{% if options.include_comments %}
+## 有价值评论
+{% for comment in comments %}
+### {{ (comment.author or '匿名') | replace('\n', ' ') | md }}
+
+{{ comment.content | md }}
+
+点赞 {{ comment.likes }} · 回复 {{ comment.replies }}{% if comment.ai_score is not none %} · AI 评分 {{ comment.ai_score }}{% endif %}
+{% if comment.parent_source_id %}
+此条为回复，仅导出已标记为有价值的评论。
+{% endif %}
+{% else %}
+暂无标记为有价值的评论。
+{% endfor %}
+{% endif %}
+{% if options.include_annotations %}
+## 我的标注与笔记
+{% for item in annotations %}
+### 标注 {{ loop.index }} · 内容块 {{ item.block_index }} · UTF-16 偏移 {{ item.start_offset }}–{{ item.end_offset }}
+
+原文片段：{{ item.selected_text | md }}
+
+高亮：{{ colors.get(item.highlight_color, '无') }}
+{% if item.note_text %}
+批注：{{ item.note_text | md }}
+{% endif %}
+{% if item.id not in valid_ids %}
+原文位置已失效，仅保留保存时的片段与批注。
+{% endif %}
+{% else %}
+暂无私人标注。
+{% endfor %}
+{% endif %}

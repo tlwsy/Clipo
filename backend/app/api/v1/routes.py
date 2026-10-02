@@ -9,6 +9,7 @@ from app.api.v1.annotations import router as annotations_router
 from app.api.v1.backups import router as backups_router
 from app.api.v1.captures import router as captures_router
 from app.api.v1.collections import router as collections_router
+from app.api.v1.exports import router as exports_router
 from app.api.v1.sharing import router as sharing_router
 from app.api.v1.shortcuts import router as shortcuts_router
 from app.api.v1.summaries import router as summaries_router
@@ -58,6 +59,7 @@ router = APIRouter(
 COOKIE_NAME = "clipo_refresh"
 router.include_router(captures_router)
 router.include_router(annotations_router)
+router.include_router(exports_router)
 router.include_router(collections_router)
 router.include_router(shortcuts_router)
 router.include_router(backups_router)
