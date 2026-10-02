@@ -7,11 +7,13 @@ export function CollectionDialog({
   children,
   onClose,
   busy = false,
+  className = "",
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   busy?: boolean;
+  className?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -23,7 +25,7 @@ export function CollectionDialog({
   return (
     <dialog
       ref={dialog}
-      className="collection-dialog"
+      className={`collection-dialog ${className}`.trim()}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();

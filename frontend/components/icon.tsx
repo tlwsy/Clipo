@@ -16,6 +16,7 @@ const paths = {
     "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2",
   arrow: "M5 12h14 M13 6l6 6-6 6",
   check: "m5 12 4 4L19 6",
+  download: "M12 3v12 M7 10l5 5 5-5 M4 15v6h16v-6",
   lock: "M6 10h12v11H6z M8 10V6a4 4 0 0 1 8 0v4",
   bookmark: "M6 3h12v18l-6-4-6 4z",
   key: "M14 3a5 5 0 1 1-3 9l-8 8v-4l7-7a5 5 0 0 1 4-6 M17 7h.01",

@@ -4,6 +4,7 @@
 import re
 import unicodedata
 from collections import defaultdict
+from datetime import UTC
 from html import escape
 from typing import Any
 from urllib.parse import quote
@@ -187,7 +188,8 @@ class ExportService:
     def _html_block(self, block: CapturedBlock) -> str:
         annotations = self.grouped[self.indices[id(block)]] if block.type in TEXT_BLOCKS else []
         body = annotated_html(block, annotations)
-        children = "".join(self._html_block(child) for child in block.children)
+        rendered_children = [self._html_block(child) for child in block.children]
+        children = "".join(rendered_children)
         if block.type == "image":
             return _html_image(block.url, block.alt)
         if block.type == "game_card":
@@ -207,6 +209,14 @@ class ExportService:
                 f'<h3>{body or "展开内容"}</h3>{children}</section>'
             )
         if block.type == "table":
+            if (
+                block.children
+                and block.children[0].children
+                and all(cell.header for cell in block.children[0].children)
+            ):
+                header = rendered_children[0]
+                rows = "".join(rendered_children[1:])
+                return f"<table><thead>{header}</thead><tbody>{rows}</tbody></table>"
             return f"<table><tbody>{children}</tbody></table>"
         tag = {
             "text": "div",
@@ -305,8 +315,15 @@ class ExportService:
         if note.source.author:
             metadata.append(("作者", note.source.author))
         if note.source.published_at:
-            metadata.append(("发布时间", note.source.published_at.isoformat()))
-        metadata.append(("保存时间", note.created_at.isoformat()))
+            metadata.append(
+                (
+                    "发布时间",
+                    note.source.published_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC"),
+                )
+            )
+        metadata.append(
+            ("保存时间", note.created_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC"))
+        )
         if note.tags:
             metadata.append(("标签", "、".join(tag.name for tag in note.tags)))
         included = {

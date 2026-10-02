@@ -170,7 +170,8 @@ def test_complete_export_is_private_inert_and_preserves_content(
         assert not document.xpath("//script|//iframe|//object")
         assert not document.xpath("//*[@onerror or @onload]")
         assert document.xpath('//mark[@class="highlight-green"]')
-        assert document.xpath("//ol/li") and document.xpath("//table//th")
+        assert document.xpath("//ol/li") and document.xpath("//table/thead/tr/th")
+        assert "UTC" in document.xpath('//*[@class="metadata"]')[0].text_content()
         assert document.xpath("//pre/code")[0].text == "print('<script>')\n```"
         assert len(document.xpath('//img[@src="https://example.com/photo.png"]')) == 1
         assert "@page" in text and "counter(page)" in text and "@media print" in text

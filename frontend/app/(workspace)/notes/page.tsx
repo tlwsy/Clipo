@@ -11,6 +11,7 @@ import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { NoteSharing } from "@/components/note-sharing";
+import { ExportMenu } from "@/components/export-menu";
 import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
@@ -66,7 +67,8 @@ function Reader() {
           ← 全部笔记
         </Link>
         {note && (
-          <div>
+          <div className="reader-actions">
+            <ExportMenu key={note.id} noteId={note.id} title={note.title} />
             {confirm ? (
               <>
                 <span>删除这篇笔记及评论？</span>
