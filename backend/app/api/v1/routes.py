@@ -12,6 +12,7 @@ from app.api.v1.collections import router as collections_router
 from app.api.v1.conversations import router as conversations_router
 from app.api.v1.exports import router as exports_router
 from app.api.v1.memory import router as memory_router
+from app.api.v1.model_usage import router as model_usage_router
 from app.api.v1.search import router as search_router
 from app.api.v1.sharing import router as sharing_router
 from app.api.v1.shortcuts import router as shortcuts_router
@@ -64,6 +65,7 @@ router.include_router(search_router)
 router.include_router(captures_router)
 router.include_router(annotations_router)
 router.include_router(memory_router)
+router.include_router(model_usage_router)
 router.include_router(conversations_router)
 router.include_router(exports_router)
 router.include_router(collections_router)

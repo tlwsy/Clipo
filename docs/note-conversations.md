@@ -29,6 +29,6 @@ Q4 附加阶段为每篇笔记提供一个持久对话线程，复用账号当�
 
 ## 验证状态
 
-后端、页面、浏览器和部署的当次验证以 [进度记录](progress.md) 为准。真实模型质量及费用、Safari/Edge 与 Android/iOS 实机需单独验证。未实现可选的逐字流式输出；使用异步任务完成后显示整条回答。目前提供每分钟限流，未提供月度模型额度控制，费用上限需在模型供应商侧管理。
+后端、页面、浏览器和部署的当次验证以 [进度记录](progress.md) 为准。真实模型质量及费用、Safari/Edge 与 Android/iOS 实机需单独验证。未实现可选的逐字流式输出；使用异步任务完成后显示整条回答。除每分钟限流外，对话及重试受账号[模型月度调用限额](model-usage.md)约束；超额保留问题并停止自动重试。次数限额不等于费用上限，金额预算需在模型供应商侧管理。
 
 可复现入口：`make lint`、`make test`、`make build`；`.venv/bin/pytest backend/tests/integration/test_conversations.py backend/tests/unit/test_conversation_context.py`，PostgreSQL 可按开发指南追加 `--postgres-url`；构建后执行 `uv run --no-project --with playwright python scripts/smoke_conversations.py`（支持 `CLIPO_TEST_CHROMIUM`）。

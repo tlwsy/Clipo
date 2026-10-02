@@ -17,6 +17,7 @@ class ClipoError(Exception):
 def validation_message(field: str, error_type: str) -> str:
     """Explain expected values without echoing user inputs or validator exceptions."""
     messages = {
+        "body.monthly_limit": "月度调用限额需为 0–1000000 之间的整数，留空表示不限",
         "body.username": "用户名需为 3–64 个字符，只能包含文字、数字、下划线和短横线",
         "body.email": "请输入有效的邮箱地址，例如 you@example.com",
         "body.password": "密码长度不符合要求，请按页面提示填写",

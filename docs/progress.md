@@ -1,5 +1,12 @@
 # 构建进度
 
+## Q4 成本控制：月度模型调用限额后端节点（2026-10-02）
+
+- 根据计划成本缓解项补齐账号月度调用限额，分支 `feat/q4-model-usage` 新增迁移 `0022_model_usage`、用量读取/配置接口和共享计数。默认不限，0 暂停，按 UTC 自然月重置；摘要及评论评分、重新摘要、对话、笔记/查询嵌入共用限额，每次尝试及重试在发出前提交一次计数。运行语义见 [模型用量](model-usage.md)。
+- SQLite/PostgreSQL 通过账号设置行锁串行化额度修改与计数；重启、改模型、取消再开启限额不清零。超额保留原文/旧摘要/问题、停止自动重试；语义查询显示限额提示并保留关键词回退。资料库备份不包含运行用量或限额。
+- 本节点 `make gen-api`、`make lint`、`make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项；SQLite 额度专项 **10** 项通过。独立 PostgreSQL 16 + pgvector 的额度、迁移、对话、摘要、语义专项 **49** 项通过，含并发上限、跨年换月、账号隔离、旧数据升级/回滚和模型一致性。首轮测试夹具漏传参数已修正，失败运行未记为通过。
+- 设置页、Chromium 和 Compose 升级继续推进；本节点尚未构建页面或升级本机测试实例。仅使用固定模型响应，没有请求真实供应商。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 保持原样。
+
 ## Q4 附加阶段完成：多轮 AI 对话与 Compose 验收（2026-10-02）
 
 - 分支 `feat/q4-note-conversations` 完成附加阶段本地实现与验收：后端 `c983885`（`feat(conversations): add durable private note dialogue and backups`）、页面 `2190442`（`feat(conversations): add persistent dialogue UI and browser recovery checks`）。每篇笔记持久问答，复用当前模型；后台执行、失败重试、幂等/租约、上下文限制、分页和安全 Markdown、私人备份恢复均已接入。操作与边界见 [私人 AI 对话](note-conversations.md)。

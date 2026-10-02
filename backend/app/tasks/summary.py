@@ -13,6 +13,7 @@ from app.extractors.base import CapturedComment, CapturedContent
 from app.llm.client import CompatibleClient
 from app.llm.orchestrator import load_config, summarize
 from app.models import SummaryJob
+from app.services.model_usage import MeteredClient
 from app.summary_repository import SummaryRepository
 
 logger = logging.getLogger("clipo.summary")
@@ -68,13 +69,13 @@ class SummaryQueue:
                     }
                 )
                 config = load_config(repository, self.settings)
-            result = summarize(content, config, self.llm)
+            result = summarize(content, config, MeteredClient(self.llm, self.sessions, user_id))
             with self.sessions.begin() as db:
                 repository = SummaryRepository(db, user_id)
                 if result.summary is not None:
                     repository.finish_summary(job_id, execution_id, result)
                     return None
-                if not config.api_key:
+                if not config.api_key or result.quota_exceeded:
                     delay = None
                 repository.fail_summary(
                     job_id,

@@ -11,8 +11,10 @@ from app.conversation_repository import ConversationRepository
 from app.db.base import utcnow
 from app.llm.client import CompatibleClient
 from app.llm.orchestrator import load_config
+from app.model_usage_repository import ModelQuotaExceeded
 from app.models.conversation import ConversationJob
 from app.services.conversations import answer_question, build_messages
+from app.services.model_usage import MeteredClient
 
 logger = logging.getLogger("clipo.conversations")
 RETRY_DELAYS = (30, 120, 480)
@@ -62,9 +64,15 @@ class ConversationQueue:
                     repository.question(repository.job(job_id)),
                     config.token_budget,
                 )
-            answer = answer_question(messages, config, self.llm)
+            answer = answer_question(
+                messages, config, MeteredClient(self.llm, self.sessions, user_id)
+            )
             with self.sessions.begin() as db:
                 ConversationRepository(db, user_id).finish(job_id, execution, answer)
+            return None
+        except ModelQuotaExceeded as exc:
+            with self.sessions.begin() as db:
+                ConversationRepository(db, user_id).fail(job_id, execution, exc.message, None)
             return None
         except Exception:
             with self.sessions.begin() as db:

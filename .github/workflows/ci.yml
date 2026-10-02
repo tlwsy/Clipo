@@ -51,6 +51,7 @@ jobs:
           backend/tests/integration/test_semantic_search.py
           backend/tests/integration/test_memory_gallery.py
           backend/tests/integration/test_conversations.py
+          backend/tests/integration/test_model_usage.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
         run: make gen-api && git diff --exit-code -- frontend/openapi.json frontend/lib/api-types.ts

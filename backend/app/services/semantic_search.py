@@ -3,6 +3,7 @@ import re
 
 from app.config import Settings
 from app.errors import ClipoError
+from app.model_usage_repository import QUOTA_MESSAGE
 from app.models import Note
 from app.schemas.capture import TagResponse
 from app.schemas.search import EmbeddingIndexResponse, SearchMode, SearchResponse, SearchResult
@@ -88,6 +89,8 @@ def search_notes(
                     "语义搜索暂不可用，当前显示关键词结果；"
                     "请检查模型设置，或 10 分钟后重新尝试。"
                 )
+                if job.last_error == QUOTA_MESSAGE:
+                    message = QUOTA_MESSAGE + "；当前显示关键词结果。"
             else:
                 message = "正在生成查询向量，先显示关键词结果。"
                 retry = 2

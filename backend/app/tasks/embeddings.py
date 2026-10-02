@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import Settings
 from app.db.base import utcnow
 from app.embedding_repository import EmbeddingRepository
+from app.model_usage_repository import ModelQuotaExceeded
 from app.models import EmbeddingJob
 from app.services.embeddings import (
     EMBEDDING_ERROR,
@@ -18,6 +19,7 @@ from app.services.embeddings import (
     note_input,
     validate_vector,
 )
+from app.services.model_usage import reserve_model_call
 
 logger = logging.getLogger("clipo.embeddings")
 RETRY_DELAYS = (30, 120, 480)
@@ -79,6 +81,7 @@ class EmbeddingQueue:
                 if not value:
                     raise ValueError("Missing embedding input")
                 content_hash = digest(value)
+            reserve_model_call(self.sessions, user_id)
             vector = validate_vector(self.client.embed(config, value))
             with self.sessions.begin() as db:
                 repository = EmbeddingRepository(db, user_id)
@@ -91,6 +94,10 @@ class EmbeddingQueue:
                         repository.fail(job_id, execution_id, "模型配置已改变，请重新搜索", None)
                     return None
                 repository.finish(job_id, execution_id, config, content_hash, vector)
+        except ModelQuotaExceeded as exc:
+            with self.sessions.begin() as db:
+                EmbeddingRepository(db, user_id).fail(job_id, execution_id, exc.message, None)
+            return None
         except Exception:
             with self.sessions.begin() as db:
                 EmbeddingRepository(db, user_id).fail(job_id, execution_id, EMBEDDING_ERROR, delay)

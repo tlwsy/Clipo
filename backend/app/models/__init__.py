@@ -92,6 +92,7 @@ class UserSettings(Base):
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     llm_config: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
+    monthly_model_limit: Mapped[int | None]
     platform_cookies: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
     capture_config: Mapped[dict[str, Any]] = mapped_column(
         json_type, default=dict, server_default="{}"
@@ -122,5 +123,6 @@ from app.models.collection import Collection, NoteCollection  # noqa: E402, F401
 from app.models.conversation import ConversationJob, NoteConversation  # noqa: E402, F401
 from app.models.embedding import EmbeddingJob  # noqa: E402, F401
 from app.models.memory import MemoryGalleryDismissal  # noqa: E402, F401
+from app.models.model_usage import ModelUsage  # noqa: E402, F401
 from app.models.sharing import SharedLink  # noqa: E402, F401
 from app.models.summary import SummaryJob, SummaryRequestKey  # noqa: E402, F401

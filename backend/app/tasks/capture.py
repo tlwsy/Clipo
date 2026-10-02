@@ -17,6 +17,7 @@ from app.llm.client import CompatibleClient
 from app.llm.orchestrator import SummaryResult, load_config, summarize
 from app.models import CaptureJob, CaptureUpload
 from app.services.captures import browser_content
+from app.services.model_usage import MeteredClient
 from app.services.settings import load_platform_cookie
 from app.tasks.backup import BackupQueue
 from app.tasks.conversations import ConversationQueue
@@ -78,7 +79,7 @@ class CapturePipeline:
             try:
                 with self.sessions() as db:
                     config = load_config(CaptureRepository(db, user_id), self.settings)
-                result = summarize(content, config, self.llm)
+                result = summarize(content, config, MeteredClient(self.llm, self.sessions, user_id))
             except Exception:
                 result = SummaryResult(
                     None,
