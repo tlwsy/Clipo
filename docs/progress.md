@@ -1,18 +1,18 @@
 # 构建进度
 
+## Q4 成本控制：设置页与 Compose 验收节点（2026-10-02）
+
+- 后端提交 `fe7bd36`（`feat(models): enforce shared monthly request quotas`）、页面提交 `5a22972`（`feat(settings): add monthly model usage controls`）；设置页新增“模型月度用量”卡片，显示 UTC 月份、已用/剩余次数和重置时间，支持不限、暂停及整数上限；输入保留、刷新、超额提示和 390px 布局通过 Chromium。模型调用次数说明、恢复边界和接口契约见 [模型用量](model-usage.md)。
+- `make build`、`make lint`、`make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项；`smoke_model_usage.py` Chromium 专项通过，覆盖设置持久化、暂停采集保留原文、对话超额、放宽后重试、离线刷新和移动布局；既有 `smoke_capture.py` 回归通过且无页面脚本错误。
+- 本机执行 `CLIPO_IMAGE=clipo-app docker compose build app` 与 `docker compose up -d --no-build --wait --wait-timeout 90 app`，应用/PostgreSQL healthy，迁移版本为 `0022_model_usage`，API/worker 正常。容器内使用临时 HTTP 固定模型和两个隔离账号，实际验证暂停采集、摘要计数、对话超额与恢复、账号隔离、未认证/越权拒绝及删除清理；临时模型、账号和数据已清理。本次未请求真实模型或采集站点。
+- 当前分支未推送、未执行远端 CI 或发布；真实供应商质量/费用、Safari/Edge、Android/iOS 实机仍待独立验收。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 原稿保持原样。
+
 ## Q4 成本控制：月度模型调用限额后端节点（2026-10-02）
 
 - 根据计划成本缓解项补齐账号月度调用限额，分支 `feat/q4-model-usage` 新增迁移 `0022_model_usage`、用量读取/配置接口和共享计数。默认不限，0 暂停，按 UTC 自然月重置；摘要及评论评分、重新摘要、对话、笔记/查询嵌入共用限额，每次尝试及重试在发出前提交一次计数。运行语义见 [模型用量](model-usage.md)。
 - SQLite/PostgreSQL 通过账号设置行锁串行化额度修改与计数；重启、改模型、取消再开启限额不清零。超额保留原文/旧摘要/问题、停止自动重试；语义查询显示限额提示并保留关键词回退。资料库备份不包含运行用量或限额。
 - 本节点 `make gen-api`、`make lint`、`make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项；SQLite 额度专项 **10** 项通过。独立 PostgreSQL 16 + pgvector 的额度、迁移、对话、摘要、语义专项 **49** 项通过，含并发上限、跨年换月、账号隔离、旧数据升级/回滚和模型一致性。首轮测试夹具漏传参数已修正，失败运行未记为通过。
 - 设置页、Chromium 和 Compose 升级继续推进；本节点尚未构建页面或升级本机测试实例。仅使用固定模型响应，没有请求真实供应商。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 保持原样。
-
-## Q4 成本控制：设置页与 Compose 验收节点（2026-10-02）
-
-- 设置页新增“模型月度用量”卡片，显示 UTC 月份、已用/剩余次数和重置时间，支持不限、暂停及整数上限；输入保留、刷新、超额提示和 390px 布局通过 Chromium。模型调用次数说明、恢复边界和接口契约见 [模型用量](model-usage.md)。
-- `make build`、`make lint`、`make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项；`smoke_model_usage.py` Chromium 专项通过，覆盖设置持久化、暂停采集保留原文、对话超额、放宽后重试、离线刷新和移动布局；既有 `smoke_capture.py` 回归通过且无页面脚本错误。
-- 本机执行 `CLIPO_IMAGE=clipo-app docker compose build app` 与 `docker compose up -d --no-build --wait --wait-timeout 90 app`，应用/PostgreSQL healthy，迁移版本为 `0022_model_usage`，API/worker 正常。容器内使用临时 HTTP 固定模型和两个隔离账号，实际验证暂停采集、摘要计数、对话超额与恢复、账号隔离、未认证/越权拒绝及删除清理；临时模型、账号和数据已清理。本次未请求真实模型或采集站点。
-- 当前分支未推送、未执行远端 CI 或发布；真实供应商质量/费用、Safari/Edge、Android/iOS 实机仍待独立验收。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 原稿保持原样。
 
 ## Q4 附加阶段完成：多轮 AI 对话与 Compose 验收（2026-10-02）
 
@@ -463,7 +463,7 @@
 
 ## 当前阶段与后续节点
 
-Q4 功能优化的五个核心阶段已完成本地实现与验收：空间系统、私人标注与阅读样式、单篇多格式导出、AI 语义搜索、回忆廊。本机测试 Compose 已升级至 `0020_memory_gallery` 并通过业务与浏览器验收；下一步为附加阶段多轮 AI 对话，尚未实施。真实嵌入供应商的质量/费用、大规模检索/候选性能及其他浏览器/移动端实机仍保留独立验收边界。
+Q4 五个核心阶段、附加多轮 AI 对话及月度模型调用限额已完成本地实现与验收。本机测试 Compose 已升级至 `0022_model_usage`，限额及对话恢复通过实际 API/worker 验证。当前剩余为可选逐字流式输出，以及真实供应商质量/费用、大规模检索/候选性能、Safari/Edge 和移动端实机验收；这些项目未标记为完成。开发分支未推送、未执行远端 CI 或发布。
 
 **Phase 7：重新生成摘要、公开分享及访问保护开发与本地验收完成。Phase 6 开发、验收及发布已完成；Phase 5 真实登录平台与 Edge 待验收项继续保留。**
 
