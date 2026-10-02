@@ -50,6 +50,7 @@ jobs:
           backend/tests/integration/test_note_exports.py
           backend/tests/integration/test_semantic_search.py
           backend/tests/integration/test_memory_gallery.py
+          backend/tests/integration/test_conversations.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
         run: make gen-api && git diff --exit-code -- frontend/openapi.json frontend/lib/api-types.ts
@@ -72,6 +73,8 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_semantic_search.py
       - name: Browser memory gallery and reading activity
         run: uv run --no-project --with playwright python scripts/smoke_memory_gallery.py
+      - name: Browser private AI conversations
+        run: uv run --no-project --with playwright python scripts/smoke_conversations.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:

@@ -2871,3 +2871,96 @@ input[aria-invalid="true"] {
     margin-top: 16px;
   }
 }
+
+/* Private note dialogue */
+.conversation-heading,
+.conversation-submit,
+.conversation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.conversation-heading h2 {
+  margin: 0;
+}
+.note-conversation > .muted {
+  margin: 12px 0;
+}
+.conversation-panel {
+  margin-top: 20px;
+}
+.conversation-panel > p {
+  margin: 12px 0;
+}
+.conversation-messages {
+  list-style: none;
+  padding: 4px;
+  margin: 18px 0;
+  max-height: 560px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.conversation-messages:empty {
+  display: none;
+}
+.conversation-message {
+  width: fit-content;
+  max-width: 92%;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: #f2f4f2;
+  overflow-wrap: anywhere;
+}
+.conversation-message.user {
+  margin-left: auto;
+  background: #edf4ff;
+}
+.conversation-meta {
+  justify-content: flex-start;
+  font-size: 12px;
+  color: var(--muted);
+}
+.conversation-question {
+  white-space: pre-wrap;
+  margin: 10px 0 0;
+}
+.conversation-message .markdown {
+  margin: 10px 0 0;
+  line-height: 1.8;
+}
+.conversation-message .markdown > :last-child {
+  margin-bottom: 0;
+}
+.conversation-message .markdown pre {
+  max-width: 100%;
+}
+.conversation-message .markdown ul,
+.conversation-message .markdown ol {
+  padding-left: 24px;
+}
+.conversation-form {
+  margin-top: 20px;
+  display: grid;
+  gap: 10px;
+}
+.conversation-form textarea {
+  resize: vertical;
+  min-height: 92px;
+  width: 100%;
+}
+.conversation-empty {
+  color: var(--muted);
+  padding: 20px 0;
+}
+@media (max-width: 600px) {
+  .conversation-message {
+    max-width: 96%;
+    padding: 12px 14px;
+  }
+  .conversation-messages {
+    max-height: 480px;
+  }
+}

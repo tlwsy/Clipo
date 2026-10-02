@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import { NoteConversation } from "@/components/note-conversation";
 import { NoteComments } from "@/components/note-comments";
 import { NoteReading } from "@/components/note-reading";
 import { ReadingTracker } from "@/components/reading-tracker";
@@ -214,6 +215,7 @@ function Reader() {
             ["xiaohongshu", "xiaoheihe", "bilibili", "youtube"].includes(
               note.source.platform,
             )) && <NoteComments note={note} />}
+          <NoteConversation key={`conversation-${note.id}`} noteId={note.id} />
         </article>
       )}
     </>

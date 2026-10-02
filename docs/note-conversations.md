@@ -2,6 +2,12 @@
 
 Q4 附加阶段为每篇笔记提供一个持久对话线程，复用账号当前模型服务。需要联网及运行中的 worker；模型费用由配置的供应商收取。
 
+## 使用
+
+在笔记详情底部点击“打开 AI 对话”，输入问题并发送；回答后可继续追问。重新打开笔记会加载保存的对话，超过 20 轮时可查看更早记录。失败可点“重试回答”或提出新问题；未配置密钥时先到“模型设置”保存配置。
+
+发送超时会保留输入，重新发送相同问题会复用请求键；刷新对话也可确认后台状态。收起面板、离开笔记或页面隐藏时停止轮询，恢复网络或返回页面时重新读取。对话及草稿不写入浏览器持久缓存，关闭面板会丢弃未提交草稿。
+
 ## 数据与上下文
 
 - 每次提问保存问题，后台生成回答；原文、摘要、标注和评论不被修改。单篇同一时间只处理一个问题。
@@ -23,4 +29,6 @@ Q4 附加阶段为每篇笔记提供一个持久对话线程，复用账号当�
 
 ## 验证状态
 
-本阶段仍在实施，后端、页面、浏览器和部署的当次验证以 [进度记录](progress.md) 为准。真实模型质量及费用、Safari/Edge 与 Android/iOS 实机需单独验证。未实现可选的逐字流式输出；使用异步任务完成后显示整条回答。
+后端、页面、浏览器和部署的当次验证以 [进度记录](progress.md) 为准。真实模型质量及费用、Safari/Edge 与 Android/iOS 实机需单独验证。未实现可选的逐字流式输出；使用异步任务完成后显示整条回答。目前提供每分钟限流，未提供月度模型额度控制，费用上限需在模型供应商侧管理。
+
+可复现入口：`make lint`、`make test`、`make build`；`.venv/bin/pytest backend/tests/integration/test_conversations.py backend/tests/unit/test_conversation_context.py`，PostgreSQL 可按开发指南追加 `--postgres-url`；构建后执行 `uv run --no-project --with playwright python scripts/smoke_conversations.py`（支持 `CLIPO_TEST_CHROMIUM`）。
