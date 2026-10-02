@@ -1,5 +1,14 @@
 # 构建进度
 
+## Q4 第三阶段完成：本机 Compose 升级验收（2026-10-02）
+
+- 分支 `feat/q4-note-export` 完成第三阶段“单篇多格式导出”：后端 `e15a7df`（`feat(export): add private Markdown and HTML note exports`）、页面与打印 `2370537`（`feat(export): add note downloads and PDF print preview`）。范围包括两种下载、内容选项、私人标注、PDF 预览与打印样式、测试和使用文档；操作见 [单篇导出指南](note-export.md)。下一阶段为 AI 语义搜索，回忆廊与多轮对话尚未实施。
+- 本次 `CLIPO_IMAGE=clipo-app docker compose build app` 成功，包含前端静态构建及带模板的新后端包；随后执行 `CLIPO_IMAGE=clipo-app docker compose up -d --no-build --wait --wait-timeout 90 app` 更新测试应用。应用及 PostgreSQL 16 healthy，迁移保持 `0018_annotations`，API 与 Huey worker 正常运行。
+- 在运行中 Compose 创建两个隔离测试账号及固定笔记，通过实际 HTTP 验证 Markdown/HTML、三项开关、emoji 高亮、私人批注、有价值评论、401/404 与账号隔离；实际 worker 完成资料库导出，ZIP 中标注正确。笔记由固定数据与摘要直接构造，没有调用真实采集站点或模型。
+- Chromium 对运行中的 Compose 验证登录、390px 阅读页、真实 Markdown 下载、PDF 预览、关闭私人标注及真实 `beforeprint`；无页面脚本错误或横向溢出。完成后删除两个测试账号、关联数据和导出目录，临时 PostgreSQL 专项容器停止并自动删除；本机测试 Compose 保持运行。
+- 本阶段代码检查、契约生成与静态构建通过，最终全量为后端 **510**、前端 **67**、扩展 **5**；本地导出/标注/完整采集/PWA、PostgreSQL 和 **6 页 A4 PDF** 验证见下方节点。本收尾只更新文档、构建/升级容器和运行部署验收，未把前节点测试计作又一次全量运行。
+- 尚未推送分支、创建 PR、执行远端 CI 或发布公共镜像。Safari/Edge、Android/iOS 系统打印及真实外部图片可用性仍待验收；用户的未跟踪 `FEATURE_PLAN_2026Q4.md` 原稿保持原样。
+
 ## Q4 多格式导出：阅读页与 PDF 浏览器验收（2026-10-02）
 
 - 阅读页新增导出菜单，Markdown/HTML 下载与 PDF 打印预览共用摘要、有价值评论、私人标注三个选项。复用认证、账号核对及 Blob 下载；关闭弹窗取消请求，切换选项立即停用旧预览，图片等待最多 8 秒并明确提示超时，可重新加载。
@@ -244,6 +253,8 @@
 
 ## 当前可用
 
+- Q4 单篇多格式导出：笔记详情提供 Markdown、HTML 下载和 PDF 打印预览，支持摘要、有价值评论及私人标注开关；已通过本地及本机测试 Compose 验收。详见 [导出指南](note-export.md)。
+
 - FastAPI 应用工厂、配置、统一错误体、健康检查与 OpenAPI；PostgreSQL / SQLite 模型和可回滚的 Alembic 迁移。
 - 初始化向导、账号与注册开关、Argon2id 密码、JWT 与刷新令牌轮换、HttpOnly Cookie、自动续期、API Token 管理；配置按账号隔离，模型密钥加密存储。
 - 小红书、小黑盒 Cookie 设置：加密保存、独立替换与清除，设置页附获取教程；读接口只返回保存状态。小红书后台采集使用当前账号凭据；小黑盒抓取也使用当前账号凭据；独立有效性探测入口已接入后台队列，结果附检测时间，凭据变更后失效。
@@ -360,6 +371,8 @@
 - YouTube 真实站点在当前环境无法解析域名，线上兼容性未验收；B 站样本没有公开字幕，字幕成功路径目前仅由离线夹具验证。视频平台不配置 Cookie，不下载视频/音频，不保证需要登录的字幕或评论可读。
 
 ## 当前阶段与后续节点
+
+Q4 功能优化已完成前三阶段：空间系统、私人标注与阅读样式、单篇多格式导出。下一步按计划推进第四阶段 AI 语义搜索；回忆廊和多轮 AI 对话尚未实施。前三阶段本地及本机测试 Compose 已验收，移动端系统打印与其他浏览器仍保留独立验收边界。
 
 **Phase 7：重新生成摘要、公开分享及访问保护开发与本地验收完成。Phase 6 开发、验收及发布已完成；Phase 5 真实登录平台与 Edge 待验收项继续保留。**
 

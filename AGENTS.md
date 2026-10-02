@@ -22,7 +22,9 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 - Q4 第一阶段已接入空间系统（CRUD、多对多归属、批量添加、单篇归属管理与备份恢复），迁移为 `0017_collections`；主要入口为 `collection_repository.py`、`api/v1/collections.py`、`frontend/app/(workspace)/collections/`。实现边界与验收见 `docs/collections.md`、`docs/progress.md`。
 
-- Q4 第二阶段已接入私人高亮/批注、标注侧栏、全局及本文阅读样式、备份恢复，最新迁移为 `0018_annotations`；主要入口为 `annotation_repository.py`、`schemas/reading.py`、`api/v1/annotations.py`、`frontend/components/note-reading.tsx`。标注使用内容块前序编号及 UTF-16 偏移，仅对原始正文操作，不进入公开分享或离线写队列；边界及本次验证见 `docs/annotations.md`、`docs/progress.md`。后续单篇多格式导出、语义搜索、回忆廊与多轮对话尚未实施。
+- Q4 第二阶段已接入私人高亮/批注、标注侧栏、全局及本文阅读样式、备份恢复，最新迁移为 `0018_annotations`；主要入口为 `annotation_repository.py`、`schemas/reading.py`、`api/v1/annotations.py`、`frontend/components/note-reading.tsx`。标注使用内容块前序编号及 UTF-16 偏移，仅对原始正文操作，不进入公开分享或离线写队列；边界及本次验证见 `docs/annotations.md`、`docs/progress.md`。
+
+- Q4 第三阶段已接入单篇 Markdown/HTML 下载及 PDF 打印预览，支持摘要、有价值评论、私人标注开关；主要入口为 `services/note_export.py`、`api/v1/exports.py`、`frontend/components/export-menu.tsx` 和 `pdf-export-dialog.tsx`。无需新迁移，图片保留外部引用，导出需要联网。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Safari/Edge 与移动端系统打印待实机验证，详见 `docs/note-export.md`、`docs/progress.md`。下一阶段为 AI 语义搜索，回忆廊与多轮对话仍未实施。
 
 ## 代码位置与运行架构
 
