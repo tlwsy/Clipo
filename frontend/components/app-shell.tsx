@@ -163,6 +163,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               空间
             </Link>
             <Link
+              href="/memory/"
+              className={
+                pathname.startsWith("/memory") ? "nav-item active" : "nav-item"
+              }
+            >
+              <Icon name="spark" />
+              回忆
+            </Link>
+            <Link
               className={
                 pathname.startsWith("/jobs") ? "nav-item active" : "nav-item"
               }

@@ -2717,3 +2717,157 @@ input[aria-invalid="true"] {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+/* Memory gallery stays in the dialog top layer, above navigation and PWA notices. */
+.memory-dialog {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 24px max(20px, env(safe-area-inset-right)) 24px
+    max(20px, env(safe-area-inset-left));
+  border: 0;
+  border-radius: 0;
+  background: rgba(21, 37, 30, 0.96);
+  color: #f0f5ed;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.memory-dialog::backdrop {
+  background: #15251e;
+}
+.memory-dialog > .section-heading {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.memory-dialog > .section-heading .inline-button {
+  color: #e0edde;
+}
+.memory-stage {
+  max-width: 680px;
+  margin: 24px auto;
+  text-align: center;
+}
+.memory-intro {
+  color: #c7d5c6;
+}
+.memory-progress {
+  min-height: 28px;
+  margin: 18px 0 10px;
+  font-variant-numeric: tabular-nums;
+}
+.memory-card {
+  position: relative;
+  text-align: left;
+  background: #fafbf7;
+  color: var(--ink);
+  border-radius: 22px;
+  padding: 44px;
+  box-shadow: 0 22px 70px #0004;
+  overflow-wrap: anywhere;
+  touch-action: pan-y;
+}
+.memory-dismiss {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  width: 38px;
+  height: 38px;
+  font-size: 26px;
+}
+.memory-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: #687b6b;
+  font-size: 12px;
+  padding-right: 12px;
+}
+.memory-reading-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.memory-card h2 {
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.5;
+  margin: 24px 0 18px;
+}
+.memory-snippet {
+  font-size: 16px;
+  line-height: 1.9;
+}
+.memory-points {
+  padding-left: 22px;
+  line-height: 1.9;
+  font-size: 14px;
+  margin: 24px 0;
+}
+.memory-points li + li {
+  margin-top: 8px;
+}
+.memory-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+.memory-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.memory-actions .button {
+  padding: 10px 15px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.memory-previous {
+  color: #e0edde;
+  background: transparent;
+  border: 1px solid #66796a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-top: 20px;
+}
+.memory-help {
+  font-size: 12px;
+  color: #b7c8b8;
+  line-height: 1.8;
+  margin-top: 24px;
+}
+.memory-message {
+  color: #e0edde;
+}
+.memory-empty {
+  text-align: center;
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+.memory-empty p {
+  line-height: 1.9;
+  margin-bottom: 24px;
+}
+@media (max-width: 600px) {
+  .memory-dialog {
+    padding-top: max(18px, env(safe-area-inset-top));
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+  .memory-card {
+    padding: 36px 20px 24px;
+    border-radius: 16px;
+  }
+  .memory-actions {
+    gap: 6px;
+  }
+  .memory-actions .button {
+    font-size: 12px;
+    padding: 10px;
+  }
+  .memory-stage {
+    margin-top: 16px;
+  }
+}

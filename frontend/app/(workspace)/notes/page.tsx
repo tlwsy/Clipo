@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
 import { NoteComments } from "@/components/note-comments";
 import { NoteReading } from "@/components/note-reading";
+import { ReadingTracker } from "@/components/reading-tracker";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
 import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
@@ -106,6 +107,7 @@ function Reader() {
       {!note && !error && <p role="status">正在打开笔记…</p>}
       {note && (
         <article className="reader">
+          <ReadingTracker noteId={note.id} />
           <header>
             <span className="eyebrow">KEEP THE GOOD IDEAS</span>
             <h1>{note.title || "无标题笔记"}</h1>
