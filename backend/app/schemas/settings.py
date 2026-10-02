@@ -16,6 +16,11 @@ from pydantic import (
 
 
 class LlmUpdate(BaseModel):
+    embedding_enabled: bool | None = None
+    embedding_model: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+        | None
+    ) = None
     base_url: HttpUrl | None = None
     model: (
         Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
@@ -77,6 +82,8 @@ class SettingsUpdate(BaseModel):
 
 
 class LlmResponse(BaseModel):
+    embedding_enabled: bool = False
+    embedding_model: str = "text-embedding-3-small"
     base_url: str
     model: str
     api_key_set: bool

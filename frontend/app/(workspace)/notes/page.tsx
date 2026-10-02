@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import { NoteConversation } from "@/components/note-conversation";
 import { NoteComments } from "@/components/note-comments";
-import { ArticleContent } from "@/components/article-content";
+import { NoteReading } from "@/components/note-reading";
+import { ReadingTracker } from "@/components/reading-tracker";
 import { NoteOrganization } from "@/components/note-organization";
 import { NoteSummary } from "@/components/note-summary";
+import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { NoteSharing } from "@/components/note-sharing";
+import { ExportMenu } from "@/components/export-menu";
 import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
@@ -21,6 +25,8 @@ function Reader() {
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [organizing, setOrganizing] = useState(false);
+  const [collectionMessage, setCollectionMessage] = useState("");
   const router = useRouter();
   useEffect(() => {
     let active = true;
@@ -63,7 +69,8 @@ function Reader() {
           ← 全部笔记
         </Link>
         {note && (
-          <div>
+          <div className="reader-actions">
+            <ExportMenu key={note.id} noteId={note.id} title={note.title} />
             {confirm ? (
               <>
                 <span>删除这篇笔记及评论？</span>
@@ -101,6 +108,7 @@ function Reader() {
       {!note && !error && <p role="status">正在打开笔记…</p>}
       {note && (
         <article className="reader">
+          <ReadingTracker noteId={note.id} />
           <header>
             <span className="eyebrow">KEEP THE GOOD IDEAS</span>
             <h1>{note.title || "无标题笔记"}</h1>
@@ -125,6 +133,30 @@ function Reader() {
           </header>
           <NoteOrganization note={note} onChange={setNote} />
           <NoteSummary noteId={note.id} onChange={setNote} />
+          <div className="collection-actions">
+            <button
+              className="button secondary small"
+              onClick={() => {
+                setCollectionMessage("");
+                setOrganizing(true);
+              }}
+            >
+              管理所属空间
+            </button>
+            {collectionMessage && (
+              <span role="status">{collectionMessage}</span>
+            )}
+          </div>
+          {organizing && (
+            <AddToCollectionDialog
+              noteIds={[note.id]}
+              onClose={() => setOrganizing(false)}
+              onSaved={() => {
+                setOrganizing(false);
+                setCollectionMessage("空间归属已保存。");
+              }}
+            />
+          )}
           <NoteSharing noteId={note.id} />
           {(note.content.capture_warnings ?? []).map((warning, index) => (
             <p className="notice" role="status" key={index}>
@@ -172,14 +204,7 @@ function Reader() {
               )}
             </section>
           )}
-          <section className="original-section">
-            <h2>原始正文</h2>
-            <ArticleContent
-              text={note.content.text}
-              blocks={note.content.blocks}
-              images={note.content.images}
-            />
-          </section>
+          <NoteReading key={note.id} note={note} onChange={setNote} />
           {note.content.selection && (
             <section className="original-section">
               <h2>保存时的选区</h2>
@@ -190,6 +215,7 @@ function Reader() {
             ["xiaohongshu", "xiaoheihe", "bilibili", "youtube"].includes(
               note.source.platform,
             )) && <NoteComments note={note} />}
+          <NoteConversation key={`conversation-${note.id}`} noteId={note.id} />
         </article>
       )}
     </>

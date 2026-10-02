@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        image: pgvector/pgvector:0.8.2-pg16
         env:
           POSTGRES_PASSWORD: clipo-ci-only
         ports: ['5432:5432']
@@ -46,6 +46,12 @@ jobs:
           backend/tests/integration/test_xiaoheihe_capture.py
           backend/tests/integration/test_payload_capture.py
           backend/tests/integration/test_migrations.py
+          backend/tests/integration/test_annotations.py
+          backend/tests/integration/test_note_exports.py
+          backend/tests/integration/test_semantic_search.py
+          backend/tests/integration/test_memory_gallery.py
+          backend/tests/integration/test_conversations.py
+          backend/tests/integration/test_model_usage.py
           --postgres-url postgresql+psycopg://postgres:clipo-ci-only@localhost:5432/postgres
       - name: Generated contract is current
         run: make gen-api && git diff --exit-code -- frontend/openapi.json frontend/lib/api-types.ts
@@ -60,6 +66,18 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_notes.py
       - name: Browser ordered articles and platform DOM
         run: uv run --no-project --with playwright python scripts/smoke_article.py
+      - name: Browser annotations and reading styles
+        run: uv run --no-project --with playwright python scripts/smoke_annotations.py
+      - name: Browser single-note downloads and PDF printing
+        run: uv run --no-project --with playwright python scripts/smoke_note_export.py
+      - name: Browser semantic search and offline fallback
+        run: uv run --no-project --with playwright python scripts/smoke_semantic_search.py
+      - name: Browser memory gallery and reading activity
+        run: uv run --no-project --with playwright python scripts/smoke_memory_gallery.py
+      - name: Browser private AI conversations
+        run: uv run --no-project --with playwright python scripts/smoke_conversations.py
+      - name: Browser monthly model quota and recovery
+        run: uv run --no-project --with playwright python scripts/smoke_model_usage.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:
@@ -97,6 +115,7 @@ jobs:
           CLIPO_IMAGE: clipo-app:latest
         run: |
           python3 scripts/init_env.py
+          docker compose build db
           docker compose up -d --no-build --wait --wait-timeout 120
           uv run --no-project --with playwright python -m playwright install --with-deps chromium
           uv run --no-project --with playwright python scripts/smoke_compose.py --base-url http://127.0.0.1:8000

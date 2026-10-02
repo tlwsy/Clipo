@@ -92,16 +92,21 @@ class UserSettings(Base):
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     llm_config: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
+    monthly_model_limit: Mapped[int | None]
     platform_cookies: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
     capture_config: Mapped[dict[str, Any]] = mapped_column(
         json_type, default=dict, server_default="{}"
     )
     media_policy: Mapped[str] = mapped_column(String(32), default="thumbnail_only")
     backup_config: Mapped[dict[str, Any]] = mapped_column(json_type, default=dict)
+    reading_preferences: Mapped[dict[str, Any]] = mapped_column(
+        json_type, default=dict, server_default="{}"
+    )
 
 
 # Import every mapped table so Alembic sees the complete metadata.
 from app.models.access import AccessBucket  # noqa: E402, F401
+from app.models.annotation import Annotation  # noqa: E402, F401
 from app.models.backup import BackupJob  # noqa: E402, F401
 from app.models.capture import (  # noqa: E402, F401
     CaptureJob,
@@ -114,5 +119,10 @@ from app.models.capture import (  # noqa: E402, F401
     Source,
     Tag,
 )
+from app.models.collection import Collection, NoteCollection  # noqa: E402, F401
+from app.models.conversation import ConversationJob, NoteConversation  # noqa: E402, F401
+from app.models.embedding import EmbeddingJob  # noqa: E402, F401
+from app.models.memory import MemoryGalleryDismissal  # noqa: E402, F401
+from app.models.model_usage import ModelUsage  # noqa: E402, F401
 from app.models.sharing import SharedLink  # noqa: E402, F401
 from app.models.summary import SummaryJob, SummaryRequestKey  # noqa: E402, F401

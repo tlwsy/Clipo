@@ -48,6 +48,10 @@
 - **通用网页**：基于 Trafilatura 与 Readability 双引擎，精准提取主要正文，剥离广告与冗余标签，内置企业级 SSRF 防护。
 
 ### 2. AI 智能总结与深度挖掘
+- **AI 语义搜索（Q4 开发分支）**：后台生成笔记向量，支持含义检索与关键词混合排序；默认关闭，PostgreSQL 使用 pgvector，SQLite 提供本地回退。配置、数据库升级和验收边界见 [语义搜索指南](docs/semantic-search.md)。
+- **私人 AI 对话（Q4 开发分支）**：在笔记详情底部围绕原文多轮追问，保存问答并支持失败重试；复用当前模型，需联网，可能产生模型费用。范围见 [对话指南](docs/note-conversations.md)。
+- **模型月度用量（Q4 开发分支）**：设置账号每月请求次数上限，摘要、对话与嵌入共用额度，超额保留已有内容；默认不限，可在设置页查看用量与重置时间。计数及恢复规则见 [用量指南](docs/model-usage.md)。
+- **回忆廊（Q4 开发分支）**：主导航进入全屏卡片，重访留有摘要、标注或认真读过的笔记；支持跳过、收藏、打开阅读和 30 天不再推荐。筛选与阅读记录边界见 [回忆廊指南](docs/memory-gallery.md)。
 - **兼容任意大模型**：标准 OpenAI 接口兼容，支持接入 DeepSeek、通义千问、Kimi (Moonshot)、OpenAI 或 One API 等网关。
 - **结构化摘要**：自动生成精炼 Markdown 概述、分条要点清单，并智能推荐分类标签。
 - **评论价值评分与精华提炼**：初筛互动较高的讨论，由 AI 逐条评估信息量（附带评分与理由），标记高价值讨论，置顶精华观点。
@@ -61,11 +65,14 @@
 - **开放 RESTful API**：规范的 OpenAPI 契约，方便与自动化工作流（如 Raycast、Alfred、Webhook）轻松集成。
 
 ### 4. 知识管理与检索
+- **多空间组织**：创建带颜色和图标的空间，一篇笔记可归属多个空间；支持列表多选添加、空间内添加与移除，删除空间保留笔记。详见 [空间指南](docs/collections.md)。
+- **私人标注与阅读样式**：选中正文添加四色高亮或批注，侧栏定位、编辑与删除；舒适/紧凑/专注/打印预设支持全局偏好及本文覆盖。标注随资料库备份恢复，公开分享不展示私人标注。详见 [标注指南](docs/annotations.md)。
 - **灵活标签与收藏**：手动打标与 AI 自动分类相结合，支持多维度组合筛选与快速收藏。
 - **中文全文检索**：针对中文深度优化。PostgreSQL 环境采用高效 `tsvector` + GIN 索引；SQLite 环境采用 FTS5 trigram 引擎，零额外依赖即可实现毫秒级即时搜索。
 - **安全公开分享**：支持生成可自定义过期时间或永久有效的只读公开链接，随时可一键撤回；公开视图自动脱敏个人标签与私密信息，并内置访问频率保护。
 
 ### 5. 数据自主与备份迁移
+- **单篇多格式导出**：在笔记详情下载 Markdown、独立 HTML，或预览后通过浏览器打印保存 PDF；摘要、有价值评论、私人高亮/批注可分别选择。详见 [单篇导出指南](docs/note-export.md)。
 - **一键打包导出**：随时导出包含结构化 `library.json`、标准 Markdown 目录树和完整媒体元数据的归档包。
 - **全量无损恢复**：支持上传备份包一键恢复全部笔记、评论、AI 摘要与标签，支持幂等追加。
 - **自动化多端备份**：原生支持本地备份、S3 兼容对象存储（AWS S3、MinIO、Cloudflare R2 等）和 WebDAV，支持内置 Cron 定时自动归档与生命周期清理。
@@ -99,12 +106,13 @@ docker run -d \
 一条复合命令自动创建目录、下载官方 compose 文件与环境模板、生成安全随机密钥并拉取官方镜像启动：
 
 ```bash
-mkdir -p clipo && cd clipo && \
+mkdir -p clipo/deploy && cd clipo && \
 curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/deploy/postgres.Dockerfile -o deploy/postgres.Dockerfile && \
 curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env && \
 sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env && \
 sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env && \
-docker compose up -d
+docker compose build db && docker compose up -d
 ```
 
 启动完成后同样访问 `http://localhost:8000` 即可。
@@ -122,7 +130,8 @@ cd Clipo
 # 1. 初始化本地环境配置与随机主密钥（不覆盖已有 .env）
 python3 scripts/init_env.py
 
-# 2. 直接拉取官方预构建镜像并后台启动（无需本地编译）
+# 2. 构建含 pgvector 的 PostgreSQL 16 镜像，拉取应用镜像并启动
+docker compose build db
 docker compose up -d
 
 # 3. 查看运行状态
@@ -133,7 +142,7 @@ docker compose logs -f app
 首次访问将自动引导进入**设置向导**，创建管理员账户并配置模型接入点即可开始使用！
 
 > 💡 **镜像与升级说明**：
-> - **一键升级**：Compose 升级仅需执行 `docker compose pull && docker compose up -d`；单容器模式执行 `docker pull ghcr.io/tlwsy/clipo:latest` 并重启容器即可。启动时系统会自动执行增量数据迁移，数据卷持久化保留。
+> - **升级**：更新仓库或下载最新 Compose/数据库 Dockerfile 后，执行 `docker compose pull app && docker compose build db && docker compose up -d`；单容器模式执行 `docker pull ghcr.io/tlwsy/clipo:latest` 并重启容器即可。启动时系统会自动执行增量数据迁移，数据卷持久化保留。Q4 开发分支尚未发布，验收本分支需按下条从源码构建应用。
 > - **二次开发**：若需要自行修改源码调试，可执行 `docker compose up --build -d` 从本地源码重新构建容器。详细部署与反向代理配置见 [部署指南](docs/deployment.md)。
 
 ---

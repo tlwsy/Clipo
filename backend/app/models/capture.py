@@ -3,7 +3,8 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, LargeBinary, String, Text, UniqueConstraint, false
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import JSON, ForeignKey, LargeBinary, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -48,8 +49,17 @@ class Note(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     source_id: Mapped[int] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(1536).with_variant(JSON(none_as_null=True), "sqlite"), deferred=True
+    )
+    embedding_key: Mapped[str | None] = mapped_column(String(64))
+    embedding_hash: Mapped[str | None] = mapped_column(String(64))
+    embedding_error: Mapped[str | None] = mapped_column(Text)
     url: Mapped[str] = mapped_column(Text)
     content: Mapped[dict[str, Any]] = mapped_column(json_type)
+    display_overrides: Mapped[dict[str, Any]] = mapped_column(
+        json_type, default=dict, server_default="{}"
+    )
     summary_markdown: Mapped[str | None] = mapped_column(Text)
     key_points: Mapped[list[str]] = mapped_column(json_type, default=list)
     suggested_tags: Mapped[list[str]] = mapped_column(json_type, default=list)
@@ -62,6 +72,8 @@ class Note(Base):
     )
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    last_viewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
+    reading_duration_seconds: Mapped[int] = mapped_column(default=0, server_default="0")
 
 
 class Comment(Base):

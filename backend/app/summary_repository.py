@@ -212,3 +212,6 @@ class SummaryRepository(NoteRepository):
                 )
         job.status, job.last_error = "success", result.comment_score_error
         job.execution_id = job.lease_expires_at = job.next_retry_at = None
+        from app.embedding_repository import EmbeddingRepository
+
+        EmbeddingRepository(self.db, self.user_id).invalidate_note(note)

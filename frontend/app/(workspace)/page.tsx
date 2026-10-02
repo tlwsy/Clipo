@@ -14,8 +14,10 @@ import { useAccount } from "@/components/app-shell";
 import { CaptureForm } from "@/components/capture-form";
 import { Icon } from "@/components/icon";
 import { loadNotes, loadTags } from "@/lib/notes";
-import { sourceName } from "@/lib/source-name";
+import { NoteCard } from "@/components/note-card";
+import { AddToCollectionDialog } from "@/components/add-to-collection-dialog";
 import { api, errorMessage, type Schema } from "@/lib/api";
+import { searchNotes, waitForSearch } from "@/lib/search";
 
 function Notes() {
   const user = useAccount();
@@ -30,6 +32,10 @@ function Notes() {
   const [query, setQuery] = useState(restored.current?.query ?? "");
   const [draft, setDraft] = useState(restored.current?.draft ?? "");
   const generation = useRef(0);
+  const searchController = useRef<AbortController | null>(null);
+  const [searchMessage, setSearchMessage] = useState(
+    restored.current?.searchMessage ?? "",
+  );
   const pages = useRef(restored.current?.pages ?? 1);
   const filters = useRef({
     query,
@@ -43,6 +49,14 @@ function Notes() {
   const [favorite, setFavorite] = useState(restored.current?.favorite ?? false);
   const [busy, setBusy] = useState(!restored.current);
   const [error, setError] = useState("");
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    setSelected([]);
+    setMessage("");
+  }, [query, tag, favorite]);
   useLayoutEffect(() => {
     snapshot.current = {
       items,
@@ -54,8 +68,19 @@ function Notes() {
       favorite,
       pages: pages.current,
       scrollY: snapshot.current?.scrollY ?? 0,
+      searchMessage,
     };
-  }, [snapshot, items, cursor, query, draft, tags, tag, favorite]);
+  }, [
+    snapshot,
+    items,
+    cursor,
+    query,
+    draft,
+    tags,
+    tag,
+    favorite,
+    searchMessage,
+  ]);
   useLayoutEffect(() => {
     const position = restored.current?.scrollY ?? 0;
     window.scrollTo({ top: position, behavior: "instant" });
@@ -77,6 +102,9 @@ function Notes() {
   const load = useCallback(
     async (next?: string) => {
       const current = ++generation.current;
+      searchController.current?.abort();
+      const controller = new AbortController();
+      searchController.current = controller;
       setBusy(true);
       setError("");
       try {
@@ -85,6 +113,63 @@ function Notes() {
           filters.current.tag !== tag ||
           filters.current.favorite !== favorite;
         filters.current = { query, tag, favorite };
+        if (changed || !query) setSearchMessage("");
+        if (query) {
+          if (changed) {
+            setCursor(null);
+            setItems([]);
+          }
+          const total = next || changed ? 1 : pages.current;
+          const collected: Schema["NoteItem"][] = [];
+          let nextCursor = next;
+          let loaded = 0;
+          const started = Date.now();
+          while (!controller.signal.aborted) {
+            const result = await searchNotes(
+              query,
+              { tag, favorite, cursor: nextCursor },
+              user.id,
+              controller.signal,
+            );
+            if (current !== generation.current) return;
+            if (
+              result.mode === "fulltext" &&
+              result.semantic_status === "unused"
+            ) {
+              collected.push(...result.results);
+              loaded++;
+              nextCursor = result.next_cursor ?? undefined;
+              if (nextCursor && loaded < total) continue;
+              pages.current = next ? pages.current + 1 : loaded;
+              setItems((previous) =>
+                next ? [...previous, ...collected] : collected,
+              );
+              setCursor(nextCursor ?? null);
+              setSearchMessage(
+                "按关键词匹配标题、正文和摘要；用自然语言描述问题可尝试语义搜索。",
+              );
+              return;
+            }
+            pages.current = 1;
+            setItems(result.results);
+            setSearchMessage(
+              result.message ?? "按相关程度显示匹配结果，可缩小搜索范围。",
+            );
+            setBusy(false);
+            if (!result.retry_after) return;
+            if (Date.now() - started > 90000) {
+              setSearchMessage(
+                "查询仍在后台等待处理，已保留关键词结果；稍后点击刷新列表继续查看。",
+              );
+              return;
+            }
+            await waitForSearch(
+              Math.max(1, result.retry_after) * 1000,
+              controller.signal,
+            );
+          }
+          return;
+        }
         const total = next || changed ? 1 : pages.current;
         let nextCursor = next;
         let loaded = 0;
@@ -110,7 +195,7 @@ function Notes() {
         if (current === generation.current) setBusy(false);
       }
     },
-    [tag, favorite, query],
+    [tag, favorite, query, user.id],
   );
   useEffect(() => {
     loadTags()
@@ -126,6 +211,7 @@ function Notes() {
     window.addEventListener("clipo:synced", refresh);
     return () => {
       requests.current++;
+      searchController.current?.abort();
       window.removeEventListener("clipo:synced", refresh);
     };
   }, [load]);
@@ -160,7 +246,7 @@ function Notes() {
           maxLength={200}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="搜索标题、正文和摘要"
+          placeholder="搜索关键词，或描述你想找的内容"
         />
         <button className="button secondary small">搜索</button>
         {query && (
@@ -176,6 +262,11 @@ function Notes() {
           </button>
         )}
       </form>
+      {query && searchMessage && (
+        <p className="notice" role="status">
+          {searchMessage}
+        </p>
+      )}
       <div className="note-filters">
         <label>
           标签
@@ -224,7 +315,17 @@ function Notes() {
         )}
       </div>
       <div className="section-heading">
-        <h2>最近笔记</h2>
+        <h2>{query ? "搜索结果" : "最近笔记"}</h2>
+        <button
+          className="inline-button"
+          onClick={() => {
+            setSelecting(!selecting);
+            setSelected([]);
+            setMessage("");
+          }}
+        >
+          {selecting ? "取消多选" : "多选笔记"}
+        </button>
         <button
           className="inline-button"
           disabled={busy}
@@ -254,40 +355,57 @@ function Notes() {
           </Link>
         </section>
       )}
+      {message && (
+        <p role="status" className="notice">
+          {message}
+        </p>
+      )}
+      {adding && (
+        <AddToCollectionDialog
+          noteIds={selected}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            setAdding(false);
+            setSelecting(false);
+            setSelected([]);
+            setMessage("空间归属已保存。");
+          }}
+        />
+      )}
       <div className="notes-grid">
         {items.map((note) => (
-          <Link
-            href={`/notes/?id=${note.id}`}
-            className="note-card"
+          <NoteCard
             key={note.id}
-          >
-            <div className="note-card-meta">
-              <span title={sourceName(note)}>{sourceName(note)}</span>
-              <span>
-                {note.status === "ready" ? "AI 已整理" : "未生成摘要"}
-              </span>
-            </div>
-            <h2>
-              {note.is_favorite ? "★ " : ""}
-              {note.title || "无标题笔记"}
-            </h2>
-            <div className="tag-list">
-              {note.tags.map((item) => (
-                <span className="subtle-badge" key={item.id}>
-                  {item.name}
-                </span>
-              ))}
-            </div>
-            <p>{note.summary_excerpt}</p>
-            <div className="note-card-footer">
-              <span>{note.author || "网页收藏"}</span>
-              <time>
-                {new Date(note.created_at).toLocaleDateString("zh-CN")}
-              </time>
-            </div>
-          </Link>
+            note={note}
+            searchQuery={query}
+            selecting={selecting}
+            selected={selected.includes(note.id)}
+            disabled={!selected.includes(note.id) && selected.length >= 100}
+            onSelect={(checked) =>
+              setSelected((previous) =>
+                checked
+                  ? [...previous, note.id]
+                  : previous.filter((id) => id !== note.id),
+              )
+            }
+          />
         ))}
       </div>
+      {selecting && (
+        <div className="collection-selection-bar">
+          <span>已选 {selected.length} 篇（最多 100 篇）</span>
+          <button
+            className="button secondary small"
+            disabled={!selected.length}
+            onClick={() => setAdding(true)}
+          >
+            添加到空间
+          </button>
+          <button className="inline-button" onClick={() => setSelected([])}>
+            取消选择
+          </button>
+        </div>
+      )}
       {busy && (
         <p className="list-status" role="status">
           正在读取笔记…

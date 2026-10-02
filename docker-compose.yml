@@ -15,7 +15,10 @@ services:
     restart: unless-stopped
     init: true
   db:
-    image: postgres:16-alpine
+    image: clipo-postgres:16-vector
+    build:
+      context: .
+      dockerfile: deploy/postgres.Dockerfile
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-clipo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}

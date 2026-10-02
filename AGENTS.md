@@ -20,6 +20,20 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 - 评论楼中楼与 AI 评论精华已实现，当前最新迁移为 `0016_comment_threads`；低分评论仅隐藏，完整数据保留，旧笔记补齐回复需重新采集。2026-09-27 本地 SQLite、全量测试和 Chromium 网页/扩展离线验收通过；新增回复接口真实平台、PostgreSQL 和 Docker 升级未在本次验收，见 `docs/comments.md`、`docs/progress.md`。
 
+- Q4 第一阶段已接入空间系统（CRUD、多对多归属、批量添加、单篇归属管理与备份恢复），迁移为 `0017_collections`；主要入口为 `collection_repository.py`、`api/v1/collections.py`、`frontend/app/(workspace)/collections/`。实现边界与验收见 `docs/collections.md`、`docs/progress.md`。
+
+- Q4 第二阶段已接入私人高亮/批注、标注侧栏、全局及本文阅读样式、备份恢复，最新迁移为 `0018_annotations`；主要入口为 `annotation_repository.py`、`schemas/reading.py`、`api/v1/annotations.py`、`frontend/components/note-reading.tsx`。标注使用内容块前序编号及 UTF-16 偏移，仅对原始正文操作，不进入公开分享或离线写队列；边界及本次验证见 `docs/annotations.md`、`docs/progress.md`。
+
+- Q4 第三阶段已接入单篇 Markdown/HTML 下载及 PDF 打印预览，支持摘要、有价值评论、私人标注开关；主要入口为 `services/note_export.py`、`api/v1/exports.py`、`frontend/components/export-menu.tsx` 和 `pdf-export-dialog.tsx`。无需新迁移，图片保留外部引用，导出需要联网。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Safari/Edge 与移动端系统打印待实机验证，详见 `docs/note-export.md`、`docs/progress.md`。后续语义搜索的实现与验收见下方第四阶段记录。
+
+- Q4 第四阶段已完成 AI 语义搜索：后台向量生成/补齐、语义与全文 RRF 融合、自动搜索与关键词分页、索引设置和离线降级；该阶段迁移为 `0019_semantic_search`。主要入口为 `embedding_repository.py`、`search_repository.py`、`services/embeddings.py`、`tasks/embeddings.py`、`api/v1/search.py` 和 `frontend/components/semantic-settings.tsx`。默认关闭，复用账号模型服务，要求 1536 维嵌入；PostgreSQL 使用 pgvector 0.8+/HNSW，SQLite 为流式精确回退。2026-10-02 SQLite、PostgreSQL 16、Chromium 和本机测试 Compose 验收通过；没有调用真实嵌入供应商，质量、额度与大规模性能待真实样本验证，未推送或发布。使用及实现边界见 `docs/semantic-search.md`、`docs/progress.md`。
+
+- Q4 第五阶段已完成回忆廊：按保存年限加权的随机推荐、最近 7 天阅读排除、30 天移除、全屏卡片/键盘/触摸交互、可见且聚焦时的阅读增量记录、过期清理及备份恢复；该阶段迁移为 `0020_memory_gallery`。主要入口为 `memory_repository.py`、`api/v1/memory.py`、`tasks/memory.py`、`frontend/components/memory-gallery.tsx` 和 `frontend/lib/memory.ts`。推荐/移除需联网，阅读记录不进入离线队列，不出现在公开分享中。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Android/iOS 实机、Safari/Edge 与大规模候选性能待验收。详见 `docs/memory-gallery.md`、`docs/progress.md`；五个核心阶段已完成本地实现与验收，附加阶段多轮 AI 对话见下方记录。
+
+- Q4 附加阶段已完成私人多轮 AI 对话：每篇持久问答、正文与最近最多 10 轮上下文、后台任务/租约/重试、请求幂等、历史分页、账号限流、详情页 Markdown 对话、联网恢复及资料库备份恢复；该阶段迁移为 `0021_note_conversations`。主要入口为 `conversation_repository.py`、`services/conversations.py`、`tasks/conversations.py`、`api/v1/conversations.py` 和 `frontend/components/note-conversation.tsx`。对话不进入公开分享、单篇导出、离线缓存或离线写队列。2026-10-02 SQLite、PostgreSQL 16、Chromium 与本机测试 Compose 验收通过，未推送或发布；仅使用离线/临时固定响应模型，真实供应商质量与费用、Safari/Edge 和 Android/iOS 实机待验收。可选逐字流式输出未实现；月度调用限额见下方补充记录。详见 `docs/note-conversations.md`、`docs/progress.md`；Q4 五个核心阶段及附加对话阶段已完成本地实现与验收。
+
+- Q4 成本控制补充已完成账号月度模型调用限额，最新迁移为 `0022_model_usage`；主要入口为 `model_usage_repository.py`、`services/model_usage.py`、`api/v1/model_usage.py` 和 `frontend/components/model-usage-settings.tsx`。默认不限，0 暂停；按 UTC 自然月统计，摘要/评论评分、对话、笔记/查询嵌入共用计数，失败和重试也计数。共享数据库并发保护、设置页、超额保留内容与停止重试已接入。2026-10-02 SQLite、PostgreSQL 16、Chromium 和本机测试 Compose 验收通过，未推送或发布；次数限额不等同于供应商金额预算。详见 `docs/model-usage.md`、`docs/progress.md`。
+
 ## 代码位置与运行架构
 
 - `backend/app/main.py`：FastAPI 应用工厂 `create_app`、统一错误处理和静态文件挂载；ASGI 入口为 `app.asgi:app`。

@@ -27,12 +27,13 @@ docker run -d \
 #### 选项 A：一行命令一键拉取启动（无需 Clone 源码）
 
 ```bash
-mkdir -p clipo && cd clipo && \
+mkdir -p clipo/deploy && cd clipo && \
 curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/docker-compose.yml -o docker-compose.yml && \
+curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/deploy/postgres.Dockerfile -o deploy/postgres.Dockerfile && \
 curl -fsSL https://raw.githubusercontent.com/tlwsy/Clipo/main/.env.example -o .env && \
 sed -i "s/CLIPO_SECRET_KEY=/CLIPO_SECRET_KEY=$(openssl rand -hex 32)/" .env && \
 sed -i "s/POSTGRES_PASSWORD=clipo-local-change-me/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env && \
-docker compose up -d
+docker compose build db && docker compose up -d
 ```
 
 #### 选项 B：克隆仓库快速启动
@@ -42,6 +43,7 @@ docker compose up -d
 ```bash
 python3 scripts/init_env.py        # 生成 .env 与随机密钥，不覆盖已有文件
 # 按实际部署地址修改 .env 中的 CLIPO_BASE_URL
+docker compose build db             # PostgreSQL 16 Alpine + pgvector 0.8.2
 docker compose up -d               # 默认拉取官方预构建镜像启动
 docker compose logs -f app
 ```
@@ -51,7 +53,7 @@ docker compose logs -f app
 仓库的 `docker-compose.yml` 已提供两个服务：
 
 - `app`：多阶段构建，Node.js 仅用于生成静态页面；运行时由非 root 用户启动 FastAPI 和独立 Huey worker，托管前端、API 并处理采集。进程监督器在任一子进程退出时终止容器，交由重启策略恢复。
-- `db`：PostgreSQL 16，数据库端口不映射至宿主机，使用 `pg_isready` 健康检查。
+- `db`：PostgreSQL 16 Alpine + pgvector 0.8.2，由 `deploy/postgres.Dockerfile` 构建；数据库端口不映射至宿主机，使用 `pg_isready` 健康检查。维持原数据库运行环境，复用现有卷。
 
 应用等待数据库健康后启动，先执行 `alembic upgrade head`，迁移失败会退出。应用健康检查访问 `/api/v1/health` 并检查数据库连接。
 
@@ -63,7 +65,9 @@ Compose 用 PostgreSQL 连接覆盖 `.env` 中的 `CLIPO_DATABASE_URL`。本地�
 
 ### 升级时数据与 Cookie 是否保留
 
-在同一 Compose 项目下执行 `docker compose pull && docker compose up -d`（如需从本地源码构建使用 `--build`），会复用 `pgdata`（笔记、评论、账号及加密 Cookie/模型配置）和 `appdata`（队列、本地备份）命名卷；正常拉取镜像、替换容器或 `docker compose down` 不会清除这些数据。启动时自动执行数据库迁移。
+更新 Compose 和数据库 Dockerfile 后，在同一项目下执行 `docker compose pull app && docker compose build db && docker compose up -d`（如需从本地源码构建应用使用 `--build`），会复用 `pgdata`（笔记、评论、账号及加密 Cookie/模型配置）和 `appdata`（队列、本地备份）命名卷；正常拉取镜像、替换容器或 `docker compose down` 不会清除这些数据。启动时自动执行数据库迁移。
+
+迁移 `0019_semantic_search` 需要 pgvector 0.8+；只构建应用镜像不能安装数据库扩展。外部 PostgreSQL 需预先安装扩展包，并确保迁移角色有创建扩展的权限；详见[语义搜索部署说明](semantic-search.md)。Q4 开发分支尚未发布，验收本分支请构建本地应用镜像，不要把默认 GHCR 镜像视为已包含本阶段功能。
 
 保留原 `.env`，尤其是 `CLIPO_SECRET_KEY`；更换密钥会使已有 Cookie/API Key 无法解密。不要执行 `docker compose down -v` 或删除数据卷。更换目录、`-p` 或 `COMPOSE_PROJECT_NAME` 可能创建另一组卷，表现为新实例，需要连接原卷。平台自身过期或撤销 Cookie 不属于升级丢失。
 
@@ -115,6 +119,7 @@ location / {
 `docker-compose.yml` 默认已配置使用官方预构建镜像 `image: ${CLIPO_IMAGE:-ghcr.io/tlwsy/clipo:latest}`。日常部署直接执行：
 
 ```bash
+docker compose build db
 docker compose up -d
 ```
 
@@ -122,6 +127,7 @@ docker compose up -d
 
 ```bash
 docker compose pull app
+docker compose build db
 docker compose up -d
 ```
 

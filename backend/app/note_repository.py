@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2026 Clipo contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from sqlalchemy import and_, delete, or_, select
+from sqlalchemy import Select, and_, delete, or_, select
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.capture_repository import CaptureRepository, decode_cursor, encode_cursor
 from app.db.base import utcnow
 from app.errors import ClipoError
-from app.models import Note, NoteTag, Tag
+from app.models import Collection, Note, NoteCollection, NoteTag, Tag
 
 
 class NoteRepository(CaptureRepository):
@@ -74,18 +74,9 @@ class NoteRepository(CaptureRepository):
         tag_id: int | None = None,
         favorite: bool | None = None,
         search: ColumnElement[bool] | None = None,
+        collection_id: int | None = None,
     ) -> tuple[list[Note], str | None]:
-        query = select(Note).where(Note.user_id == self.user_id)
-        if tag_id is not None:
-            query = query.where(
-                Note.id.in_(
-                    select(NoteTag.note_id)
-                    .join(Tag)
-                    .where(Tag.id == tag_id, Tag.user_id == self.user_id)
-                )
-            )
-        if favorite is not None:
-            query = query.where(Note.is_favorite == favorite)
+        query = self.filtered_notes(tag_id, favorite, collection_id)
         if search is not None:
             query = query.where(search)
         if cursor:
@@ -102,3 +93,30 @@ class NoteRepository(CaptureRepository):
             self.db.scalars(query.order_by(Note.created_at.desc(), Note.id.desc()).limit(limit + 1))
         )
         return rows[:limit], encode_cursor(rows[limit - 1]) if len(rows) > limit else None
+
+    def filtered_notes(
+        self,
+        tag_id: int | None = None,
+        favorite: bool | None = None,
+        collection_id: int | None = None,
+    ) -> Select[tuple[Note]]:
+        query = select(Note).where(Note.user_id == self.user_id)
+        if tag_id is not None:
+            query = query.where(
+                Note.id.in_(
+                    select(NoteTag.note_id)
+                    .join(Tag)
+                    .where(Tag.id == tag_id, Tag.user_id == self.user_id)
+                )
+            )
+        if collection_id is not None:
+            query = query.where(
+                Note.id.in_(
+                    select(NoteCollection.note_id)
+                    .join(Collection)
+                    .where(Collection.id == collection_id, Collection.user_id == self.user_id)
+                )
+            )
+        if favorite is not None:
+            query = query.where(Note.is_favorite == favorite)
+        return query

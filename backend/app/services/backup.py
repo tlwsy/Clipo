@@ -9,9 +9,12 @@ from pathlib import Path
 from app.backup_repository import BackupRepository
 from app.config import Settings
 from app.content import blocks_markdown
+from app.conversation_repository import ConversationRepository
 from app.db.base import utcnow
 from app.errors import ClipoError
+from app.memory_repository import MemoryGalleryRepository
 from app.schemas.backup import MAX_IMPORT_BYTES
+from app.schemas.conversation import ConversationMessage
 from app.services.notes import read_note
 
 
@@ -41,13 +44,37 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                 "exported_at": utcnow().isoformat(),
                 "tags": [{"name": tag.name} for tag in repository.list_tags()],
             }
+            if preferences := repository.settings().reading_preferences:
+                header["reading_preferences"] = preferences
+            collections = repository.archive_collections()
+            note_collections: dict[int, list[str]] = {}
+            if collections:
+                header["collections"] = [item.model_dump(mode="json") for item in collections]
+                for collection in collections:
+                    for member in collection.members:
+                        note_collections.setdefault(member.note_id, []).append(collection.name)
             output.write(json.dumps(header, ensure_ascii=False)[:-1] + ', "notes": [')
+            if output.tell() > MAX_IMPORT_BYTES - 2:
+                raise ClipoError(422, "archive_too_large", "导出超过 100 MiB，请使用数据库备份")
             for note_id in repository.note_ids():
                 note = read_note(repository, note_id)
                 note.content.raw_html = repository.note(note_id).content.get("raw_html")
                 if count:
                     output.write(",")
-                output.write(note.model_dump_json())
+                data = note.model_dump(mode="json")
+                data.update(
+                    MemoryGalleryRepository(repository.db, repository.user_id)
+                    .history(note_id)
+                    .model_dump(mode="json")
+                )
+                conversations = ConversationRepository(repository.db, repository.user_id).completed(
+                    note_id
+                )
+                data["conversations"] = [
+                    ConversationMessage.model_validate(row).model_dump(mode="json")
+                    for row in conversations
+                ]
+                output.write(json.dumps(data, ensure_ascii=False))
                 if output.tell() > MAX_IMPORT_BYTES - 2:
                     raise ClipoError(422, "archive_too_large", "导出超过 100 MiB，请使用数据库备份")
                 lines = [
@@ -56,6 +83,7 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                     f"来源：{note.url}",
                     "",
                     "标签：" + "、".join(tag.name for tag in note.tags),
+                    "空间：" + "、".join(note_collections.get(note_id, [])),
                     "",
                     "## 摘要",
                     "",
@@ -94,6 +122,32 @@ def write_archive(repository: BackupRepository, directory: Path, execution: str)
                             "",
                         ]
                     )
+                if note.annotations:
+                    lines.extend(["", "## 我的标注", ""])
+                    for item in note.annotations:
+                        lines.extend(
+                            [
+                                f"### 内容块 {item.block_index} · "
+                                f"{item.start_offset}–{item.end_offset}",
+                                "",
+                                item.selected_text,
+                                "",
+                                f"高亮：{item.highlight_color or '无'}",
+                                item.note_text or "",
+                                "",
+                            ]
+                        )
+                if conversations:
+                    lines.extend(["", "## 私人 AI 对话", ""])
+                    for message in conversations:
+                        lines.extend(
+                            [
+                                "### " + ("我" if message.role == "user" else "AI"),
+                                "",
+                                message.content,
+                                "",
+                            ]
+                        )
                 archive.writestr(f"markdown/{note.id}.md", "\n".join(lines))
                 count += 1
                 repository.db.expire_all()

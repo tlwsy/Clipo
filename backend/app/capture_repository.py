@@ -341,6 +341,9 @@ class CaptureRepository(UserRepository):
             )
         job.note_id, job.status, job.cached = note.id, "success", cached
         job.last_error = job.next_retry_at = job.lease_expires_at = job.execution_id = None
+        from app.embedding_repository import EmbeddingRepository
+
+        EmbeddingRepository(self.db, self.user_id).invalidate_note(note)
 
     def note(self, note_id: int) -> Note:
         note = self.db.scalar(select(Note).where(Note.id == note_id, Note.user_id == self.user_id))

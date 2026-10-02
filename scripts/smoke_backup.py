@@ -135,6 +135,19 @@ def main() -> None:
                 break
             time.sleep(0.1)
         assert status["status"] == "success", status["status"]
+        request(
+            source,
+            f"/notes/{status['note_id']}/annotations",
+            token,
+            {
+                "block_index": 0,
+                "start_offset": 0,
+                "end_offset": 4,
+                "highlight_color": "yellow",
+                "note_text": "备份后保留的私人批注",
+            },
+        )
+        request(source, "/collections", token, {"name": "空空间", "color": "yellow"})
         with sync_playwright() as playwright, ExitStack() as browser_stack:
             browser = playwright.chromium.launch(
                 headless=True, executable_path=os.environ.get("CLIPO_TEST_CHROMIUM")
@@ -155,6 +168,23 @@ def main() -> None:
             page.screenshot(path=str(RESULTS / "backup-demo-library.png"))
             page.locator(".note-card").first.click()
             expect(page.locator(".original-text")).to_contain_text("保存阅读")
+            page.get_by_role("button", name="阅读样式", exact=True).click()
+            style = page.get_by_role("dialog", name="阅读样式")
+            style.get_by_label("应用范围").select_option("global")
+            style.get_by_role("button", name="紧凑", exact=True).click()
+            style.get_by_role("button", name="保存样式").click()
+            expect(style).to_have_count(0)
+            page.get_by_role("button", name="阅读样式", exact=True).click()
+            style.get_by_role("button", name="舒适", exact=True).click()
+            style.get_by_role("button", name="保存样式").click()
+            expect(style).to_have_count(0)
+            page.get_by_role("button", name="管理所属空间").click()
+            page.get_by_role("dialog").get_by_role("button", name="创建空间").click()
+            page.get_by_role("dialog").get_by_label("空间名称").fill("复习计划")
+            page.get_by_role("dialog").get_by_role("button", name="保存空间").click()
+            expect(page.get_by_role("dialog").get_by_label("复习计划", exact=True)).to_be_checked()
+            page.get_by_role("dialog").get_by_role("button", name="保存归属").click()
+            expect(page.get_by_role("dialog")).to_have_count(0)
             page.screenshot(path=str(RESULTS / "backup-demo-note.png"))
             page.goto(source + "/settings/#backups")
             panel = page.locator("#backups")
@@ -228,6 +258,10 @@ def main() -> None:
             assert restored["content"]["images"] == payload["payload"]["images"]
             assert restored["comments"][0]["likes"] == 12
             assert restored["tags"][0]["name"] == "知识管理"
+            assert restored["annotations"][0]["note_text"] == "备份后保留的私人批注"
+            assert restored["annotations"][0]["selected_text"] == "保存阅读"
+            assert restored["reading_preferences"]["theme"] == "compact"
+            assert restored["display_overrides"]["theme"] == "comfortable"
             with page.expect_file_chooser() as selected:
                 panel.get_by_role("button", name="选择 JSON 文件").click()
             selected.value.set_files(
@@ -236,11 +270,28 @@ def main() -> None:
             panel.get_by_role("button", name="确认追加导入").click()
             expect(panel.get_by_role("status")).to_contain_text("导入任务已提交")
             assert len(request(destination, "/notes", destination_token)["items"]) == 1
+            page.goto(destination + "/collections/")
+            expect(page.locator(".collection-card")).to_have_count(2)
+            empty = page.locator(".collection-card").filter(has_text="空空间")
+            expect(empty).to_contain_text("0 篇笔记")
+            space = page.locator(".collection-card").filter(has_text="复习计划")
+            expect(space).to_contain_text("1 篇笔记")
+            space.get_by_role("link").click()
+            expect(page.locator(".note-card")).to_have_count(1)
+            expect(page.locator(".note-card")).to_contain_text(payload["payload"]["title"])
+            page.locator(".note-card").get_by_role("link").click()
+            expect(page.locator(".article-content .highlight-yellow")).to_have_text("保存阅读")
+            page.get_by_role("button", name="我的标注（1）").click()
+            expect(page.get_by_text("备份后保留的私人批注", exact=True)).to_be_visible()
+            expect(page.locator(".reading-surface")).to_have_css(
+                "background-color", "rgb(254, 252, 232)"
+            )
             assert not errors, errors
             context.close()
         shutil.copy(root / "source/server.log", RESULTS / "backup-source.log")
         print(
-            "浏览器备份验收通过：本地目标、导出下载、恢复、重复导入、选文件点击范围/键盘/移除与手机布局"
+            "浏览器备份验收通过：本地目标、导出下载、恢复、标注/阅读样式、空间归属/空空间、"
+            "重复导入、选文件点击范围/键盘/移除与手机布局"
         )
 
 

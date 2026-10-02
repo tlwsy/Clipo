@@ -210,7 +210,7 @@ make test
 ```
 
 ### 3. PostgreSQL 集成测试
-本地默认测试使用临时 SQLite 数据库。若需验证针对 PostgreSQL 16 的全文检索、JSONB 与迁移兼容性，可传入测试数据库连接串：
+本地默认测试使用临时 SQLite 数据库。PostgreSQL 16 从迁移 `0019_semantic_search` 起需要 pgvector 0.8+（可使用 `deploy/postgres.Dockerfile` 构建的镜像）。若需验证全文检索、向量、JSONB 与迁移兼容性，可传入测试数据库连接串：
 
 ```bash
 .venv/bin/pytest backend/tests/integration/test_note_search.py \

@@ -7,7 +7,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.extractors.base import CapturedContent
 from app.llm.orchestrator import CommentInsight
+from app.schemas.annotation import AnnotationResponse
 from app.schemas.payload import MAX_UPLOAD_BYTES, CapturePayload
+from app.schemas.reading import ReadingPreferences, ReadingStylePatch, resolve_preferences
 from app.security.urls import UnsafeURL, normalize_url
 
 JobStatus = Literal["uploading", "queued", "running", "retrying", "failed", "success"]
@@ -129,6 +131,9 @@ class NoteResponse(BaseModel):
     url: str
     source: SourceResponse
     content: CapturedContent
+    annotations: list[AnnotationResponse] = Field(default_factory=list, max_length=1000)
+    reading_preferences: ReadingPreferences = Field(default_factory=lambda: resolve_preferences({}))
+    display_overrides: ReadingStylePatch = Field(default_factory=ReadingStylePatch)
     comments: list[CommentResponse]
     summary_markdown: str | None
     key_points: list[str]

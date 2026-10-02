@@ -22,6 +22,8 @@ from app.schemas.settings import (
 from app.security.credentials import decrypt_secret, encrypt_secret
 
 LLM_DEFAULTS: dict[str, Any] = {
+    "embedding_enabled": False,
+    "embedding_model": "text-embedding-3-small",
     "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "model": "qwen-plus",
     "comment_score_threshold": 0.6,
@@ -90,6 +92,16 @@ def update_llm(repository: UserRepository, payload: LlmUpdate, settings: Setting
         else:
             config[key] = str(value) if key == "base_url" else value
     repository.set_llm(config)
+    effective = read_settings(repository, settings).llm
+    if effective.embedding_enabled and (
+        not current.embedding_enabled
+        or effective.base_url != current.base_url
+        or effective.embedding_model != current.embedding_model
+        or "api_key" in payload.model_fields_set
+    ):
+        from app.embedding_repository import EmbeddingRepository
+
+        EmbeddingRepository(repository.db, repository.user_id).request_backfill(restart=True)
 
 
 def update_platform_cookies(

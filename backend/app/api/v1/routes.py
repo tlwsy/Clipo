@@ -5,8 +5,15 @@ from sqlalchemy import text
 
 from app import __version__
 from app.api.dependencies import Config, CurrentUser, Db, UserRepo
+from app.api.v1.annotations import router as annotations_router
 from app.api.v1.backups import router as backups_router
 from app.api.v1.captures import router as captures_router
+from app.api.v1.collections import router as collections_router
+from app.api.v1.conversations import router as conversations_router
+from app.api.v1.exports import router as exports_router
+from app.api.v1.memory import router as memory_router
+from app.api.v1.model_usage import router as model_usage_router
+from app.api.v1.search import router as search_router
 from app.api.v1.sharing import router as sharing_router
 from app.api.v1.shortcuts import router as shortcuts_router
 from app.api.v1.summaries import router as summaries_router
@@ -54,7 +61,14 @@ router = APIRouter(
     },
 )
 COOKIE_NAME = "clipo_refresh"
+router.include_router(search_router)
 router.include_router(captures_router)
+router.include_router(annotations_router)
+router.include_router(memory_router)
+router.include_router(model_usage_router)
+router.include_router(conversations_router)
+router.include_router(exports_router)
+router.include_router(collections_router)
 router.include_router(shortcuts_router)
 router.include_router(backups_router)
 router.include_router(summaries_router)
@@ -168,7 +182,7 @@ def get_user_settings(repository: UserRepo, settings: Config) -> SettingsRespons
 
 @router.put("/settings", response_model=SettingsResponse, tags=["settings"])
 def put_user_settings(
-    payload: SettingsUpdate, repository: UserRepo, settings: Config
+    payload: SettingsUpdate, repository: UserRepo, settings: Config, request: Request
 ) -> SettingsResponse:
     if payload.llm is not None:
         update_llm(repository, payload.llm, settings)
@@ -176,7 +190,11 @@ def put_user_settings(
         update_platform_cookies(repository, payload.platform_cookies, settings)
     if payload.capture is not None:
         update_capture_settings(repository, payload.capture)
-    return read_settings(repository, settings)
+    result = read_settings(repository, settings)
+    repository.db.commit()
+    if payload.llm is not None:
+        request.app.state.capture_queue.embeddings.dispatch_pending(repository.user_id)
+    return result
 
 
 @router.post("/settings/llm/models", response_model=LlmModelsResponse, tags=["settings"])

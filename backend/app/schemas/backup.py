@@ -6,15 +6,52 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from app.schemas.capture import NoteResponse, TagRequest
+from app.schemas.collection import CollectionCreate
+from app.schemas.conversation import ConversationMessage
+from app.schemas.memory import MemoryHistory
+from app.schemas.reading import ReadingStylePatch
 from app.security.urls import normalize_url
+from app.services.annotations import annotation_texts, selected_text
 
 MAX_IMPORT_BYTES = 100 * 1024 * 1024
 
 
-class ArchiveNote(NoteResponse):
+class ArchiveNote(NoteResponse, MemoryHistory):
     model_config = ConfigDict(extra="forbid")
     created_at: AwareDatetime
     updated_at: AwareDatetime
+    conversations: list[ConversationMessage] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_conversations(self) -> "ArchiveNote":
+        previous = -1
+        if len(self.conversations) % 2:
+            raise ValueError("对话必须包含完整问答")
+        for question, answer in zip(self.conversations[::2], self.conversations[1::2], strict=True):
+            if (
+                question.role != "user"
+                or answer.role != "assistant"
+                or question.turn_index != answer.turn_index
+                or question.turn_index <= previous
+                or len(question.content) > 4000
+                or not question.content.strip()
+                or not answer.content.strip()
+            ):
+                raise ValueError("对话顺序或内容无效")
+            previous = question.turn_index
+        return self
+
+
+class ArchiveCollectionMember(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    note_id: int = Field(strict=True, gt=0)
+    added_at: AwareDatetime
+
+
+class ArchiveCollection(CollectionCreate):
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
+    members: list[ArchiveCollectionMember]
 
 
 class Archive(BaseModel):
@@ -24,6 +61,8 @@ class Archive(BaseModel):
     exported_at: AwareDatetime
     tags: list[TagRequest]
     notes: list[ArchiveNote]
+    collections: list[ArchiveCollection] = Field(default_factory=list)
+    reading_preferences: ReadingStylePatch = Field(default_factory=ReadingStylePatch)
 
     @model_validator(mode="after")
     def validate_references(self) -> "Archive":
@@ -31,7 +70,21 @@ class Archive(BaseModel):
         names = [tag.name for tag in self.tags]
         if len(set(ids)) != len(ids) or len(set(names)) != len(names):
             raise ValueError("重复的笔记或标签")
+        collection_names = [collection.name for collection in self.collections]
+        if len(set(collection_names)) != len(collection_names):
+            raise ValueError("重复的空间")
+        note_ids = set(ids)
+        for collection in self.collections:
+            members = [member.note_id for member in collection.members]
+            if len(set(members)) != len(members) or not set(members) <= note_ids:
+                raise ValueError("空间归属重复或引用缺失的笔记")
         for note in self.notes:
+            annotation_ids = [item.id for item in note.annotations]
+            if len(set(annotation_ids)) != len(annotation_ids):
+                raise ValueError("重复的标注")
+            texts = annotation_texts(note.content.text, note.content.blocks)
+            for annotation in note.annotations:
+                selected_text(texts, annotation)
             if len(note.source.platform) > 40:
                 raise ValueError("平台名称过长")
             for url in (

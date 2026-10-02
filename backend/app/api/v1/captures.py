@@ -122,10 +122,17 @@ def notes(
     limit: Limit = 50,
     tag_id: Annotated[int | None, Query(ge=1)] = None,
     favorite: bool | None = None,
+    collection_id: Annotated[int | None, Query(ge=1)] = None,
     q: Annotated[str, Query(max_length=200, pattern=r"^[^\x00-\x1f\x7f]*$")] = "",
 ) -> NotePage:
     return note_service.list_notes(
-        repository, cursor, limit, tag_id, favorite, request.app.state.search.condition(q)
+        repository,
+        cursor,
+        limit,
+        tag_id,
+        favorite,
+        request.app.state.search.condition(q),
+        collection_id,
     )
 
 

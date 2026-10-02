@@ -131,6 +131,7 @@ export function ModelSettings({ initial }: { initial: Schema["LlmResponse"] }) {
       setKey("");
       setClearKey(false);
       setMessage("模型配置已保存");
+      window.dispatchEvent(new Event("clipo:model-settings"));
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {

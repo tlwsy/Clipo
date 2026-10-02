@@ -10,6 +10,7 @@ from app.config import Settings
 from app.extractors.base import CapturedContent
 from app.llm.client import CompatibleClient
 from app.llm.prompts import SYSTEM_PROMPT, truncate_text
+from app.model_usage_repository import ModelQuotaExceeded
 from app.repositories import UserRepository
 from app.security.credentials import decrypt_secret
 from app.services.comments import select_comments
@@ -45,6 +46,7 @@ class SummaryResult:
     comment_score_threshold: float = 0.6
     comment_score_error: str | None = None
     comment_insights: list[CommentInsight] = field(default_factory=list)
+    quota_exceeded: bool = False
 
 
 @dataclass
@@ -191,6 +193,15 @@ def summarize(
                 comment_insights=insights,
                 comment_scores=scores,
                 comment_score_threshold=config.comment_score_threshold,
+            )
+        except ModelQuotaExceeded as exc:
+            return SummaryResult(
+                last_summary,
+                error=None if last_summary else f"未生成摘要：{exc.message}；原文已保存",
+                comment_score_error=(
+                    f"未生成评论评分：{exc.message}；已采集评论已保留" if comments else None
+                ),
+                quota_exceeded=True,
             )
         except Exception:
             # Provider bodies and exception strings may include credentials/content.

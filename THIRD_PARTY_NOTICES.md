@@ -31,3 +31,9 @@ SOFTWARE.
 ## xhshow
 
 依赖 `xhshow==0.2.0` 使用 MIT 许可，安装包附带许可文本。来源：https://github.com/Cloxl/xhshow 。
+
+## pgvector
+
+数据库镜像编译 pgvector 0.8.2，使用 PostgreSQL License，源码来自 https://github.com/pgvector/pgvector 。镜像内保留完整许可于 `/usr/local/share/doc/pgvector/LICENSE`，构建固定版本并校验下载源码的 SHA-256。
+
+Python 依赖 `pgvector` 使用 MIT 许可，依赖的 NumPy 使用 BSD-3-Clause 许可；各安装包附带许可及其所捆绑组件的声明，版本固定在 `backend/requirements.lock`。
