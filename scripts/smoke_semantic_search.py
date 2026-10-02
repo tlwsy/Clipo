@@ -92,7 +92,8 @@ def main() -> None:
             page.get_by_label("按标签筛选").select_option("")
             query.fill('"' + title + '"')
             button.click()
-            expect(page.locator(".search-match")).to_have_text("关键词匹配")
+            expect(page.get_by_text("关键词匹配", exact=True)).to_be_visible(timeout=30000)
+            expect(page.locator(".note-card h2")).to_have_text(title)
 
             # A superseded response must never overwrite the newly submitted query.
             held: list[Route] = []
