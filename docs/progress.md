@@ -7,6 +7,13 @@
 - 本节点 `make gen-api`、`make lint`、`make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项；SQLite 额度专项 **10** 项通过。独立 PostgreSQL 16 + pgvector 的额度、迁移、对话、摘要、语义专项 **49** 项通过，含并发上限、跨年换月、账号隔离、旧数据升级/回滚和模型一致性。首轮测试夹具漏传参数已修正，失败运行未记为通过。
 - 设置页、Chromium 和 Compose 升级继续推进；本节点尚未构建页面或升级本机测试实例。仅使用固定模型响应，没有请求真实供应商。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 保持原样。
 
+## Q4 成本控制：设置页与 Compose 验收节点（2026-10-02）
+
+- 设置页新增“模型月度用量”卡片，显示 UTC 月份、已用/剩余次数和重置时间，支持不限、暂停及整数上限；输入保留、刷新、超额提示和 390px 布局通过 Chromium。模型调用次数说明、恢复边界和接口契约见 [模型用量](model-usage.md)。
+- `make build`、`make lint`、`make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项；`smoke_model_usage.py` Chromium 专项通过，覆盖设置持久化、暂停采集保留原文、对话超额、放宽后重试、离线刷新和移动布局；既有 `smoke_capture.py` 回归通过且无页面脚本错误。
+- 本机执行 `CLIPO_IMAGE=clipo-app docker compose build app` 与 `docker compose up -d --no-build --wait --wait-timeout 90 app`，应用/PostgreSQL healthy，迁移版本为 `0022_model_usage`，API/worker 正常。容器内使用临时 HTTP 固定模型和两个隔离账号，实际验证暂停采集、摘要计数、对话超额与恢复、账号隔离、未认证/越权拒绝及删除清理；临时模型、账号和数据已清理。本次未请求真实模型或采集站点。
+- 当前分支未推送、未执行远端 CI 或发布；真实供应商质量/费用、Safari/Edge、Android/iOS 实机仍待独立验收。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 原稿保持原样。
+
 ## Q4 附加阶段完成：多轮 AI 对话与 Compose 验收（2026-10-02）
 
 - 分支 `feat/q4-note-conversations` 完成附加阶段本地实现与验收：后端 `c983885`（`feat(conversations): add durable private note dialogue and backups`）、页面 `2190442`（`feat(conversations): add persistent dialogue UI and browser recovery checks`）。每篇笔记持久问答，复用当前模型；后台执行、失败重试、幂等/租约、上下文限制、分页和安全 Markdown、私人备份恢复均已接入。操作与边界见 [私人 AI 对话](note-conversations.md)。
