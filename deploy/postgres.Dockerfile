@@ -11,3 +11,4 @@ RUN apk add --no-cache build-base curl \
 FROM postgres:16-alpine
 COPY --from=vector-build /usr/local/lib/postgresql/vector.so /usr/local/lib/postgresql/vector.so
 COPY --from=vector-build /usr/local/share/postgresql/extension/vector* /usr/local/share/postgresql/extension/
+COPY --from=vector-build /tmp/pgvector-0.8.2/LICENSE /usr/local/share/doc/pgvector/LICENSE

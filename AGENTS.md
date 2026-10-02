@@ -24,7 +24,9 @@ Clipo 是自托管的网页采集与 AI 笔记应用。目前已实现 Phase 1 �
 
 - Q4 第二阶段已接入私人高亮/批注、标注侧栏、全局及本文阅读样式、备份恢复，最新迁移为 `0018_annotations`；主要入口为 `annotation_repository.py`、`schemas/reading.py`、`api/v1/annotations.py`、`frontend/components/note-reading.tsx`。标注使用内容块前序编号及 UTF-16 偏移，仅对原始正文操作，不进入公开分享或离线写队列；边界及本次验证见 `docs/annotations.md`、`docs/progress.md`。
 
-- Q4 第三阶段已接入单篇 Markdown/HTML 下载及 PDF 打印预览，支持摘要、有价值评论、私人标注开关；主要入口为 `services/note_export.py`、`api/v1/exports.py`、`frontend/components/export-menu.tsx` 和 `pdf-export-dialog.tsx`。无需新迁移，图片保留外部引用，导出需要联网。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Safari/Edge 与移动端系统打印待实机验证，详见 `docs/note-export.md`、`docs/progress.md`。下一阶段为 AI 语义搜索，回忆廊与多轮对话仍未实施。
+- Q4 第三阶段已接入单篇 Markdown/HTML 下载及 PDF 打印预览，支持摘要、有价值评论、私人标注开关；主要入口为 `services/note_export.py`、`api/v1/exports.py`、`frontend/components/export-menu.tsx` 和 `pdf-export-dialog.tsx`。无需新迁移，图片保留外部引用，导出需要联网。2026-10-02 SQLite、PostgreSQL 16、Chromium 及本机测试 Compose 验收通过，未推送或发布；Safari/Edge 与移动端系统打印待实机验证，详见 `docs/note-export.md`、`docs/progress.md`。后续语义搜索的实现与验收见下方第四阶段记录。
+
+- Q4 第四阶段已完成 AI 语义搜索：后台向量生成/补齐、语义与全文 RRF 融合、自动搜索与关键词分页、索引设置和离线降级；最新迁移为 `0019_semantic_search`。主要入口为 `embedding_repository.py`、`search_repository.py`、`services/embeddings.py`、`tasks/embeddings.py`、`api/v1/search.py` 和 `frontend/components/semantic-settings.tsx`。默认关闭，复用账号模型服务，要求 1536 维嵌入；PostgreSQL 使用 pgvector 0.8+/HNSW，SQLite 为流式精确回退。2026-10-02 SQLite、PostgreSQL 16、Chromium 和本机测试 Compose 验收通过；没有调用真实嵌入供应商，质量、额度与大规模性能待真实样本验证，未推送或发布。使用及实现边界见 `docs/semantic-search.md`、`docs/progress.md`；下一阶段为回忆廊，多轮对话仍未实施。
 
 ## 代码位置与运行架构
 
