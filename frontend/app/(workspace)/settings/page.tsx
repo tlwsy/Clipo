@@ -9,6 +9,7 @@ import { CaptureSettings } from "@/components/capture-settings";
 import { BackupSettings } from "@/components/backup-settings";
 import { Icon } from "@/components/icon";
 import { ModelSettings } from "@/components/model-settings";
+import { ModelUsageSettings } from "@/components/model-usage-settings";
 import { SemanticSettings } from "@/components/semantic-settings";
 import { PlatformSettings } from "@/components/platform-settings";
 import { ShortcutSettings } from "@/components/shortcut-settings";
@@ -258,6 +259,7 @@ function SettingsContent() {
           {data ? (
             <>
               <ModelSettings initial={data.settings.llm} />
+              <ModelUsageSettings key={user.id} />
               <SemanticSettings initial={data.settings.llm} />
               <CaptureSettings initial={data.settings.capture} />
               <PlatformSettings initial={data.settings.platform_cookies} />

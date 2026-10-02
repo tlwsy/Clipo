@@ -76,6 +76,8 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_memory_gallery.py
       - name: Browser private AI conversations
         run: uv run --no-project --with playwright python scripts/smoke_conversations.py
+      - name: Browser monthly model quota and recovery
+        run: uv run --no-project --with playwright python scripts/smoke_model_usage.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:

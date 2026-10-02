@@ -4,6 +4,8 @@ Q4 成本控制补充提供按账号的模型请求次数限额。默认不限�
 
 ## 计数与恢复
 
+在“设置 → 模型月度用量”查看本月次数和下次重置时间，填写“每月最多调用次数”后保存；可手动刷新最新用量，刷新不会覆盖未保存的输入。设置需要联网。
+
 - 摘要及随同生成的评论评分/精华算一次请求；格式兼容重试、后台重试分别计数。单独重新摘要、多轮对话的每次生成、笔记与搜索查询嵌入共用一个账号额度。
 - 每次尝试在发往模型之前提交计数。失败、超时及异常返回仍计数；进程在计数后崩溃可能计入一次未发送的请求，不退款，以避免不确定请求绕过限额。数量不是供应商账单，不等于 token 用量或金额预算；金额上限仍需在供应商侧配置。
 - 无密钥、被限额拦截、读取缓存向量、关键词搜索、查询模型列表、纯索引扫描及重复任务未执行模型时不计数。关闭限额期间也持续计数，重新启用不会重置用量。
@@ -20,4 +22,4 @@ Q4 成本控制补充提供按账号的模型请求次数限额。默认不限�
 
 ## 验证
 
-当次验证结果见 [进度](progress.md)。后端专项入口：`.venv/bin/pytest backend/tests/integration/test_model_usage.py backend/tests/integration/test_migrations.py`，可追加开发指南中的 `--postgres-url`。所有模型测试使用固定响应，不消耗真实供应商额度。
+当次验证结果见 [进度](progress.md)。后端专项入口：`.venv/bin/pytest backend/tests/integration/test_model_usage.py backend/tests/integration/test_migrations.py`，可追加开发指南中的 `--postgres-url`。构建后运行 `uv run --no-project --with playwright python scripts/smoke_model_usage.py` 验证设置、限额、原文保留与对话重试。所有模型测试使用固定响应，不消耗真实供应商额度。
