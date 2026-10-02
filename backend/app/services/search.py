@@ -28,6 +28,16 @@ class SearchBackend:
         return cls("postgresql_bigm" if bigm else "postgresql_tsvector_like")
 
     def condition(self, query: str) -> ColumnElement[bool] | None:
+        query = query.strip()
+        if len(query) >= 2 and query.startswith(('"', "“")) and query.endswith(('"', "”")):
+            phrase = query[1:-1].strip()
+            if not phrase:
+                return None
+            return or_(
+                Note.title.contains(phrase, autoescape=True),
+                Note.summary_markdown.contains(phrase, autoescape=True),
+                Note.content["text"].as_string().contains(phrase, autoescape=True),
+            )
         words = list(dict.fromkeys(query.split()))
         if not words:
             return None

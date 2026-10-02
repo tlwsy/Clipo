@@ -90,11 +90,14 @@ export async function loadNote(id: number): Promise<Schema["NoteResponse"]> {
     return note;
   }
 }
-export async function loadNotes(path: string): Promise<Schema["NotePage"]> {
+export async function loadNotes(
+  path: string,
+  expectedUserId?: number,
+): Promise<Schema["NotePage"]> {
   try {
     const owner = await readAccount().catch(() => undefined);
     const page = await timedApi<Schema["NotePage"]>(path, {
-      expectedUserId: owner?.user.id,
+      expectedUserId: expectedUserId ?? owner?.user.id,
     });
     const local = await readOffline().catch(() => null);
     for (const operation of local?.operations ?? []) {
@@ -113,11 +116,18 @@ export async function loadNotes(path: string): Promise<Schema["NotePage"]> {
     if (!unavailable(error)) throw error;
     const local = await readOffline();
     const params = new URLSearchParams(path.split("?")[1]);
+    if (
+      expectedUserId !== undefined &&
+      local.account?.user.id !== expectedUserId
+    )
+      throw new ApiError(409, "account_changed", "登录账号已改变，请刷新页面");
     if (params.has("cursor")) return { items: [], next_cursor: null };
-    const terms = (params.get("q") ?? "")
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
+    const rawQuery = (params.get("q") ?? "").trim().toLowerCase();
+    const terms = (
+      /^(?:".*"|“.*”)$/.test(rawQuery)
+        ? [rawQuery.slice(1, -1)]
+        : rawQuery.split(/\s+/)
+    ).filter(Boolean);
     const items = applyOperations(local.notes, local.operations)
       .filter(
         (note) =>

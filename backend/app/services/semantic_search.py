@@ -2,12 +2,13 @@
 import re
 
 from app.config import Settings
+from app.errors import ClipoError
 from app.models import Note
 from app.schemas.capture import TagResponse
 from app.schemas.search import EmbeddingIndexResponse, SearchMode, SearchResponse, SearchResult
 from app.search_repository import SearchRepository
 from app.services.embeddings import load_embedding_config
-from app.services.notes import site_name
+from app.services.notes import note_excerpt, site_name
 from app.services.search import SearchBackend
 
 
@@ -50,15 +51,23 @@ def search_notes(
     favorite: bool | None,
     collection_id: int | None,
     semantic_only: bool = False,
+    cursor: str | None = None,
 ) -> SearchResponse:
     selected = choose_mode(query, mode)
+    next_cursor = None
+    if cursor and selected != "fulltext":
+        raise ClipoError(422, "semantic_cursor", "语义搜索不支持分页，请从头搜索")
     lexical = (
         repository.fulltext(
             query, backend, 10 if selected == "semantic" else limit, tag_id, favorite, collection_id
         )
-        if not semantic_only
+        if not semantic_only and selected == "semantic"
         else []
     )
+    if selected == "fulltext":
+        lexical, next_cursor = repository.list_notes(
+            cursor, limit, tag_id, favorite, backend.condition(query), collection_id
+        )
     semantic: list[tuple[Note, float]] = []
     state, message, retry = "unused", None, None
     if selected == "semantic":
@@ -97,8 +106,6 @@ def search_notes(
     for identifier in identifiers:
         note = notes[identifier]
         source = repository.source(note)
-        excerpt = note.summary_markdown or note.content.get("text", "")
-        excerpt = re.sub(r"!?\[([^\]]*)\]\([^)]+\)", r"\1", excerpt)
         results.append(
             SearchResult(
                 id=note.id,
@@ -110,7 +117,7 @@ def search_notes(
                 status=note.status,
                 is_favorite=note.is_favorite,
                 created_at=note.created_at,
-                summary_excerpt=" ".join(excerpt.split())[:160],
+                summary_excerpt=note_excerpt(note),
                 tags=[TagResponse.model_validate(tag) for tag in tags[note.id]],
                 score=scores[identifier] * 30.5,
                 similarity=similarities.get(identifier),
@@ -122,5 +129,10 @@ def search_notes(
             "先显示关键词结果", "请稍候"
         )
     return SearchResponse(
-        results=results, mode=selected, semantic_status=state, message=message, retry_after=retry
+        results=results,
+        next_cursor=next_cursor,
+        mode=selected,
+        semantic_status=state,
+        message=message,
+        retry_after=retry,
     )

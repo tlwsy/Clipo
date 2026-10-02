@@ -57,6 +57,15 @@ def read_note(repository: NoteRepository, note_id: int) -> NoteResponse:
     )
 
 
+def note_excerpt(note: Note) -> str:
+    excerpt = note.summary_markdown or note.content.get("text", "")
+    if note.summary_markdown:
+        excerpt = re.sub(r"!?\[([^\]]*)\]\([^)]+\)", r"\1", excerpt)
+        excerpt = re.sub(r"(?m)^\s{0,3}(?:#{1,6}\s+|[-*+]\s+|>\s*)", "", excerpt)
+        excerpt = excerpt.replace("**", "").replace("__", "").replace("`", "")
+    return " ".join(excerpt.split())[:160]
+
+
 def list_notes(
     repository: NoteRepository,
     cursor: str | None,
@@ -73,11 +82,6 @@ def list_notes(
     items = []
     for note in rows:
         source = repository.source(note)
-        excerpt = note.summary_markdown or note.content["text"]
-        if note.summary_markdown:
-            excerpt = re.sub(r"!?\[([^\]]*)\]\([^)]+\)", r"\1", excerpt)
-            excerpt = re.sub(r"(?m)^\s{0,3}(?:#{1,6}\s+|[-*+]\s+|>\s*)", "", excerpt)
-            excerpt = excerpt.replace("**", "").replace("__", "").replace("`", "")
         items.append(
             NoteItem(
                 id=note.id,
@@ -86,7 +90,7 @@ def list_notes(
                 platform=source.platform,
                 site_name=site_name(note),
                 author=source.author,
-                summary_excerpt=" ".join(excerpt.split())[:160],
+                summary_excerpt=note_excerpt(note),
                 status=note.status,
                 created_at=note.created_at,
                 is_favorite=note.is_favorite,

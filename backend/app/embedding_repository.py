@@ -96,6 +96,13 @@ class EmbeddingRepository(NoteRepository):
             raise ValueError("Invalid note owner")
         content_hash = digest(note_input(note))
         if note.embedding_key == config.key and note.embedding_hash == content_hash:
+            note.embedding_error = None
+            self.db.execute(
+                delete(EmbeddingJob).where(
+                    EmbeddingJob.user_id == self.user_id,
+                    EmbeddingJob.target_key == f"note:{note.id}",
+                )
+            )
             return None
         key = f"note:{note.id}"
         current = self.target(key)

@@ -272,7 +272,7 @@ def check_xiaohongshu_capture(page: Page, base: str) -> None:
 
     # Reuse the cached extraction with a model that omits scores: retain the summary and comments.
     page.goto(base + "/settings/")
-    page.get_by_label("模型名称").fill("offline-no-scores")
+    page.get_by_label("模型名称", exact=True).fill("offline-no-scores")
     page.get_by_role("button", name="保存配置", exact=True).click()
     expect(page.locator("#llm .notice.success")).to_be_visible()
     page.goto(base + "/")
@@ -301,7 +301,7 @@ def check_comment_capture_limit(page: Page, base: str) -> None:
         page.reload()
         expect(page.get_by_label("评论采集上限")).to_have_value(str(limit))
         expect(page.get_by_label("候选评论上限")).to_have_value("2")
-        page.get_by_label("模型名称").fill("offline-scores")
+        page.get_by_label("模型名称", exact=True).fill("offline-scores")
         page.get_by_role("button", name="保存配置", exact=True).click()
         expect(page.locator("#llm .notice.success")).to_be_visible()
         page.goto(base + "/")

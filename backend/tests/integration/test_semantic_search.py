@@ -403,6 +403,45 @@ def test_semantic_only_endpoint_and_shared_request_limit(
     assert limited.status_code == 429 and limited.headers["retry-after"]
 
 
+def test_restoring_previous_model_reuses_vectors_and_clears_obsolete_errors(
+    app: FastAPI, client: TestClient, auth: dict
+) -> None:
+    seed_note(app)
+    model = configure(app, client, auth)
+    drain(app)
+    client.put("/api/v1/settings", headers=auth, json={"llm": {"embedding_model": "broken"}})
+    model.fail = True
+    drain(app)
+    assert client.get("/api/v1/settings/search-index", headers=auth).json()["failed"] == 1
+    calls = len(model.calls)
+    client.put(
+        "/api/v1/settings", headers=auth, json={"llm": {"embedding_model": "test-embedding"}}
+    )
+    drain(app)
+    status = client.get("/api/v1/settings/search-index", headers=auth).json()
+    assert status["ready"] == 1 and status["failed"] == status["pending"] == 0
+    assert len(model.calls) == calls
+
+
+def test_keyword_pages_keep_stable_cursor_order(
+    app: FastAPI, client: TestClient, auth: dict
+) -> None:
+    identifiers = [named_note(app, f"分页关键词 {i}") for i in range(5)]
+    first = search(client, auth, "分页关键词", limit=2)
+    second = search(client, auth, "分页关键词", limit=2, cursor=first["next_cursor"])
+    third = search(client, auth, "分页关键词", limit=2, cursor=second["next_cursor"])
+    assert [row["id"] for page in (first, second, third) for row in page["results"]] == identifiers[
+        ::-1
+    ]
+    assert third["next_cursor"] is None
+    invalid = client.get(
+        "/api/v1/notes/search",
+        headers=auth,
+        params={"q": "如何专注", "cursor": first["next_cursor"]},
+    )
+    assert invalid.status_code == 422
+
+
 def test_concurrent_identical_queries_share_one_outbox_generation(
     app: FastAPI, client: TestClient, auth: dict
 ) -> None:

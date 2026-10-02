@@ -2098,6 +2098,8 @@ export interface components {
         SearchResponse: {
             /** Results */
             results: components["schemas"]["SearchResult"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
             /**
              * Mode
              * @enum {string}
@@ -2386,6 +2388,7 @@ export interface operations {
                 tag_id?: number | null;
                 favorite?: boolean | null;
                 collection_id?: number | null;
+                cursor?: string | null;
             };
             header?: never;
             path?: never;
@@ -2503,6 +2506,7 @@ export interface operations {
                 tag_id?: number | null;
                 favorite?: boolean | null;
                 collection_id?: number | null;
+                cursor?: string | null;
             };
             header?: never;
             path?: never;

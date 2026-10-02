@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { type Schema } from "@/lib/api";
 import { sourceName } from "@/lib/source-name";
+import { SearchHighlight } from "@/components/search-highlight";
 
 export function NoteCard({
   note,
@@ -10,14 +11,23 @@ export function NoteCard({
   disabled = false,
   onSelect,
   onRemove,
+  searchQuery = "",
 }: {
-  note: Schema["NoteItem"];
+  note: Schema["NoteItem"] | Schema["SearchResult"];
+  searchQuery?: string;
   selecting?: boolean;
   selected?: boolean;
   disabled?: boolean;
   onSelect?: (checked: boolean) => void;
   onRemove?: () => void;
 }) {
+  const match = "match_type" in note ? note.match_type : undefined;
+  const highlight = (text: string) =>
+    searchQuery && match !== "semantic" ? (
+      <SearchHighlight text={text} query={searchQuery} />
+    ) : (
+      text
+    );
   return (
     <article className="note-card">
       {selecting && (
@@ -38,7 +48,7 @@ export function NoteCard({
         </div>
         <h2>
           {note.is_favorite ? "★ " : ""}
-          {note.title || "无标题笔记"}
+          {highlight(note.title || "无标题笔记")}
         </h2>
         <div className="tag-list">
           {note.tags.map((item) => (
@@ -47,7 +57,16 @@ export function NoteCard({
             </span>
           ))}
         </div>
-        <p>{note.summary_excerpt}</p>
+        {match && (
+          <span className="subtle-badge search-match">
+            {match === "both"
+              ? "语义与关键词匹配"
+              : match === "semantic"
+                ? "语义匹配"
+                : "关键词匹配"}
+          </span>
+        )}
+        <p>{highlight(note.summary_excerpt)}</p>
         <div className="note-card-footer">
           <span>{note.author || "网页收藏"}</span>
           <time>{new Date(note.created_at).toLocaleDateString("zh-CN")}</time>

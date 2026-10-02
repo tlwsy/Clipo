@@ -19,6 +19,7 @@ export type NoteListSnapshot = {
   favorite: boolean;
   pages: number;
   scrollY: number;
+  searchMessage?: string;
 };
 
 const NoteListContext =

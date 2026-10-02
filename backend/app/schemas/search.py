@@ -16,6 +16,7 @@ class SearchResult(NoteItem):
 
 class SearchResponse(BaseModel):
     results: list[SearchResult]
+    next_cursor: str | None = None
     mode: Literal["semantic", "fulltext"]
     semantic_status: Literal[
         "disabled", "unused", "queued", "running", "retrying", "ready", "failed"

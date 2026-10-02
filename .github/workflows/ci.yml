@@ -67,6 +67,8 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_annotations.py
       - name: Browser single-note downloads and PDF printing
         run: uv run --no-project --with playwright python scripts/smoke_note_export.py
+      - name: Browser semantic search and offline fallback
+        run: uv run --no-project --with playwright python scripts/smoke_semantic_search.py
       - run: make extension-package
       - uses: actions/upload-artifact@v4
         with:

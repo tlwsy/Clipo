@@ -1830,6 +1830,23 @@ input[aria-invalid="true"] {
   width: auto;
 }
 
+.semantic-index-status {
+  margin-top: 20px;
+}
+.semantic-index-status .button-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.search-highlight {
+  background: #fef3c7;
+  color: #4b3f1d;
+  border-radius: 2px;
+}
+.search-match {
+  margin-bottom: 8px;
+}
 .search-form {
   display: flex;
   gap: 10px;

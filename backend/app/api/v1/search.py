@@ -32,6 +32,7 @@ def search(
     tag_id: Annotated[int | None, Query(ge=1)] = None,
     favorite: bool | None = None,
     collection_id: Annotated[int | None, Query(ge=1)] = None,
+    cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> SearchResponse:
     q = q.strip()
     if not q or not q.strip('"“”').strip():
@@ -50,6 +51,7 @@ def search(
         favorite,
         collection_id,
         semantic_only,
+        cursor,
     )
     repository.db.commit()
     if response.semantic_status == "queued":

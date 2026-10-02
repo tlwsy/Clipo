@@ -17,6 +17,7 @@ from app.extractors.base import ExtractionError
 from app.extractors.generic import ScopedCookie
 from app.extractors.xhs_api import XhsClient
 from app.main import create_app
+from app.services.embeddings import DIMENSIONS, EmbeddingConfig
 from app.tasks.capture import CaptureQueue
 from huey.consumer import Consumer
 
@@ -114,6 +115,12 @@ def youtube_json(url: str, **kwargs: Any) -> dict[str, Any]:
 
 
 class OfflineModel:
+    def embed(self, config: EmbeddingConfig, value: str) -> list[float]:
+        if config.model == "offline-embedding-failure":
+            raise ValueError("Offline embedding failure")
+        focus = "专注" in value or "深度" in value
+        return [1.0 if focus else 0.0, 0.0 if focus else 1.0] + [0.0] * (DIMENSIONS - 2)
+
     def complete(self, **kwargs: Any) -> str:
         comments = json.loads(kwargs["messages"][1]["content"])["comments"]
         if kwargs["model"] == "offline-no-scores":
@@ -167,6 +174,7 @@ if __name__ == "__main__":
         queue = CaptureQueue(session_factory(engine), settings)
         queue.pipeline.llm = OfflineModel()
         queue.summaries.llm = OfflineModel()
+        queue.embeddings.client = OfflineModel()
         queue.recover()
         Consumer(queue.huey, workers=1).run()
     else:
