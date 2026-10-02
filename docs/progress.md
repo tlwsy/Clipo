@@ -1,5 +1,14 @@
 # 构建进度
 
+## Q4 附加阶段完成：多轮 AI 对话与 Compose 验收（2026-10-02）
+
+- 分支 `feat/q4-note-conversations` 完成附加阶段本地实现与验收：后端 `c983885`（`feat(conversations): add durable private note dialogue and backups`）、页面 `2190442`（`feat(conversations): add persistent dialogue UI and browser recovery checks`）。每篇笔记持久问答，复用当前模型；后台执行、失败重试、幂等/租约、上下文限制、分页和安全 Markdown、私人备份恢复均已接入。操作与边界见 [私人 AI 对话](note-conversations.md)。
+- 本次 `CLIPO_IMAGE=clipo-app docker compose build app`、`CLIPO_IMAGE=clipo-app docker compose up -d --no-build --wait --wait-timeout 90 app` 成功。最终镜像包含独立组件 key 修复；本机测试 Compose 保留已有数据卷，迁移至 `0021_note_conversations`，应用/PostgreSQL 16 healthy，API 与 Huey worker 进程正常。
+- 在实际 Compose 创建两个隔离测试账号，使用容器内临时 HTTP 模型服务，验证实际内容直传、摘要及对话 worker、多轮上下文、相同请求幂等、401/404 和公开分享不携带问答。实际 worker 导出 ZIP、恢复到另一账号并继续提问；Chromium 390px 登录、历史读取、继续追问及保存阅读样式后保留对话均通过，截图已检查，无脚本错误或横向溢出。
+- 测试结束删除两个账号、级联数据及导入/导出目录；临时模型进程/文件已清理，独立 PostgreSQL 专项容器已停止并自动删除，本机测试 Compose 继续运行。没有修改原账号的模型配置，没有请求真实模型或采集平台。
+- 本阶段最终 `make lint`、`make test`、`make build` 通过：后端 **575**、前端 **83**、扩展 **5** 项；SQLite 对话/上下文/迁移专项 **23** 项、独立 PostgreSQL 对话/备份/迁移专项 **22** 项，Chromium 对话/备份/导航及采集/PWA回归的具体时点见下方节点。此收尾只同步文档，不把前节点检查记为又一次运行。
+- Q4 五个核心阶段及附加对话阶段已完成本地实现与验收。真实供应商兼容性、问答质量与费用、Safari/Edge、Android/iOS 实机仍待独立验收；可选逐字流式回答及月度模型额度控制未实现，现有每分钟限流不等同于月度费用上限。未推送、执行远端 CI 或发布。用户未跟踪的 `FEATURE_PLAN_2026Q4.md` 原稿保持原样。
+
 ## Q4 多轮 AI 对话：详情页、恢复交互与 Chromium 节点（2026-10-02）
 
 - 在后端 `c983885`（`feat(conversations): add durable private note dialogue and backups`）之上接入详情页底部私人对话：多轮提问、问答历史分页、Markdown 回答、任务状态和失败重试。复用账号核对与认证续期，网络不确定时保留请求键/输入；折叠、离开或隐藏页面停止轮询，网络恢复后可继续，不写入离线缓存或队列。
