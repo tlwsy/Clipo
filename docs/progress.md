@@ -1,5 +1,12 @@
 # 构建进度
 
+## 本机 Docker 访问入口修复（2026-11-03）
+
+- 用户反馈 `http://localhost:8000` 无法访问，复查发现上个节点只核对了容器内部健康与静态文件，没有核对宿主机入口。Windows `netsh interface ipv4 show excludedportrange protocol=tcp` 显示 **7926–8025** 被系统保留，Docker Desktop 日志发布 8000 时报告 `address already in use`；Windows 上该地址实际无法连接。重建容器/项目网络和重启 Docker Desktop 未解除系统端口保留。
+- Compose 新增 `CLIPO_PORT` 环境变量，默认仍为 8000，容器端口仍为 8000；模板与 README 同步说明。仅本机未提交的 `.env` 改为 `CLIPO_PORT=18000`、`CLIPO_BASE_URL=http://localhost:18000`，保留现有数据卷。测试入口现为 **http://localhost:18000**；没有修改 Windows 的系统保留范围。
+- 本次从 Windows 宿主机请求健康接口得到 HTTP **200**；使用独立临时配置的 Windows Edge 实际访问根地址，成功转到 `/login/` 并显示用户名输入框和登录按钮。通过 Windows 下载笔记页面引用的 CSS，与本次阅读 UI 静态产物逐字节一致，含新版阅读样式。应用/PostgreSQL healthy，API/worker 进程正常，迁移保持 `0022_model_usage`。临时探测容器和浏览器配置已清理。
+- `docker compose config` 默认 8000 与覆盖 18000 两种映射验证通过，`make lint`、本次 `make test` 通过：后端 **585**、前端 **83**、扩展 **5** 项。此节点没有重建前端或另跑阅读样式功能专项，Windows Edge 验证范围仅为宿主机入口与登录页。未推送或发布，用户已有未跟踪文件保持原样。
+
 ## 阅读样式界面与整篇阅读一致性（2026-11-03）
 
 - 根据用户提供的三张 App 参考图重做阅读样式弹窗：主题 / 字体 / 排版页签、五种配色色卡、字体样张、胶囊选项、滑杆及当前笔记预览；桌面左右布局，手机上下布局，底部固定保存区。配色保留排版调整，四个整套预设保留原有重置语义；本文与全局分别保留本次草稿，失败后可重试，关闭放弃未保存更改。

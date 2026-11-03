@@ -117,6 +117,12 @@ docker compose build db && docker compose up -d
 
 启动完成后同样访问 `http://localhost:8000` 即可。
 
+若宿主机的 8000 端口被占用或被 Windows 保留，可在 `.env` 中设置
+`CLIPO_PORT=18000` 和 `CLIPO_BASE_URL=http://localhost:18000`，再运行
+`docker compose up -d`，之后使用新地址访问。`CLIPO_PORT` 仅调整 Compose
+的宿主机端口，容器内部仍监听 8000。部署后应从浏览器所在的宿主机检查页面与
+`/api/v1/health`；容器显示 healthy 不代表宿主机端口已正常发布。
+
 ---
 
 ### 📦 方式二：克隆仓库快速启动
