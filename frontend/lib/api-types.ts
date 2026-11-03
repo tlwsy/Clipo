@@ -2111,6 +2111,22 @@ export interface components {
             /** Duration Seconds */
             duration_seconds: number;
         };
+        /**
+         * OnlineFont
+         * @description Pinned Fontsource package metadata, never an arbitrary stylesheet URL.
+         */
+        OnlineFont: {
+            /** Id */
+            id: string;
+            /** Family */
+            family: string;
+            /** Version */
+            version: string;
+            /** Variable */
+            variable: boolean;
+            /** Weights */
+            weights: (400 | 500 | 600 | 700)[];
+        };
         /** PairingRequest */
         PairingRequest: {
             /** Name */
@@ -2257,7 +2273,7 @@ export interface components {
              * Font Family
              * @enum {string}
              */
-            font_family: "system-ui" | "serif" | "sans-serif";
+            font_family: "system-ui" | "serif" | "sans-serif" | "online";
             /** Font Size */
             font_size: number;
             /**
@@ -2280,6 +2296,24 @@ export interface components {
             background_color: string;
             /** Text Color */
             text_color: string;
+            /**
+             * Color Mode
+             * @default custom
+             * @enum {string}
+             */
+            color_mode: "custom" | "system" | "monet";
+            /**
+             * Monet Seed
+             * @default #8ca68c
+             */
+            monet_seed: string;
+            /**
+             * Monet Scheme
+             * @default system
+             * @enum {string}
+             */
+            monet_scheme: "light" | "dark" | "system";
+            online_font?: components["schemas"]["OnlineFont"] | null;
         };
         /**
          * ReadingStylePatch
@@ -2289,7 +2323,7 @@ export interface components {
             /** Theme */
             theme?: ("comfortable" | "compact" | "focus" | "print") | null;
             /** Font Family */
-            font_family?: ("system-ui" | "serif" | "sans-serif") | null;
+            font_family?: ("system-ui" | "serif" | "sans-serif" | "online") | null;
             /** Font Size */
             font_size?: number | null;
             /** Font Weight */
@@ -2306,6 +2340,13 @@ export interface components {
             background_color?: string | null;
             /** Text Color */
             text_color?: string | null;
+            /** Color Mode */
+            color_mode?: ("custom" | "system" | "monet") | null;
+            /** Monet Seed */
+            monet_seed?: string | null;
+            /** Monet Scheme */
+            monet_scheme?: ("light" | "dark" | "system") | null;
+            online_font?: components["schemas"]["OnlineFont"] | null;
         };
         /** RefreshRequest */
         RefreshRequest: {

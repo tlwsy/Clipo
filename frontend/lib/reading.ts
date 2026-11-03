@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { CSSProperties } from "react";
 import { api, type Schema } from "./api";
+import { readingColors } from "./reading-colors";
+import { onlineFontFamily } from "./reading-fonts";
 
 export type ReadingStyle = Schema["ReadingPreferences"];
 export type StylePatch = Schema["ReadingStylePatch"];
 export const readingThemes: Record<ReadingStyle["theme"], ReadingStyle> = {
   comfortable: {
+    color_mode: "custom",
+    monet_seed: "#8ca68c",
+    monet_scheme: "system",
+    online_font: null,
     theme: "comfortable",
     font_family: "system-ui",
     font_size: 18,
@@ -18,6 +24,10 @@ export const readingThemes: Record<ReadingStyle["theme"], ReadingStyle> = {
     text_color: "#1c1917",
   },
   compact: {
+    color_mode: "custom",
+    monet_seed: "#8ca68c",
+    monet_scheme: "system",
+    online_font: null,
     theme: "compact",
     font_family: "system-ui",
     font_size: 16,
@@ -30,6 +40,10 @@ export const readingThemes: Record<ReadingStyle["theme"], ReadingStyle> = {
     text_color: "#0a0a0a",
   },
   focus: {
+    color_mode: "custom",
+    monet_seed: "#8ca68c",
+    monet_scheme: "system",
+    online_font: null,
     theme: "focus",
     font_family: "system-ui",
     font_size: 20,
@@ -42,6 +56,10 @@ export const readingThemes: Record<ReadingStyle["theme"], ReadingStyle> = {
     text_color: "#fafafa",
   },
   print: {
+    color_mode: "custom",
+    monet_seed: "#8ca68c",
+    monet_scheme: "system",
+    online_font: null,
     theme: "print",
     font_family: "system-ui",
     font_size: 16,
@@ -61,6 +79,7 @@ export const themeLabels = {
   print: "打印",
 } as const;
 export const readingFonts: Record<ReadingStyle["font_family"], string> = {
+  online: 'system-ui, "PingFang SC", "Microsoft YaHei", sans-serif',
   "system-ui":
     'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',
   serif:
@@ -82,7 +101,8 @@ export function resolvedReadingStyle(
   const base = overrides.theme
     ? readingThemes[overrides.theme]
     : (global ?? readingThemes.comfortable);
-  return {
+  const result: ReadingStyle = {
+    ...readingThemes.comfortable,
     ...base,
     ...Object.fromEntries(
       Object.entries(overrides).filter(
@@ -90,24 +110,39 @@ export function resolvedReadingStyle(
       ),
     ),
   };
+  if (result.font_family === "online" && result.online_font) {
+    const weights = result.online_font.weights;
+    if (weights.length && !weights.includes(result.font_weight)) {
+      result.font_weight = weights.reduce((closest, weight) =>
+        Math.abs(weight - result.font_weight) <
+        Math.abs(closest - result.font_weight)
+          ? weight
+          : closest,
+      );
+    }
+  }
+  return result;
 }
-export function readingVariables(style: ReadingStyle): CSSProperties {
-  const [red, green, blue] = [1, 3, 5].map((offset) =>
-    parseInt(style.background_color.slice(offset, offset + 2), 16),
-  );
-  const dark = red * 0.299 + green * 0.587 + blue * 0.114 < 140;
+export function readingVariables(
+  style: ReadingStyle,
+  systemDark = false,
+): CSSProperties {
+  const colors = readingColors(style, systemDark);
   return {
-    "--reading-font": readingFonts[style.font_family],
+    "--reading-font":
+      style.font_family === "online" && style.online_font
+        ? `"${onlineFontFamily(style.online_font)}", ${readingFonts["system-ui"]}`
+        : readingFonts[style.font_family],
     "--reading-size": `${style.font_size}px`,
     "--reading-weight": style.font_weight,
     "--reading-line": style.line_height,
     "--reading-spacing": `${style.paragraph_spacing}px`,
     "--reading-width": `${style.content_width}px`,
     "--reading-align": style.text_align,
-    "--reading-background": style.background_color,
-    "--reading-color": style.text_color,
-    "--reading-accent": dark ? "#a2d6bd" : "#226552",
-    "--reading-scheme": dark ? "dark" : "light",
+    "--reading-background": colors.background,
+    "--reading-color": colors.text,
+    "--reading-accent": colors.accent,
+    "--reading-scheme": colors.dark ? "dark" : "light",
   } as CSSProperties;
 }
 export function saveReadingPreferences(

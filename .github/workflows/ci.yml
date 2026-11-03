@@ -68,6 +68,8 @@ jobs:
         run: uv run --no-project --with playwright python scripts/smoke_article.py
       - name: Browser annotations and reading styles
         run: uv run --no-project --with playwright python scripts/smoke_annotations.py
+      - name: Browser reading appearance and font fallback
+        run: uv run --no-project --with playwright python scripts/smoke_reading_appearance.py
       - name: Browser single-note downloads and PDF printing
         run: uv run --no-project --with playwright python scripts/smoke_note_export.py
       - name: Browser semantic search and offline fallback

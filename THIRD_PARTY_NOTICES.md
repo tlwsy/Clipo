@@ -37,3 +37,11 @@ SOFTWARE.
 数据库镜像编译 pgvector 0.8.2，使用 PostgreSQL License，源码来自 https://github.com/pgvector/pgvector 。镜像内保留完整许可于 `/usr/local/share/doc/pgvector/LICENSE`，构建固定版本并校验下载源码的 SHA-256。
 
 Python 依赖 `pgvector` 使用 MIT 许可，依赖的 NumPy 使用 BSD-3-Clause 许可；各安装包附带许可及其所捆绑组件的声明，版本固定在 `backend/requirements.lock`。
+
+## Material Color Utilities
+
+前端莫奈取色使用 `@material/material-color-utilities@0.3.0`（Google，Apache-2.0）。来源：https://github.com/material-foundation/material-color-utilities 。完整许可随静态站点分发于 `frontend/public/licenses/material-color-utilities.txt`（站点路径 `/licenses/material-color-utilities.txt`）。
+
+## Fontsource 在线字体
+
+在线目录来自 https://api.fontsource.org ，用户选择的字体由 jsDelivr 上的 Fontsource 包按固定版本加载；仓库不捆绑这些字体文件。字体各自的许可及来源可在 https://fontsource.org/fonts 查看，下载包中也包含许可。用户配置仅保存字体元数据，不接受自定义 CSS 或资源地址。

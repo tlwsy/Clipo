@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 Theme = Literal["comfortable", "compact", "focus", "print"]
-FontFamily = Literal["system-ui", "serif", "sans-serif"]
+FontFamily = Literal["system-ui", "serif", "sans-serif", "online"]
 FontSize = Annotated[int, Field(strict=True, ge=14, le=24)]
 FontWeight = Literal[400, 500, 600, 700]
 LineHeight = Annotated[float, Field(ge=1.2, le=2.0, allow_inf_nan=False)]
@@ -12,6 +12,19 @@ ParagraphSpacing = Annotated[int, Field(strict=True, ge=0, le=40)]
 ContentWidth = Annotated[int, Field(strict=True, ge=600, le=900)]
 TextAlign = Literal["left", "justify"]
 Color = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]
+ColorMode = Literal["custom", "system", "monet"]
+MonetScheme = Literal["light", "dark", "system"]
+
+
+class OnlineFont(BaseModel):
+    """Pinned Fontsource package metadata, never an arbitrary stylesheet URL."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9-]{0,79}$")]
+    family: Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9 ._+\-]{0,99}$")]
+    version: Annotated[str, Field(pattern=r"^\d{1,3}\.\d{1,3}\.\d{1,3}$")]
+    variable: bool
+    weights: Annotated[list[FontWeight], Field(min_length=1, max_length=4)]
 
 
 class ReadingPreferences(BaseModel):
@@ -26,6 +39,10 @@ class ReadingPreferences(BaseModel):
     text_align: TextAlign
     background_color: Color
     text_color: Color
+    color_mode: ColorMode = "custom"
+    monet_seed: Color = "#8ca68c"
+    monet_scheme: MonetScheme = "system"
+    online_font: OnlineFont | None = None
 
 
 class ReadingStylePatch(BaseModel):
@@ -42,6 +59,10 @@ class ReadingStylePatch(BaseModel):
     text_align: TextAlign | None = None
     background_color: Color | None = None
     text_color: Color | None = None
+    color_mode: ColorMode | None = None
+    monet_seed: Color | None = None
+    monet_scheme: MonetScheme | None = None
+    online_font: OnlineFont | None = None
 
 
 THEMES: dict[str, ReadingPreferences] = {

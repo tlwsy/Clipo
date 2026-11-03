@@ -173,8 +173,24 @@ def test_annotations_backup_and_legacy_restore(
     with app.state.session_factory.begin() as db:
         repo = AnnotationRepository(db, 1)
         repo.create_annotation(note_id, AnnotationCreate(**BODY, note_text="保留批注"))
-        repo.save_display(note_id, ReadingStylePatch(font_size=22))
-        repo.save_preferences(ReadingStylePatch(theme="focus"))
+        repo.save_display(
+            note_id,
+            ReadingStylePatch(
+                font_size=22,
+                color_mode="monet",
+                monet_seed="#aabbcc",
+                monet_scheme="dark",
+                font_family="online",
+                online_font={
+                    "id": "noto-sans-sc",
+                    "family": "Noto Sans SC",
+                    "version": "5.3.1",
+                    "variable": True,
+                    "weights": [400, 500, 600, 700],
+                },
+            ),
+        )
+        repo.save_preferences(ReadingStylePatch(theme="focus", color_mode="system"))
         IdentityRepository(db).create_user("other", "other@example.com", "unused", False)
     job, archive = export_library(app, client, auth)
     with zipfile.ZipFile(
@@ -196,6 +212,10 @@ def test_annotations_backup_and_legacy_restore(
         == archive["notes"][0]["annotations"][0]["created_at"]
     )
     assert restored["display_overrides"]["font_size"] == 22
+    assert restored["display_overrides"]["color_mode"] == "monet"
+    assert restored["display_overrides"]["monet_seed"] == "#aabbcc"
+    assert restored["display_overrides"]["online_font"]["weights"] == [400, 500, 600, 700]
+    assert restored["reading_preferences"]["color_mode"] == "system"
     assert restored["reading_preferences"]["theme"] == "focus"
     # Old archives have no reading fields and do not overwrite a configured destination.
     archive.pop("reading_preferences")

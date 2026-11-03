@@ -59,3 +59,44 @@ def test_partial_reading_styles_reset_and_validate_css() -> None:
     ):
         with pytest.raises(ValueError):
             ReadingStylePatch.model_validate(value)
+
+
+def test_online_font_and_dynamic_color_contracts() -> None:
+    font = {
+        "id": "noto-sans-sc",
+        "family": "Noto Sans SC",
+        "version": "5.3.1",
+        "variable": True,
+        "weights": [400, 500, 600, 700],
+    }
+    current = patch_preferences(
+        {},
+        ReadingStylePatch(
+            font_family="online", online_font=font, color_mode="monet", monet_seed="#2488cc"
+        ),
+    )
+    style = resolve_preferences(current)
+    assert style.online_font.id == "noto-sans-sc"
+    assert style.monet_scheme == "system"
+    assert style.color_mode == "monet"
+    assert (
+        resolve_preferences(
+            patch_preferences(current, ReadingStylePatch(theme="compact"))
+        ).online_font
+        is None
+    )
+    assert "online_font" not in patch_preferences(current, ReadingStylePatch(online_font=None))
+    for invalid in (
+        {"id": "../evil"},
+        {"id": "https://example.com/font"},
+        {"family": 'Bad";src:url(evil)'},
+        {"version": "latest"},
+        {"weights": []},
+        {"weights": [450]},
+        {"url": "https://example.com"},
+    ):
+        with pytest.raises(ValueError):
+            ReadingStylePatch(online_font={**font, **invalid})
+    for invalid in ({"color_mode": "auto"}, {"monet_seed": "red"}, {"monet_scheme": "custom"}):
+        with pytest.raises(ValueError):
+            ReadingStylePatch.model_validate(invalid)

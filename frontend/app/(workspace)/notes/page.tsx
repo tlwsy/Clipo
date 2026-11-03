@@ -18,7 +18,9 @@ import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
 import { sourceName } from "@/lib/source-name";
-import { readingVariables, resolvedReadingStyle } from "@/lib/reading";
+import { resolvedReadingStyle } from "@/lib/reading";
+
+import { useReadingAppearance } from "@/lib/use-reading-appearance";
 
 function Reader() {
   const snapshot = useNoteListSnapshot();
@@ -29,6 +31,10 @@ function Reader() {
   const [organizing, setOrganizing] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState("");
   const router = useRouter();
+  const appearance = useReadingAppearance(
+    resolvedReadingStyle(note?.reading_preferences, note?.display_overrides),
+    note?.content.text,
+  );
   useEffect(() => {
     let active = true;
     const id = new URLSearchParams(window.location.search).get("id");
@@ -108,16 +114,20 @@ function Reader() {
       )}
       {!note && !error && <p role="status">正在打开笔记…</p>}
       {note && (
-        <article
-          className="reader reader-styled"
-          style={readingVariables(
-            resolvedReadingStyle(
-              note.reading_preferences,
-              note.display_overrides,
-            ),
-          )}
-        >
+        <article className="reader reader-styled" style={appearance.variables}>
           <ReadingTracker noteId={note.id} />
+          {appearance.fontStatus === "error" && (
+            <p className="reading-hint" role="status">
+              {appearance.fontMessage}{" "}
+              <button
+                type="button"
+                className="inline-button"
+                onClick={appearance.retryFont}
+              >
+                重试字体下载
+              </button>
+            </p>
+          )}
           <header>
             <span className="eyebrow">KEEP THE GOOD IDEAS</span>
             <h1>{note.title || "无标题笔记"}</h1>
