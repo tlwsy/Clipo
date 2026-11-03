@@ -18,6 +18,7 @@ import { useNoteListSnapshot } from "@/components/note-list-state";
 import { loadNote, changeNote } from "@/lib/notes";
 import { errorMessage, type Schema } from "@/lib/api";
 import { sourceName } from "@/lib/source-name";
+import { readingVariables, resolvedReadingStyle } from "@/lib/reading";
 
 function Reader() {
   const snapshot = useNoteListSnapshot();
@@ -107,7 +108,15 @@ function Reader() {
       )}
       {!note && !error && <p role="status">正在打开笔记…</p>}
       {note && (
-        <article className="reader">
+        <article
+          className="reader reader-styled"
+          style={readingVariables(
+            resolvedReadingStyle(
+              note.reading_preferences,
+              note.display_overrides,
+            ),
+          )}
+        >
           <ReadingTracker noteId={note.id} />
           <header>
             <span className="eyebrow">KEEP THE GOOD IDEAS</span>

@@ -173,11 +173,19 @@ it("renders sidebar actions and the four reading themes as native accessible con
     "紧凑",
     "专注",
     "打印",
-    "高级调整",
+    "主题",
+    "字体",
+    "排版",
+    "暖纸",
+    "柔绿",
+    "深色",
     "本文跟随全局",
   ])
     expect(styles).toContain(label);
-  expect(styles).toContain('<option value="global">所有笔记</option>');
+  expect(styles).toContain("所有笔记");
+  expect(styles).toContain('role="tablist"');
+  expect(styles).toContain('role="region" aria-label="阅读效果预览"');
+  expect(styles).not.toContain("<select");
 });
 
 it("inherits global styles unless a note explicitly chooses its own theme", () => {

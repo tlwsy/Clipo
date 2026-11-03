@@ -73,7 +73,11 @@ def main() -> None:
     ]
     with tempfile.TemporaryDirectory(prefix="clipo-annotations-") as tmp, ExitStack() as stack:
         base = launch(stack, Path(tmp) / "instance")
-        token = request(base, "/setup", body=ACCOUNT)["access_token"]
+        token = request(
+            base,
+            "/setup",
+            body={**ACCOUNT, "llm": {"api_key": "offline-only", "model": "offline-default"}},
+        )["access_token"]
         note_id = wait_job(
             base,
             token,
@@ -87,6 +91,13 @@ def main() -> None:
                         "title": "标注阅读验收",
                         "text": "离线标注验收。" * 20,
                         "blocks": blocks,
+                        "comments": [
+                            {
+                                "author": "阅读者",
+                                "content": "建议保留原文来源与操作步骤，定期回顾自己的阅读笔记。",
+                                "likes": 12,
+                            }
+                        ],
                     },
                 },
             ),
@@ -166,25 +177,84 @@ def main() -> None:
 
             page.get_by_role("button", name="阅读样式", exact=True).click()
             style = page.get_by_role("dialog", name="阅读样式")
-            style.get_by_label("应用范围").select_option("global")
+            style.get_by_role("button", name="所有笔记", exact=True).click()
             style.get_by_role("button", name="专注", exact=True).click()
+            expect(style.locator("select")).to_have_count(0)
+            expect(style.locator(".style-preview-paper")).to_have_css(
+                "background-color", "rgb(28, 25, 23)"
+            )
+            # A draft changes the preview only; closing never writes to the note.
+            expect(page.locator("article.reader")).to_have_css(
+                "background-color", "rgb(254, 252, 232)"
+            )
+            page.screenshot(path=str(RESULTS / "reading-style-desktop.png"))
             style.get_by_role("button", name="保存样式").click()
             expect(style).to_have_count(0)
             expect(page.locator(".reading-surface")).to_have_css(
                 "background-color", "rgb(28, 25, 23)"
             )
+            expect(page.locator("article.reader")).to_have_css(
+                "background-color", "rgb(28, 25, 23)"
+            )
+            expect(page.locator(".reader > header h1")).to_have_css("color", "rgb(250, 250, 250)")
+            expect(page.locator(".summary-section .markdown")).to_have_css("font-size", "20px")
+            expect(page.locator(".comment-text")).to_have_css("font-size", "20px")
             page.get_by_role("button", name="阅读样式", exact=True).click()
             style.get_by_role("button", name="紧凑", exact=True).click()
-            style.get_by_text("高级调整", exact=True).click()
+            style.get_by_role("tab", name="主题", exact=True).focus()
+            page.keyboard.press("ArrowRight")
+            expect(style.get_by_role("tab", name="字体", exact=True)).to_be_focused()
+            style.get_by_role("button", name="宋体 / 衬线", exact=True).click()
+            style.get_by_role("tab", name="字体", exact=True).focus()
+            page.keyboard.press("ArrowRight")
+            expect(style.get_by_role("tab", name="排版", exact=True)).to_be_focused()
             style.get_by_label("字号", exact=False).fill("22")
-            style.get_by_label("对齐方式").select_option("justify")
+            style.get_by_label("内容宽度", exact=False).fill("840")
+            style.get_by_label("行距", exact=False).fill("1.9")
+            style.get_by_label("段距", exact=False).fill("24")
+            style.get_by_role("button", name="两端对齐", exact=True).click()
+            style.get_by_role("tab", name="主题", exact=True).click()
+            style.get_by_role("button", name="雾蓝", exact=True).click()
+            # Palette changes and scope switches preserve the typography draft.
+            style.get_by_role("button", name="所有笔记", exact=True).click()
+            expect(style.get_by_label("字号", exact=False)).to_have_value("20")
+            style.get_by_role("button", name="仅本文", exact=True).click()
+            expect(style.get_by_label("字号", exact=False)).to_have_value("22")
+            expect(style.get_by_role("button", name="雾蓝", exact=True)).to_have_attribute(
+                "aria-pressed", "true"
+            )
+            page.route("**/api/v1/notes/*/display", lambda route: route.abort())
+            style.get_by_role("button", name="保存样式").click()
+            expect(style.get_by_role("alert")).to_be_visible()
+            expect(style.get_by_label("字号", exact=False)).to_have_value("22")
+            page.unroute("**/api/v1/notes/*/display")
             style.get_by_role("button", name="保存样式").click()
             expect(style).to_have_count(0)
             expect(page.locator(".article-content")).to_have_css("font-size", "22px")
             expect(page.locator(".article-content")).to_have_css("text-align", "justify")
+            expect(page.locator("article.reader")).to_have_css(
+                "background-color", "rgb(232, 239, 245)"
+            )
+            for selector in (".summary-section .markdown", ".key-points", ".comment-text"):
+                expect(page.locator(selector)).to_have_css("font-size", "22px")
+                expect(page.locator(selector)).to_have_css("text-align", "justify")
+                expect(page.locator(selector)).to_have_css("line-height", "41.8px")
+            expect(page.locator(".reader > header")).to_have_css("max-width", "840px")
+            assert "Noto Serif" in page.locator(".reader > header h1").evaluate(
+                "element => getComputedStyle(element).fontFamily"
+            )
+            assert request(base, path, token)["display_overrides"]["paragraph_spacing"] == 24
             page.reload()
             expect(page.get_by_role("button", name="我的标注（5）")).to_be_visible()
             expect(page.locator(".article-content")).to_have_css("font-size", "22px")
+            page.get_by_role("button", name="阅读样式", exact=True).click()
+            style.get_by_role("button", name="白纸", exact=True).click()
+            page.keyboard.press("Escape")
+            expect(style).to_have_count(0)
+            expect(page.locator("article.reader")).to_have_css(
+                "background-color", "rgb(232, 239, 245)"
+            )
+            page.screenshot(path=str(RESULTS / "reading-note-desktop.png"), full_page=True)
             page.get_by_role("button", name="阅读样式", exact=True).click()
             style.get_by_role("button", name="本文跟随全局").click()
             expect(style).to_have_count(0)
@@ -211,8 +281,20 @@ def main() -> None:
             page.locator(".note-reading").screenshot(path=str(RESULTS / "annotations-mobile.png"))
             sidebar.get_by_role("button", name="收起").click()
             page.get_by_role("button", name="阅读样式", exact=True).click()
-            style.get_by_text("高级调整", exact=True).click()
+            style.get_by_role("tab", name="排版", exact=True).click()
             page.screenshot(path=str(RESULTS / "reading-style-mobile.png"))
+            for width, height in ((320, 740), (768, 1024), (844, 390), (390, 844)):
+                page.set_viewport_size({"width": width, "height": height})
+                assert style.evaluate("element => element.scrollWidth <= element.clientWidth")
+                assert style.evaluate(
+                    "element => { const r = element.getBoundingClientRect(); "
+                    "return r.left >= 0 && r.right <= innerWidth "
+                    "&& r.top >= 0 && r.bottom <= innerHeight; }"
+                )
+                expect(style.get_by_role("button", name="保存样式")).to_be_in_viewport()
+            style.get_by_role("tab", name="主题", exact=True).click()
+            style.get_by_role("button", name="暖纸", exact=True).click()
+            page.screenshot(path=str(RESULTS / "reading-colors-mobile.png"))
             page.keyboard.press("Escape")
             expect(style).to_have_count(0)
 
@@ -266,6 +348,7 @@ def main() -> None:
             expect(shared.get_by_role("heading", name="标注阅读验收")).to_be_visible()
             expect(shared.locator("mark.annotation-mark")).to_have_count(0)
             expect(shared.get_by_text("编辑后保留的批注")).to_have_count(0)
+            expect(shared.locator(".reader-styled")).to_have_count(0)
             assert not errors, errors
             print(
                 "标注 Chromium 验收通过：中文/emoji/富文本/嵌套/代码/旧正文选区、"

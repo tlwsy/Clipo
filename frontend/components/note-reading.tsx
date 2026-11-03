@@ -11,8 +11,6 @@ import {
   type TextSelection,
 } from "@/lib/annotations";
 import {
-  readingVariables,
-  resolvedReadingStyle,
   saveReadingPreferences,
   saveDisplay,
   resetDisplay,
@@ -236,16 +234,7 @@ export function NoteReading({
         </p>
       )}
       <div className={`reading-layout${sidebar ? " with-annotations" : ""}`}>
-        <div
-          ref={surface}
-          className="reading-surface"
-          style={readingVariables(
-            resolvedReadingStyle(
-              note.reading_preferences,
-              note.display_overrides,
-            ),
-          )}
-        >
+        <div ref={surface} className="reading-surface">
           <ArticleContent
             text={note.content.text}
             blocks={note.content.blocks}
@@ -279,6 +268,11 @@ export function NoteReading({
       )}
       {styles && (
         <ReadingStyleSettings
+          preview={{
+            title: note.title || "无标题笔记",
+            text: note.content.text,
+            summary: note.summary_markdown ?? "",
+          }}
           preferences={note.reading_preferences}
           overrides={note.display_overrides ?? {}}
           busy={busy}

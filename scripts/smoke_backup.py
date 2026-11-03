@@ -170,7 +170,7 @@ def main() -> None:
             expect(page.locator(".original-text")).to_contain_text("保存阅读")
             page.get_by_role("button", name="阅读样式", exact=True).click()
             style = page.get_by_role("dialog", name="阅读样式")
-            style.get_by_label("应用范围").select_option("global")
+            style.get_by_role("button", name="所有笔记", exact=True).click()
             style.get_by_role("button", name="紧凑", exact=True).click()
             style.get_by_role("button", name="保存样式").click()
             expect(style).to_have_count(0)

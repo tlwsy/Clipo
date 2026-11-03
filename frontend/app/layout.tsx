@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import "./reading.css";
 
 export const metadata: Metadata = {
   title: "Clipo · 你的个人知识空间",

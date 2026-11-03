@@ -60,6 +60,21 @@ export const themeLabels = {
   focus: "专注",
   print: "打印",
 } as const;
+export const readingFonts: Record<ReadingStyle["font_family"], string> = {
+  "system-ui":
+    'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',
+  serif:
+    '"Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", SimSun, serif',
+  "sans-serif":
+    'Arial, "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif',
+};
+export const readingPalettes = [
+  { label: "白纸", background_color: "#ffffff", text_color: "#242925" },
+  { label: "暖纸", background_color: "#f5f0e5", text_color: "#39352d" },
+  { label: "柔绿", background_color: "#e8f0e6", text_color: "#293e32" },
+  { label: "雾蓝", background_color: "#e8eff5", text_color: "#293846" },
+  { label: "深色", background_color: "#202421", text_color: "#e6e9e2" },
+] as const;
 export function resolvedReadingStyle(
   global?: ReadingStyle,
   overrides: StylePatch = {},
@@ -77,8 +92,12 @@ export function resolvedReadingStyle(
   };
 }
 export function readingVariables(style: ReadingStyle): CSSProperties {
+  const [red, green, blue] = [1, 3, 5].map((offset) =>
+    parseInt(style.background_color.slice(offset, offset + 2), 16),
+  );
+  const dark = red * 0.299 + green * 0.587 + blue * 0.114 < 140;
   return {
-    "--reading-font": style.font_family,
+    "--reading-font": readingFonts[style.font_family],
     "--reading-size": `${style.font_size}px`,
     "--reading-weight": style.font_weight,
     "--reading-line": style.line_height,
@@ -87,6 +106,8 @@ export function readingVariables(style: ReadingStyle): CSSProperties {
     "--reading-align": style.text_align,
     "--reading-background": style.background_color,
     "--reading-color": style.text_color,
+    "--reading-accent": dark ? "#a2d6bd" : "#226552",
+    "--reading-scheme": dark ? "dark" : "light",
   } as CSSProperties;
 }
 export function saveReadingPreferences(
