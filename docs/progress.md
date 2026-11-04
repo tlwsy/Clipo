@@ -1,5 +1,10 @@
 # 构建进度
 
+## 移动端 M0：远端 CI 接续（2026-11-04，进行中）
+
+- 已推送 `feat/mobile-m0` 并创建 [草稿 PR #4](https://github.com/tlwsy/Clipo/pull/4)，触发三条移动端 CI 与既有 CI，尚未合并或发布。
+- 首轮三条移动端 CI 均在 SDK 初始化失败：`setup-android@v3` 默认请求已下架的 `tools` 包。已改为显式安装 `platform-tools`、`platforms;android-36` 和 `build-tools;35.0.0`，与本地构建版本一致；本地 YAML 配置检查通过，远端重跑结果继续跟踪，首轮失败不计为通过。
+
 ## 移动端 M0：KVM 恢复与 Android 原生验收节点（2026-11-04）
 
 - 用户已确认完成模拟器上的 App 测试，未提供具体设备型号与逐项结果；不将此记录扩展为平板/iPhone 实机验收。本次独立复核 `kvm` 组已包含当前用户，通过 `sg kvm` 使用更新后的组权限，`emulator -accel-check` 返回 KVM version 12 可用，Android 15 / Pixel 6 模拟器实际启动成功，KVM 权限阻塞已解除。
