@@ -1,0 +1,87 @@
+CREATE TABLE account (
+    server_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    generation TEXT NOT NULL UNIQUE,
+    server_version TEXT NOT NULL,
+    PRIMARY KEY (server_id, user_id)
+);
+
+CREATE TABLE note (
+    generation TEXT NOT NULL REFERENCES account(generation) ON DELETE CASCADE,
+    id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    item_json TEXT NOT NULL,
+    server_revision TEXT,
+    deleted_at TEXT,
+    PRIMARY KEY (generation, id)
+);
+
+CREATE TABLE note_detail (
+    generation TEXT NOT NULL,
+    id INTEGER NOT NULL,
+    detail_json TEXT NOT NULL,
+    server_revision TEXT,
+    deleted_at TEXT,
+    PRIMARY KEY (generation, id),
+    FOREIGN KEY (generation, id) REFERENCES note(generation, id) ON DELETE CASCADE
+);
+
+CREATE TABLE operation (
+    id TEXT NOT NULL PRIMARY KEY,
+    generation TEXT NOT NULL REFERENCES account(generation) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    path TEXT NOT NULL,
+    method TEXT NOT NULL,
+    body TEXT,
+    error TEXT,
+    UNIQUE (generation, position)
+);
+
+CREATE TABLE sync_state (
+    generation TEXT NOT NULL REFERENCES account(generation) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (generation, key)
+);
+
+activeAccount:
+SELECT * FROM account LIMIT 1;
+
+saveAccount:
+INSERT INTO account VALUES (?, ?, ?, ?, ?, ?);
+
+updateAccount:
+UPDATE account SET email = ?, server_version = ? WHERE generation = ?;
+
+clearAccount:
+DELETE FROM account;
+
+listNotes:
+SELECT item_json FROM note WHERE generation = ? AND deleted_at IS NULL
+ORDER BY created_at DESC, id DESC;
+
+detail:
+SELECT detail_json FROM note_detail WHERE generation = ? AND id = ? AND deleted_at IS NULL;
+
+saveNote {
+    INSERT OR IGNORE INTO note(generation, id, created_at, item_json) VALUES (:generation, :id, :created_at, :item_json);
+    UPDATE note SET created_at = :created_at, item_json = :item_json WHERE generation = :generation AND id = :id;
+}
+
+saveDetail:
+INSERT OR REPLACE INTO note_detail(generation, id, detail_json, server_revision) VALUES (?, ?, ?, ?);
+
+removeNote:
+DELETE FROM note WHERE generation = ? AND id = ?;
+
+clearNotes:
+DELETE FROM note WHERE generation = ?;
+
+state:
+SELECT value FROM sync_state WHERE generation = ? AND key = ?;
+
+saveState:
+INSERT OR REPLACE INTO sync_state VALUES (?, ?, ?);
