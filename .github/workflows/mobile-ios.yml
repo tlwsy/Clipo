@@ -1,0 +1,64 @@
+name: Mobile iOS
+on:
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/mobile-ios.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.0.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+      - run: brew install xcodegen swiftlint
+      - run: swiftlint lint --strict
+        working-directory: mobile/iosApp
+      - run: xcodegen generate
+        working-directory: mobile/iosApp
+      - name: Select available iPhone simulator
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          devices = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
+          device = next(d for runtime, group in devices['devices'].items() if 'iOS-26-0' in runtime for d in group if 'iPhone' in d['name'])
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('CLIPO_SIMULATOR=' + device['udid'] + '\n')
+          PY
+      - name: Simulator tests
+        working-directory: mobile
+        run: >-
+          xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -configuration Debug
+          -destination "platform=iOS Simulator,id=$CLIPO_SIMULATOR"
+          -derivedDataPath iosApp/DerivedData -resultBundlePath test-results/ios-tests.xcresult
+          CODE_SIGNING_ALLOWED=NO test
+      - name: Build unsigned app
+        working-directory: mobile
+        run: >-
+          xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -configuration Release
+          -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath iosApp/DerivedData
+          CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        working-directory: mobile/iosApp
+        run: |
+          mkdir -p build/Payload
+          cp -R DerivedData/Build/Products/Release-iphoneos/Clipo.app build/Payload/
+          cd build
+          zip -qr Clipo-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-ios-unsigned
+          path: mobile/iosApp/build/Clipo-unsigned.ipa
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-ios-tests
+          path: mobile/test-results/

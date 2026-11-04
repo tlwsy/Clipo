@@ -1,0 +1,37 @@
+name: Mobile shared
+on:
+  push:
+    paths: ['mobile/**', 'frontend/openapi.json', 'scripts/generate_mobile_api.py', 'scripts/smoke_mobile.py', '.github/workflows/mobile-shared.yml']
+  pull_request:
+    paths: ['mobile/**', 'frontend/openapi.json', 'scripts/generate_mobile_api.py', 'scripts/smoke_mobile.py', '.github/workflows/mobile-shared.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+      - run: python3 scripts/generate_mobile_api.py --check
+      - run: ./gradlew :shared:jvmTest :shared:ktlintCheck
+        working-directory: mobile
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+      - name: Temporary backend integration
+        run: |
+          uv venv --python 3.11 .venv
+          uv pip install --python .venv/bin/python -r backend/requirements.lock -e './backend[dev]'
+          .venv/bin/python scripts/smoke_mobile.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-shared-tests
+          path: mobile/shared/build/reports/
+          if-no-files-found: error

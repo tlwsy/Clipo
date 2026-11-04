@@ -1,5 +1,14 @@
 # 构建进度
 
+## 移动端 M0：工程、共享层与双端界面实现节点（2026-11-04）
+
+- 按 `docs/mobile-app-plan.md` / `docs/mobile-app-spec.md` 开始实施，分支 `feat/mobile-m0` 新增独立 `mobile/` 工程：Kotlin Multiplatform、Ktor、SQLDelight、Android Compose/Material 3、iOS SwiftUI/XcodeGen，以及三条独立移动端 CI。两份移动端规划作为本节点依据纳入仓库，更新实施状态，并修正正文块 `text`、capabilities 需认证、验收章节编号等与现有代码不符的细节；其他既有未跟踪文件保留。
+- M0 实现服务器地址规范化与检查、登录/刷新轮换/登出、并发刷新保护、账号/服务器代际隔离、本地列表与完整详情缓存、游标分页及双端纯文本页面。模型由已提交 OpenAPI 生成，新增漂移检查；Access token 仅在内存，Android 使用 Keystore AES-GCM 加密存储并排除云备份/设备迁移，iOS 提供 Keychain 实现。认证最终失败保留缓存，主动退出或换账号清理旧数据；迟到响应不能写入另一账号。
+- 本次共享 JVM **9 项**测试通过，覆盖并发 401、网络故障与认证失效、分页、账号/服务器隔离、缓存重开、地址校验、Retry-After 与错误处理。`scripts/smoke_mobile.py` 通过真实临时 FastAPI/SQLite 与 Kotlin HTTP 客户端验证登录、轮换、笔记/详情/标注/阅读偏好解析、磁盘重开、离线读取及退出清理；只使用临时账号和虚构直传正文，不请求真实平台或模型。关闭网络引擎的修正后已重跑该联调，正常退出。
+- Android `assembleDebug`、`lintDebug` 和 Kotlin `ktlintCheck` 通过，debug APK 位于忽略的 `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`；Gradle Wrapper 实际下载、SHA-256 校验与启动通过。`make lint`、`make test`、`make build` 本次通过：后端 **586**、前端 **89**、扩展 **5**；新增联调脚本后再次执行 `make lint` 通过。移动端 CI YAML、iOS 工程 YAML 与 Android XML 本地解析通过。构建期间发现并修正 SQLite 旧语法兼容、生成文件 lint 缓存、资源目录移动后的增量链接等问题，失败运行不计为通过。
+- **M0 里程碑尚未全部验收**：本机可见 `/dev/kvm`，但当前用户实际不在 `kvm` 组，sudo 需要交互认证；MuMu `127.0.0.1:16384` 未响应。SDK/专用模拟器已安装，Android 安装、原生界面/安全存储、真实平板和截图仍待可用设备。当前 Linux 环境无法编译 iOS，Swift/Kotlin Native、XCTest、SwiftLint、未签名 IPA 与 iPhone 侧载均未验证；三条远端 CI 未运行，未推送或发布。
+- 当前本地 schema 是 v1，新建、隔离与清理已验证，尚无旧版本升级场景。列表/详情使用完整 DTO JSON 投影，`operation` 仅预留表；独立空间/标注等查询表随后续里程碑迁移添加。最近 50 篇详情预取、离线写入、富文本/阅读偏好/平板双栏以及 M2–M5 功能尚未实施。构建命令、实际范围及接续验收见 [移动端工程说明](../mobile/README.md)；先补齐 M0 验收，再进入 M1。
+
 ## 阅读外观：滚动与动效、在线字体及动态配色（2026-11-03）
 
 - 阅读样式弹窗改为预览与配置分别滚动，左侧填满可用高度，预览不再截取前 900 字 / 五段或部分摘要；手机上下分区，配置页签固定、保存区固定。细滚动条、选项底色滑动、配色渐变与字体/排版淡入均遵循减少动态效果设置；切换样式保留预览滚动位置。

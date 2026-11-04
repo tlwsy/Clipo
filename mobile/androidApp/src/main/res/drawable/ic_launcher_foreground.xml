@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- 与 frontend/public/icon.svg 共用图形。 -->
+    <group android:translateX="22" android:translateY="22">
+        <path android:pathData="m45,30 l-16,16 a11,11 0,0 1,-16,-16 L31,12 a8,8 0,0 1,12,12 L25,42 a4,4 0,0 1,-6,-6 l17,-17"
+            android:strokeColor="#FFFFFF" android:strokeWidth="4"
+            android:strokeLineCap="round" android:strokeLineJoin="round" />
+    </group>
+</vector>

@@ -18,3 +18,13 @@ backend/app/static/
 frontend/playwright-report/
 frontend/test-results/
 .DS_Store
+mobile/.gradle/
+mobile/.kotlin/
+mobile/.local-tools/
+mobile/**/build/
+mobile/local.properties
+mobile/iosApp/DerivedData/
+mobile/iosApp/*.xcodeproj/xcuserdata/
+mobile/iosApp/Clipo.xcodeproj/
+mobile/iosApp/Info.plist
+mobile/test-results/
