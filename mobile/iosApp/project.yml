@@ -19,6 +19,8 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: Clipo
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UIAppFonts: [ClipoReadingSans.ttf, ClipoReadingSerif.ttf]
         UILaunchScreen: {}
         UIApplicationSceneManifest:
