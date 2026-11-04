@@ -9,6 +9,10 @@ import app.clipo.shared.db.NoteCache
 import app.clipo.shared.model.generated.NoteItem
 import app.clipo.shared.model.generated.NotePage
 import app.clipo.shared.model.generated.NoteResponse
+import app.clipo.shared.model.generated.ReadingPreferences
+import app.clipo.shared.model.generated.ReadingStylePatch
+import app.clipo.shared.reading.ReadingStyle
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -45,10 +49,55 @@ class NotesRepository internal constructor(
             }
         }
 
+    val preferences: Flow<ReadingPreferences?> =
+        auth.account.flatMapLatest { owner ->
+            owner?.let { cache.preferences(it.generation) } ?: flowOf(null)
+        }
+
+    suspend fun refreshPreferences(): ApiResult<Unit> =
+        resultOf {
+            refreshMutex.withLock {
+                val owner = auth.account.value ?: accountChanged()
+                val style =
+                    wireJson.decodeFromString<ReadingPreferences>(
+                        auth.authorized(owner, "/user/reading-preferences"),
+                    )
+                cache.savePreferences(owner.generation, style)
+            }
+        }
+
+    suspend fun saveStyle(
+        style: ReadingPreferences,
+        noteId: Long? = null,
+    ): ApiResult<Unit> =
+        resultOf {
+            refreshMutex.withLock {
+                val owner = auth.account.value ?: accountChanged()
+                val path = noteId?.let { "/notes/$it/display" } ?: "/user/reading-preferences"
+                val response = auth.authorized(owner, path, method = HttpMethod.Patch, body = ReadingStyle.json(style))
+                if (noteId == null) {
+                    cache.savePreferences(owner.generation, wireJson.decodeFromString(response))
+                } else {
+                    cache.saveDisplay(owner.generation, noteId, wireJson.decodeFromString(response))
+                }
+            }
+        }
+
+    suspend fun resetDisplay(id: Long): ApiResult<Unit> =
+        resultOf {
+            refreshMutex.withLock {
+                val owner = auth.account.value ?: accountChanged()
+                auth.authorized(owner, "/notes/$id/display", method = HttpMethod.Delete)
+                cache.saveDisplay(owner.generation, id, ReadingStylePatch())
+            }
+        }
+
     suspend fun refreshDetail(id: Long): ApiResult<Unit> =
         resultOf {
-            val owner = auth.account.value ?: accountChanged()
-            val note = wireJson.decodeFromString<NoteResponse>(auth.authorized(owner, "/notes/$id"))
-            cache.saveDetail(owner.generation, note)
+            refreshMutex.withLock {
+                val owner = auth.account.value ?: accountChanged()
+                val note = wireJson.decodeFromString<NoteResponse>(auth.authorized(owner, "/notes/$id"))
+                cache.saveDetail(owner.generation, note)
+            }
         }
 }

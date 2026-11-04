@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import app.clipo.shared.api.ApiResult
 import app.clipo.shared.auth.TokenStore
 import app.clipo.shared.db.ClipoDatabase
+import app.clipo.shared.reading.ReadingStyle
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.flow.first
@@ -54,6 +55,55 @@ fun main() =
             check(detail.content.text.contains("中文😀"))
             check(detail.annotations.single().selectedText == "中文😀")
             check(detail.readingPreferences != null)
+            if (detail.summaryMarkdown != null) {
+                val excerpt =
+                    client.notes.notes
+                        .first()
+                        .single()
+                        .summaryExcerpt
+                check("**" !in excerpt && "##" !in excerpt && "`" !in excerpt)
+            }
+            val global = ReadingStyle.preset("compact").copy(fontSize = 22, colorMode = "system")
+            check(client.notes.saveStyle(global) is ApiResult.Success)
+            check(client.notes.preferences.first() == global)
+            check(
+                client.notes
+                    .detail(id)
+                    .first()
+                    ?.readingPreferences == global,
+            )
+            check(client.notes.saveStyle(ReadingStyle.preset("focus"), id) is ApiResult.Success)
+            check(
+                client.notes
+                    .detail(id)
+                    .first()
+                    ?.displayOverrides
+                    ?.theme == "focus",
+            )
+            check(client.notes.refreshDetail(id) is ApiResult.Success)
+            check(
+                client.notes
+                    .detail(id)
+                    .first()
+                    ?.displayOverrides
+                    ?.theme == "focus",
+            )
+            check(client.notes.resetDisplay(id) is ApiResult.Success)
+            check(
+                client.notes
+                    .detail(id)
+                    .first()
+                    ?.displayOverrides
+                    ?.theme == null,
+            )
+            check(client.notes.refreshDetail(id) is ApiResult.Success)
+            check(
+                client.notes
+                    .detail(id)
+                    .first()
+                    ?.displayOverrides
+                    ?.theme == null,
+            )
         } finally {
             client.close()
         }
@@ -81,6 +131,17 @@ fun main() =
                     ?.contains("中文😀") == true,
             )
             check(offline.notes.refresh() is ApiResult.Error)
+            check(
+                offline.notes.preferences
+                    .first()
+                    ?.fontSize == 22L,
+            )
+            check(offline.notes.saveStyle(ReadingStyle.preset("print")) is ApiResult.Error)
+            check(
+                offline.notes.preferences
+                    .first()
+                    ?.fontSize == 22L,
+            )
             check(
                 offline.notes
                     .detail(id)

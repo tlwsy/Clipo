@@ -1,5 +1,46 @@
 # 构建进度
 
+## 移动端 M1：实现与自动验收收尾（2026-11-04）
+
+- `feat/mobile-m1` 已实现本阶段原生阅读器、全局/单篇阅读样式、内置字体、Android 平板双栏和 iOS 原生导航。复用既有 API，无后端接口或数据库迁移变更；M2 标注编辑、M3 离线写队列等后续能力没有提前计为完成。使用与边界见 [移动端工程说明](../mobile/README.md)。
+- 本地共享 JVM **16 项**、临时真实 API 富文本/样式联调、Android APK/lint、Kotlin lint、网页同夹具 Chromium、Android 原生完整专项通过。最终 Android 截图在 `mobile/test-results/android-m1-verified/`，网页在 `mobile/test-results/web-m1/`，均已检查；覆盖样式保存/重置、字体、平板横屏、200% 字号、离线保留草稿/缓存和退出清理。
+- 本阶段本地 `make lint`、`make test`、`make build` 通过，后端 **586**、前端 **89**、扩展 **5**。最终代码 `67b716c` 的 [共享 CI](https://github.com/tlwsy/Clipo/actions/runs/41829624877)、[Android CI](https://github.com/tlwsy/Clipo/actions/runs/41829625069) 和 [既有 CI](https://github.com/tlwsy/Clipo/actions/runs/41829625044) 通过；远端额外实际执行 PostgreSQL **140 项**、浏览器专项和空 Compose 首次部署。没有把远端 Compose 记录为本机测试实例更新。
+- 最终 `67b716c` 的 [iOS CI](https://github.com/tlwsy/Clipo/actions/runs/41829625029) 通过 SwiftLint、模拟器/真机编译和 **4 项** XCTest，覆盖 Keychain、UTF-16/安全链接、双字体/四字重实际绘制、动态字号与非空阅读截图。三张最终截图已下载检查，位于 `mobile/test-results/ci-ios-67b716c/tests/reader-screenshots/`；分别为 390×844 手机、1024×768 阅读区和辅助大字号。它们验证 ReaderPage，不等同于完整登录/样式表单操作或 iPad 分栏实机验收。
+- [最终 IPA 工件](https://github.com/tlwsy/Clipo/actions/runs/41829625029/artifacts/13322083798) 已下载至 `mobile/test-results/ci-ios-67b716c/Clipo-unsigned.ipa`。本地核对 ZIP 结构、版本 `0.1.0 (2)`、包标识 `app.clipo.ios`、最低 iOS 18.0、ARM64 真机平台、无代码签名及双字体完整性通过。Android 本机包在 `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`；所有安装包与截图均为忽略产物，不提交。
+- iOS 26 两次补测（[第一次](https://github.com/tlwsy/Clipo/actions/runs/41828173079)、[第二次](https://github.com/tlwsy/Clipo/actions/runs/41829011093)）均完成测试包编译，但在独立模拟器 `simctl boot` 阶段 5 分钟超时，未执行 App 测试。**iOS 26/Liquid Glass 运行、安卓平板及 iPhone 签名侧载/真实服务器业务链路仍待验收，M1 尚未完成全部实机验收**；本机 Linux 没有可替代的 Xcode/iPhone 环境。
+- 节点提交：`3514197 feat(mobile): add shared reader styles and content semantics`、`c1b6a1b feat(mobile): add native readers and appearance controls`、`8145ee1 fix(mobile): align reader scaling and cached content rendering`、`c5f9093 fix(mobile): preserve bundled font weights and verify reader parity`、`1663884 test(ios): attach reader snapshots to an active window scene`、`67b716c fix(ios): include configured versions in unsigned packages`。代码已推送至基于 M0 的 [草稿 PR #5](https://github.com/tlwsy/Clipo/pull/5)，未合并或发布；用户原有未跟踪文件保持原样。
+- 收尾只更新两份规划文档、工程说明及本记录，核对事实、链接和路径；没有把文档提交后的自动 CI 重跑算作上述测试。任务专用 `emulator-5582` 已关闭，用户原有模拟器保留。
+
+## 移动端 M1：字体与跨端阅读语义回归（2026-11-04）
+
+- `db6c66d` 的 iOS CI 后续完成 Release/IPA，但下载检查发现三张阅读截图均为空白；原 XCTest 未检查截图内容，不能计为视觉验收。测试已改用实际 UIWindowScene、等待 SwiftUI 渲染并断言截图非纯色，修正后的远端结果另行记录；本地仅完成差异/格式检查，Linux 无法运行 XCTest。
+- 同一 IPA 的 ARM64 真机平台、最低 iOS 18.0、无签名和内置双字体检查通过；另发现 XcodeGen 默认将包版本写成 `1.0 (1)`，没有使用工程设置的 `0.1.0 (2)`。已将 Info.plist 的两个版本字段显式绑定构建设置，最终包需重新核对。
+- Android 内置字体改为按 400/500/600/700 注册可变字体，修复固定 Typeface 导致正文内加粗丢失的问题；衬线选项使用内置中文衬线字体。iOS 增加实际绘制笔画量随字重递增的断言，等待该断言的远端运行。
+- 本次 Android APK/lint、`ktlintCheck`、完整原生脚本通过。最终截图 `mobile/test-results/android-m1-verified/` 已检查，覆盖富文本、衬线/500 字重、全局/单篇样式保存与重置、平板双栏、200% 字号、离线草稿保留、进程重启与退出清理。未将模拟器结果替代安卓平板实机。
+- 新增 `scripts/smoke_mobile.py --web`，与原生验收使用相同临时 API/富文本夹具，Chromium 核对标题、加粗、表格、折叠、UTF-16 和 390px 布局通过，截图在 `mobile/test-results/web-m1/`。夹具使用固定摘要、临时数据库，无真实平台或模型请求。
+- 全仓库最终回归 `make lint`、`make test` 通过：后端 **586**、前端 **89**、扩展 **5**；本阶段 `make build` 已通过。验收脚本另经 Ruff/Black 检查。`db6c66d` 的共享/Android/既有 CI 已通过，iOS 模拟器 **4 项** XCTest 通过，真机 Release/IPA 构建仍在运行；新增笔画断言及 iOS 26 结果在后续节点补充。
+
+## 移动端 M1：Android 原生验收与阅读一致性修正（2026-11-04）
+
+- `c1b6a1b` 已推送至 `feat/mobile-m1`，创建基于 M0 分支的 [草稿 PR #5](https://github.com/tlwsy/Clipo/pull/5)，未合并或发布。独立 Android 15 模拟器完整专项通过：富文本/表格/折叠、服务器核对全局与单篇样式保存/重置、1920×1200/160dpi 平板双栏、平板/手机 200% 字体、进程重启/Keystore 轮换、离线缓存、联网恢复及退出清理。截图在忽略目录 `mobile/test-results/android-m1/`，富文本、样式、平板和大字体截图已检查。
+- 复核后补齐旧笔记 `content.images` 附图并按正文块去重，修正详情刷新使列表摘要露出 Markdown 标记的问题。新增附图黄金测试，扩展 `scripts/smoke_mobile.py --rich` 核对真实接口富文本/样式/摘要投影。修正后共享 JVM **16 项**、`ktlintCheck`、Android APK/lint 和富文本临时 HTTP 联调通过；没有把修正前截图当作后续改动的重新截图。
+- iOS 首轮 CI 在 SwiftLint 的五处 `else` 换行格式中断；已修正，并将 SwiftUI 动态字号显式传给 UITextView/UIFontMetrics，补充原生字号增大断言及截图尺寸类型修正。iOS 新代码仍待修正后的远端编译/XCTest，未将本地 YAML 检查或 Android 结果当作 iOS 通过。
+
+## 移动端 M1：双端阅读界面实现检查点（2026-11-04）
+
+- Android 接入原生富文本、表格/折叠/图片回退、摘要/评论/标注只读区、样式预览与保存；840dp 以上使用 NavigationRail + 列表/阅读双栏，窄屏底部导航，包含 edge-to-edge、下拉刷新和预测性返回。iOS 接入 NavigationStack/TabView、iPad NavigationSplitView、UITextView 富文本、SwiftUI 样式表单、内置可变字体及旧系统材质回退；iOS 26 使用标准系统工具栏的 Liquid Glass 外观。
+- 本次 Android `assembleDebug`、`lintDebug`、`ktlintCheck` 通过；`make lint`、`make test`、`make build` 通过，后端 **586**、前端 **89**、扩展 **5**。Android 原生专项已实际检查富文本、全局/单篇保存与重置，完整平板/大字体/离线回归正在重跑。此前两次脚本将重置后的全 null 覆盖误判为非空、将低密度设备文字误判为不可见，已修正断言；不把中断运行计为完整通过。
+- iOS 新增 UTF-16/安全链接、双字体与四字重、原生阅读尺寸与手机/平板/大字体截图测试。XcodeGen/CI YAML 与字符串本地检查通过；本机 Linux 不能运行 Swift/Xcode。此提交用于远端 CI 验证，**尚未通过本次 iOS 编译/XCTest**。CI 增加可选 iOS 26.0 运行与阅读截图导出，18.6 仍为默认基线。
+- 此为实现检查点，M1 尚未全部验收；原生专项、远端 CI 与待实机项目在后续节点记录。
+
+## 移动端 M1：共享阅读语义与样式同步节点（2026-11-04）
+
+- 根据用户要求开始 M1；M0 的安卓平板、iPhone 侧载/业务链路与 iOS 26 运行仍单独待验收，不作为此次开发的前置阻塞，也未标记为通过。新分支 `feat/mobile-m1`。
+- 共享层新增四套主题、全局/单篇合并、HCT 莫奈/系统配色、安全 Markdown 子集、正文前序块模型与 UTF-16 边界校验；复用既有阅读接口和 schema v1 的账号隔离缓存，无后端 API/迁移变更。样式读写串行化，保存结果先落库；失败保留草稿，不进入离线队列。写请求续期保留方法、正文和幂等键。
+- 内置两个 SIL OFL 授权中文可变字体子集，各 7681 字符，保留四档字重；来源、哈希与重建命令见 `mobile/fonts/README.md`，端侧加载随下一节点接入。
+- 本次共享 JVM **15 项**、`ktlintCheck`、DTO 漂移检查和临时真实 API 联调通过；涵盖主题重置/继承、网页 HCT 黄金值、中文/emoji/组合字符、嵌套块、安全链接、401 写请求续期、迟到响应账号隔离，以及真实 API 保存全局/本文、重置、磁盘重开、离线保存失败保留缓存。`make lint` 通过；字体脚本另经 Ruff/Black 检查。全仓库 `make test` 正在运行，结果在后续验收节点记录。
+- M1 正在实施，双端界面、平板布局和设备验收尚未完成。未推送或发布。
+
 ## 移动端 M0：远端 CI 与未签名 IPA 验收节点（2026-11-04）
 
 - 已推送 `feat/mobile-m0` 并创建 [草稿 PR #4](https://github.com/tlwsy/Clipo/pull/4)，触发三条移动端 CI 与既有 CI，尚未合并或发布。

@@ -13,10 +13,11 @@ android {
         applicationId = "app.clipo.android"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-m0"
+        versionCode = 2
+        versionName = "0.1.0-m1"
     }
     buildFeatures { compose = true }
+    sourceSets["main"].assets.srcDir("../fonts")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -32,4 +33,7 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.lifecycle)
     implementation(libs.viewmodel)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network)
+    implementation(libs.compose.icons)
 }

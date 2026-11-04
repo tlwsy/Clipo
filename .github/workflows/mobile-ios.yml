@@ -3,6 +3,12 @@ on:
   pull_request:
     paths: ['mobile/**', '.github/workflows/mobile-ios.yml']
   workflow_dispatch:
+    inputs:
+      ios_runtime:
+        description: '模拟器系统版本（M1 可额外验证 iOS 26）'
+        type: choice
+        options: ['18.6', '26.0']
+        default: '18.6'
 permissions:
   contents: read
 jobs:
@@ -11,6 +17,7 @@ jobs:
     timeout-minutes: 45
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.0.1.app/Contents/Developer
+      CLIPO_IOS_RUNTIME: ${{ inputs.ios_runtime || '18.6' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -27,13 +34,14 @@ jobs:
         working-directory: mobile/iosApp
       - run: xcodegen generate
         working-directory: mobile/iosApp
-      - name: Create isolated iOS 18.6 simulator
+      - name: Create isolated iOS simulator
         run: |
           python3 - <<'PY'
           import json, os, subprocess
           devices = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
-          runtime = next(runtime for runtime in devices['devices'] if 'iOS-18-6' in runtime)
-          device = subprocess.check_output(['xcrun', 'simctl', 'create', 'Clipo M0 CI', 'com.apple.CoreSimulator.SimDeviceType.iPhone-16', runtime], text=True).strip()
+          wanted = 'iOS-' + os.environ['CLIPO_IOS_RUNTIME'].replace('.', '-')
+          runtime = next(runtime for runtime in devices['devices'] if runtime.endswith(wanted))
+          device = subprocess.check_output(['xcrun', 'simctl', 'create', 'Clipo M1 CI', 'com.apple.CoreSimulator.SimDeviceType.iPhone-16', runtime], text=True).strip()
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write('CLIPO_SIMULATOR=' + device + '\n')
           PY
@@ -60,6 +68,13 @@ jobs:
           -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1
           -test-timeouts-enabled YES -default-test-execution-time-allowance 60
           -maximum-test-execution-time-allowance 120 test-without-building
+      - name: Export reader screenshots
+        if: always()
+        working-directory: mobile
+        run: |
+          if [ -d test-results/ios-tests.xcresult ]; then
+            xcrun xcresulttool export attachments --path test-results/ios-tests.xcresult --output-path test-results/reader-screenshots
+          fi
       - name: Capture simulator launch
         timeout-minutes: 2
         run: |

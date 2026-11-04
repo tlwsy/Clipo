@@ -82,20 +82,35 @@ class AuthRepository internal constructor(
             }
         }
 
+    @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
     internal suspend fun authorized(
         owner: AccountInfo,
         path: String,
         parameters: Map<String, String> = emptyMap(),
+        method: HttpMethod = HttpMethod.Get,
+        body: String? = null,
     ): String {
         val used = token(owner)
         val server = ServerAddress.parse(owner.server)
+        val key =
+            if (method == HttpMethod.Get) {
+                null
+            } else {
+                kotlin.uuid.Uuid
+                    .random()
+                    .toString()
+            }
         return try {
-            api.request(server, path, token = used, parameters = parameters).also { verify(owner) }
+            api
+                .request(server, path, method, body, token = used, parameters = parameters, idempotencyKey = key)
+                .also { verify(owner) }
         } catch (error: ApiException) {
             if (error.status != 401) throw error
             val renewed = token(owner, used)
             try {
-                api.request(server, path, token = renewed, parameters = parameters).also { verify(owner) }
+                api
+                    .request(server, path, method, body, token = renewed, parameters = parameters, idempotencyKey = key)
+                    .also { verify(owner) }
             } catch (retry: ApiException) {
                 if (retry.status == 401) {
                     mutex.withLock {

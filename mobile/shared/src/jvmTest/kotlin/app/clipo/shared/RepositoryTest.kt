@@ -10,10 +10,13 @@ import app.clipo.shared.db.NoteCache
 import app.clipo.shared.model.generated.NoteItem
 import app.clipo.shared.model.generated.NotePage
 import app.clipo.shared.model.generated.UserResponse
+import app.clipo.shared.reading.ReadingStyle
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -303,6 +306,81 @@ class RepositoryTest {
                 assertTrue(cache.notes(second.generation).first().isEmpty())
             } finally {
                 sql.close()
+            }
+        }
+
+    @Test
+    fun styleWriteRotatesTokenWithoutLosingMethodOrBody() =
+        runTest {
+            val style = ReadingStyle.preset("focus").copy(fontSize = 23)
+            var attempts = 0
+            var requestKey: String? = null
+            val client =
+                ClipoClient(
+                    driver(),
+                    engine { request ->
+                        when (request.url.encodedPath) {
+                            "/api/v1/meta/version" -> 200 to version
+                            "/api/v1/auth/login" -> 200 to session()
+                            "/api/v1/auth/refresh" -> 200 to session(access = "new")
+                            else -> {
+                                assertEquals(HttpMethod.Patch, request.method)
+                                assertEquals(ReadingStyle.json(style), (request.body as TextContent).text)
+                                val key = request.headers["Idempotency-Key"]
+                                assertTrue(!key.isNullOrBlank())
+                                if (requestKey != null) assertEquals(requestKey, key)
+                                requestKey = key
+                                attempts++
+                                if (attempts == 1) 401 to "{}" else 200 to ReadingStyle.json(style)
+                            }
+                        }
+                    },
+                    MemoryTokens(),
+                )
+            try {
+                client.auth.login("https://example.com", "user1", "password")
+                assertIs<ApiResult.Success<*>>(client.notes.saveStyle(style))
+                assertEquals(2, attempts)
+                assertEquals(style, client.notes.preferences.first())
+            } finally {
+                client.close()
+            }
+        }
+
+    @Test
+    fun lateStyleWriteCannotChangeAnotherAccountPreferences() =
+        runTest {
+            val started = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+            var id = 1L
+            val style = ReadingStyle.preset("focus")
+            val client =
+                ClipoClient(
+                    driver(),
+                    engine { request ->
+                        when (request.url.encodedPath) {
+                            "/api/v1/meta/version" -> 200 to version
+                            "/api/v1/auth/login" -> 200 to session(id)
+                            else -> {
+                                started.complete(Unit)
+                                release.await()
+                                200 to ReadingStyle.json(style)
+                            }
+                        }
+                    },
+                    MemoryTokens(),
+                )
+            try {
+                client.auth.login("https://example.com", "user1", "password")
+                val saving = async { client.notes.saveStyle(style) }
+                started.await()
+                id = 2
+                client.auth.login("https://example.com", "user2", "password")
+                release.complete(Unit)
+                assertIs<ApiResult.Error>(saving.await())
+                assertNull(client.notes.preferences.first())
+            } finally {
+                client.close()
             }
         }
 

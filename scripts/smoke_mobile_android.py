@@ -25,7 +25,9 @@ class Device:
         self.output = output
 
     def command(self, *args: str, check: bool = True) -> bytes:
-        result = subprocess.run(self.prefix + list(args), capture_output=True, timeout=40)
+        result = subprocess.run(
+            self.prefix + list(args), capture_output=True, timeout=40, check=False
+        )
         if check and result.returncode:
             # 不将命令参数、输入内容或设备私有文件输出到日志。
             raise RuntimeError("ADB 命令执行失败，请检查指定模拟器的状态")
@@ -43,14 +45,38 @@ class Device:
             # 冷启动/转场时无障碍树可能尚未就绪，由有时限的等待继续轮询。
             return ET.Element("hierarchy")
 
-    def wait_text(self, *labels: str) -> ET.Element:
+    def wait_text(self, *labels: str, contains: bool = False) -> ET.Element:
         deadline = time.monotonic() + 35
         while time.monotonic() < deadline:
             for node in self.tree().iter("node"):
-                if node.get("text") in labels:
+                if (
+                    node.get("text") in labels
+                    or node.get("content-desc") in labels
+                    or (contains and any(label in node.get("text", "") for label in labels))
+                ):
                     return node
             time.sleep(0.3)
         raise AssertionError(f"界面未出现预期元素：{' / '.join(labels)}")
+
+    def scroll_to(self, *labels: str) -> ET.Element:
+        for _ in range(18):
+            for node in self.tree().iter("node"):
+                if any(label in node.get("text", "") for label in labels):
+                    x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.attrib["bounds"]))
+                    if x2 > x1 and y2 - y1 >= 8:
+                        return node
+            self.swipe(up=True)
+        self.screenshot("failure-scroll")
+        raise AssertionError(f"滚动后未找到元素：{labels}")
+
+    def swipe(self, up: bool = True) -> None:
+        size = self.command("shell", "wm", "size").decode()
+        width, height = map(int, re.findall(r"(\d+)x(\d+)", size)[-1])
+        x = str(int(width * 0.75))
+        start, end = (0.75, 0.3) if up else (0.3, 0.75)
+        self.command(
+            "shell", "input", "swipe", x, str(int(height * start)), x, str(int(height * end)), "350"
+        )
 
     def tap(self, node: ET.Element) -> None:
         x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.attrib["bounds"]))
@@ -67,6 +93,7 @@ class Device:
         self.command("shell", "input", "text", value)
 
     def screenshot(self, name: str) -> None:
+        time.sleep(0.5)
         self.output.mkdir(parents=True, exist_ok=True)
         (self.output / f"{name}.png").write_bytes(self.command("exec-out", "screencap", "-p"))
 
@@ -104,7 +131,7 @@ class Device:
                 assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
-def run(device: Device, apk: Path) -> None:
+def run(device: Device, apk: Path, reader: bool = False) -> None:
     if device.command("shell", "getprop", "ro.kernel.qemu").strip() != b"1":
         raise RuntimeError("此脚本仅允许在专用模拟器运行，不自动清理真机数据")
     if device.command("shell", "getprop", "sys.boot_completed").strip() != b"1":
@@ -114,7 +141,7 @@ def run(device: Device, apk: Path) -> None:
     assert device.command("shell", "pm", "clear", PACKAGE).strip() == b"Success"
     device.command("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     device.command("shell", "wm", "dismiss-keyguard")
-    with temporary_api() as base:
+    with temporary_api(rich=reader) as base:
         port = f"tcp:{urlsplit(base).port}"
         device.command("reverse", port, port)
         try:
@@ -132,10 +159,14 @@ def run(device: Device, apk: Path) -> None:
             device.wait_text("Mobile acceptance")
             device.screenshot("01-online-list")
             device.press("Mobile acceptance")
-            device.wait_text("中文😀内容")
-            device.wait_text("Offline reading.")
+            device.scroll_to("中文😀内容")
+            device.scroll_to("Offline reading.")
             device.screenshot("02-online-detail")
 
+            if reader:
+                from smoke_mobile_reader import verify_reader
+
+                verify_reader(device, base)
             encrypted = device.session_file()
             assert b"mobile-test" not in encrypted and b"refresh_token" not in encrypted
             value = ET.fromstring(encrypted).findtext("string[@name='refresh']")
@@ -156,13 +187,21 @@ def run(device: Device, apk: Path) -> None:
             )
             device.screenshot("03-offline-list")
             device.press("Mobile acceptance")
-            device.wait_text("中文😀内容")
-            device.wait_text("Offline reading.")
+            device.scroll_to("中文😀内容")
+            device.scroll_to("Offline reading.")
             device.wait_text(
                 "暂时无法刷新，已保留本地缓存。",
                 "Unable to refresh. Your local cache is available.",
             )
             device.screenshot("04-offline-detail")
+            if reader:
+                device.press("阅读样式", "Reading style")
+                device.press("专注", "Focus")
+                device.press("保存", "Save")
+                device.wait_text("无法连接服务器，请稍后重试")
+                device.wait_text("取消", "Cancel")
+                device.screenshot("m1-offline-style-draft")
+                device.press("取消", "Cancel")
 
             print("Android：恢复网络与退出清理", flush=True)
             offline_session = device.session_file()
@@ -180,7 +219,13 @@ def run(device: Device, apk: Path) -> None:
             device.verify_cleared()
             device.restart()
             device.wait_text("检查并继续", "Check and continue")
-            print("Android M0 验收通过；截图：" + str(device.output), flush=True)
+            print(
+                "Android "
+                + ("M0 + M1" if reader else "M0")
+                + " 验收通过；截图："
+                + str(device.output),
+                flush=True,
+            )
         finally:
             device.command("reverse", "--remove", port, check=False)
             device.command("shell", "am", "force-stop", PACKAGE, check=False)
@@ -189,6 +234,9 @@ def run(device: Device, apk: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--reader", action="store_true", help="追加 M1 富文本、样式、平板和字体缩放验收"
+    )
     parser.add_argument("--adb", default="adb")
     parser.add_argument("--serial", required=True, help="显式指定专用模拟器序列号")
     parser.add_argument(
@@ -205,7 +253,7 @@ def main() -> None:
         parser.error("此验收会清除 Clipo 测试数据，请使用专用模拟器并显式传入 --reset-app-data")
     if not args.apk.is_file():
         parser.error("APK 不存在，请先运行 :androidApp:assembleDebug")
-    run(Device(args.adb, args.serial, args.output), args.apk.resolve())
+    run(Device(args.adb, args.serial, args.output), args.apk.resolve(), args.reader)
 
 
 if __name__ == "__main__":

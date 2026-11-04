@@ -5,7 +5,10 @@ import app.cash.sqldelight.coroutines.mapToList
 import app.clipo.shared.api.wireJson
 import app.clipo.shared.model.generated.NoteItem
 import app.clipo.shared.model.generated.NoteResponse
+import app.clipo.shared.model.generated.ReadingPreferences
+import app.clipo.shared.model.generated.ReadingStylePatch
 import app.clipo.shared.model.generated.UserResponse
+import app.clipo.shared.reading.ReaderDocument
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -92,6 +95,40 @@ internal class NoteCache(
         }
     }
 
+    fun preferences(generation: String): Flow<ReadingPreferences?> =
+        queries
+            .state(generation, "reading_preferences")
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows -> rows.firstOrNull()?.let { wireJson.decodeFromString<ReadingPreferences>(it) } }
+
+    fun savePreferences(
+        generation: String,
+        style: ReadingPreferences,
+    ) {
+        database.transaction {
+            if (account()?.generation != generation) return@transaction
+            queries.saveState(generation, "reading_preferences", wireJson.encodeToString(style))
+            queries.allDetails(generation).executeAsList().forEach { json ->
+                val note = wireJson.decodeFromString<NoteResponse>(json).copy(readingPreferences = style)
+                queries.saveDetail(generation, note.id, wireJson.encodeToString(note), note.updatedAt)
+            }
+        }
+    }
+
+    fun saveDisplay(
+        generation: String,
+        id: Long,
+        display: ReadingStylePatch,
+    ) {
+        database.transaction {
+            if (account()?.generation != generation) return@transaction
+            val json = queries.detail(generation, id).executeAsOneOrNull() ?: return@transaction
+            val note = wireJson.decodeFromString<NoteResponse>(json).copy(displayOverrides = display)
+            queries.saveDetail(generation, id, wireJson.encodeToString(note), note.updatedAt)
+        }
+    }
+
     fun cursor(generation: String): String? = queries.state(generation, "cursor").executeAsOneOrNull()?.ifEmpty { null }
 
     fun saveDetail(
@@ -100,6 +137,7 @@ internal class NoteCache(
     ) {
         database.transaction {
             if (account()?.generation != generation) return@transaction
+            note.readingPreferences?.let { savePreferences(generation, it) }
             val item =
                 NoteItem(
                     note.id,
@@ -108,7 +146,7 @@ internal class NoteCache(
                     note.source.platform,
                     note.source.siteName,
                     note.source.author,
-                    note.summaryMarkdown.orEmpty().take(200),
+                    ReaderDocument.markdown(note.summaryMarkdown.orEmpty()).joinToString(" ") { it.text }.take(200),
                     note.status,
                     note.createdAt,
                     note.isFavorite,
