@@ -4,6 +4,8 @@
 
 - 已推送 `feat/mobile-m0` 并创建 [草稿 PR #4](https://github.com/tlwsy/Clipo/pull/4)，触发三条移动端 CI 与既有 CI，尚未合并或发布。
 - 首轮三条移动端 CI 均在 SDK 初始化失败：`setup-android@v3` 默认请求已下架的 `tools` 包。已改为显式安装 `platform-tools`、`platforms;android-36` 和 `build-tools;35.0.0`，与本地构建版本一致；本地 YAML 配置检查通过，远端重跑结果继续跟踪，首轮失败不计为通过。
+- `bfd7d61` 上 [Mobile shared](https://github.com/tlwsy/Clipo/actions/runs/41800903031)、[Mobile Android](https://github.com/tlwsy/Clipo/actions/runs/41800902990) 和 [既有 CI](https://github.com/tlwsy/Clipo/actions/runs/41800903028) 已通过：共享单测/契约/临时 HTTP 联调、APK/lint、后端 **586** / 前端 **89** / 扩展 **5**、PostgreSQL **140** 项、浏览器专项与 Docker 首次部署验收。CI APK 已下载至忽略的 `mobile/test-results/ci-android-bfd7d61/`。
+- [iOS 首轮实际构建](https://github.com/tlwsy/Clipo/actions/runs/41800903034) 已完成 SwiftLint、Kotlin/Native、Swift 与测试包编译/链接，但在 iOS 26 模拟器启动测试宿主后长时间无进展；约 20 分钟时取消以取得日志，未计为 XCTest/IPA 通过。改为 iOS 18.6 / iPhone 16 的 M0 运行基线，保留 Xcode 26 构建；拆分编译、开机和测试，模拟器使用临时签名，串行测试并设置超时。改动已完成本地 YAML/命令检查，远端结果待重跑；iOS 26 运行验证仍单独保留。
 
 ## 移动端 M0：KVM 恢复与 Android 原生验收节点（2026-11-04）
 

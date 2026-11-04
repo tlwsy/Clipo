@@ -76,6 +76,8 @@ export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
 
 需要 Apple Silicon Mac / macOS runner、JDK 21、Xcode 26.0.1、XcodeGen 与 SwiftLint。CI 固定 `macos-15` 上的 Xcode 26.0.1，版本来源见 [runner 镜像清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md)。使用 [Kotlin 官方直接集成任务](https://kotlinlang.org/docs/multiplatform/multiplatform-direct-integration.html)构建共享 framework。
 
+CI 的 M0 运行基线为 iPhone 16 / iOS 18.6；Xcode 26.0.1 编译，模拟器包使用本地临时签名，真机 IPA 保持未签名。编译、显式开机、串行 XCTest 与截图分步执行，并设置超时。首次 iOS 26 模拟器运行在编译/链接完成后卡在测试宿主启动，取消后保留了诊断工件；参考 [runner 同类问题](https://github.com/actions/runner-images/issues/13264)，改用受支持的 18.6 运行基线。iOS 26 的运行和 Liquid Glass 验证仍需独立完成，不能由 18.6 结果替代。
+
 ```bash
 cd mobile/iosApp
 brew install xcodegen swiftlint

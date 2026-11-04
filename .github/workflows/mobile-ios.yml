@@ -8,6 +8,7 @@ permissions:
 jobs:
   ios:
     runs-on: macos-15
+    timeout-minutes: 45
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.0.1.app/Contents/Developer
     steps:
@@ -26,23 +27,47 @@ jobs:
         working-directory: mobile/iosApp
       - run: xcodegen generate
         working-directory: mobile/iosApp
-      - name: Select available iPhone simulator
+      - name: Create isolated iOS 18.6 simulator
         run: |
           python3 - <<'PY'
           import json, os, subprocess
           devices = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))
-          device = next(d for runtime, group in devices['devices'].items() if 'iOS-26-0' in runtime for d in group if 'iPhone' in d['name'])
+          runtime = next(runtime for runtime in devices['devices'] if 'iOS-18-6' in runtime)
+          device = subprocess.check_output(['xcrun', 'simctl', 'create', 'Clipo M0 CI', 'com.apple.CoreSimulator.SimDeviceType.iPhone-16', runtime], text=True).strip()
           with open(os.environ['GITHUB_ENV'], 'a') as env:
-              env.write('CLIPO_SIMULATOR=' + device['udid'] + '\n')
+              env.write('CLIPO_SIMULATOR=' + device + '\n')
           PY
+      - name: Build simulator tests
+        timeout-minutes: 20
+        working-directory: mobile
+        run: >-
+          xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -configuration Debug
+          -destination "platform=iOS Simulator,id=$CLIPO_SIMULATOR"
+          -derivedDataPath iosApp/DerivedData -resultBundlePath test-results/ios-build.xcresult
+          CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES build-for-testing
+      - name: Boot simulator
+        timeout-minutes: 5
+        run: |
+          xcrun simctl boot "$CLIPO_SIMULATOR"
+          xcrun simctl bootstatus "$CLIPO_SIMULATOR" -b
       - name: Simulator tests
+        timeout-minutes: 8
         working-directory: mobile
         run: >-
           xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -configuration Debug
           -destination "platform=iOS Simulator,id=$CLIPO_SIMULATOR"
           -derivedDataPath iosApp/DerivedData -resultBundlePath test-results/ios-tests.xcresult
-          CODE_SIGNING_ALLOWED=NO test
+          -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1
+          -test-timeouts-enabled YES -default-test-execution-time-allowance 60
+          -maximum-test-execution-time-allowance 120 test-without-building
+      - name: Capture simulator launch
+        timeout-minutes: 2
+        run: |
+          xcrun simctl launch "$CLIPO_SIMULATOR" app.clipo.ios
+          sleep 3
+          xcrun simctl io "$CLIPO_SIMULATOR" screenshot mobile/test-results/ios-server.png
       - name: Build unsigned app
+        timeout-minutes: 20
         working-directory: mobile
         run: >-
           xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -configuration Release
