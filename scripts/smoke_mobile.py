@@ -21,12 +21,14 @@ from alembic import command
 from alembic.config import Config
 from app.config import BACKEND_ROOT, Settings
 from app.main import create_app
+from app.models.capture import Note
+from sqlalchemy.orm import Session
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 @contextmanager
-def temporary_api() -> Iterator[str]:
+def temporary_api(rich: bool = False) -> Iterator[str]:
     """提供含固定测试账号及笔记的隔离服务器，退出后清理全部临时数据。"""
     with tempfile.TemporaryDirectory(prefix="clipo-mobile-api-") as temporary:
         folder = Path(temporary)
@@ -68,14 +70,62 @@ def temporary_api() -> Iterator[str]:
                 response.raise_for_status()
                 session = response.json()
                 client.headers["Authorization"] = "Bearer " + session["access_token"]
+                payload = {"title": "Mobile acceptance", "text": "中文😀内容\n\nOffline reading."}
+                if rich:
+                    payload["blocks"] = [
+                        {"type": "text", "text": "中文😀内容"},
+                        {"type": "text", "text": "Offline reading."},
+                        {"type": "heading", "text": "Rich heading", "level": 2},
+                        {
+                            "type": "text",
+                            "inlines": [
+                                {"text": "Bold sample", "bold": True},
+                                {"text": " / italic", "italic": True},
+                                {"text": " / link", "url": "https://example.com"},
+                            ],
+                        },
+                        {"type": "quote", "text": "Quoted sample"},
+                        {"type": "code", "text": 'val emoji = "中文😀"'},
+                        {
+                            "type": "list",
+                            "ordered": True,
+                            "children": [
+                                {"type": "list_item", "text": "First item"},
+                                {"type": "list_item", "text": "Second item"},
+                            ],
+                        },
+                        {
+                            "type": "table",
+                            "children": [
+                                {
+                                    "type": "table_row",
+                                    "children": [
+                                        {"type": "table_cell", "text": "Column A", "header": True},
+                                        {"type": "table_cell", "text": "Column B"},
+                                    ],
+                                }
+                            ],
+                        },
+                        {
+                            "type": "details",
+                            "text": "More details",
+                            "children": [
+                                {"type": "text", "text": "Hidden paragraph"},
+                            ],
+                        },
+                        {"type": "divider"},
+                        {"type": "image", "alt": "Image fallback"},
+                        {
+                            "type": "game_card",
+                            "text": "Game link",
+                            "url": "https://example.com/game",
+                        },
+                    ]
                 job = client.post(
                     "/captures",
                     json={
                         "url": "https://example.com/mobile",
-                        "payload": {
-                            "title": "Mobile acceptance",
-                            "text": "中文😀内容\n\nOffline reading.",
-                        },
+                        "payload": payload,
                     },
                 )
                 job.raise_for_status()
@@ -84,6 +134,15 @@ def temporary_api() -> Iterator[str]:
                 result.raise_for_status()
                 assert result.json()["status"] == "success"
                 note_id = result.json()["note_id"]
+                if rich:
+                    with Session(app.state.engine) as database:
+                        note = database.get(Note, note_id)
+                        assert note is not None
+                        note.summary_markdown = (
+                            "## Summary heading\n\n**Bold summary** with `code`."
+                        )
+                        note.key_points = ["Key point"]
+                        database.commit()
                 annotation = client.post(
                     f"/notes/{note_id}/annotations",
                     json={

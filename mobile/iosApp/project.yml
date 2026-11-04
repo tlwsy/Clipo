@@ -9,16 +9,17 @@ settings:
     SWIFT_VERSION: "5.0"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
 targets:
   Clipo:
     type: application
     platform: iOS
-    sources: [Sources, Resources]
+    sources: [Sources, Resources, ../fonts]
     info:
       path: Info.plist
       properties:
         CFBundleDisplayName: Clipo
+        UIAppFonts: [ClipoReadingSans.ttf, ClipoReadingSerif.ttf]
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false

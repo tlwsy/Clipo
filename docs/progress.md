@@ -1,5 +1,12 @@
 # 构建进度
 
+## 移动端 M1：双端阅读界面实现检查点（2026-11-04）
+
+- Android 接入原生富文本、表格/折叠/图片回退、摘要/评论/标注只读区、样式预览与保存；840dp 以上使用 NavigationRail + 列表/阅读双栏，窄屏底部导航，包含 edge-to-edge、下拉刷新和预测性返回。iOS 接入 NavigationStack/TabView、iPad NavigationSplitView、UITextView 富文本、SwiftUI 样式表单、内置可变字体及旧系统材质回退；iOS 26 使用标准系统工具栏的 Liquid Glass 外观。
+- 本次 Android `assembleDebug`、`lintDebug`、`ktlintCheck` 通过；`make lint`、`make test`、`make build` 通过，后端 **586**、前端 **89**、扩展 **5**。Android 原生专项已实际检查富文本、全局/单篇保存与重置，完整平板/大字体/离线回归正在重跑。此前两次脚本将重置后的全 null 覆盖误判为非空、将低密度设备文字误判为不可见，已修正断言；不把中断运行计为完整通过。
+- iOS 新增 UTF-16/安全链接、双字体与四字重、原生阅读尺寸与手机/平板/大字体截图测试。XcodeGen/CI YAML 与字符串本地检查通过；本机 Linux 不能运行 Swift/Xcode。此提交用于远端 CI 验证，**尚未通过本次 iOS 编译/XCTest**。CI 增加可选 iOS 26.0 运行与阅读截图导出，18.6 仍为默认基线。
+- 此为实现检查点，M1 尚未全部验收；原生专项、远端 CI 与待实机项目在后续节点记录。
+
 ## 移动端 M1：共享阅读语义与样式同步节点（2026-11-04）
 
 - 根据用户要求开始 M1；M0 的安卓平板、iPhone 侧载/业务链路与 iOS 26 运行仍单独待验收，不作为此次开发的前置阻塞，也未标记为通过。新分支 `feat/mobile-m1`。
