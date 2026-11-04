@@ -28,6 +28,7 @@ kotlin {
             implementation(libs.coroutines)
             implementation(libs.sql.runtime)
             implementation(libs.sql.coroutines)
+            implementation(libs.material.colors)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

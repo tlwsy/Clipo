@@ -9,6 +9,7 @@ ktlint = "13.1.0"
 composeBom = "2025.10.00"
 activity = "1.11.0"
 lifecycle = "2.9.4"
+materialColors = "3.0.1"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -42,3 +43,4 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 activity = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+material-colors = { module = "com.materialkolor:material-color-utilities", version.ref = "materialColors" }

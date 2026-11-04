@@ -6,6 +6,7 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -42,11 +43,13 @@ internal class ClipoApi(
         body: String? = null,
         token: String? = null,
         parameters: Map<String, String> = emptyMap(),
+        idempotencyKey: String? = null,
     ): String {
         val response =
             client.request(server.endpoint(path)) {
                 this.method = method
                 if (token != null) bearerAuth(token)
+                if (idempotencyKey != null) header("Idempotency-Key", idempotencyKey)
                 url { parameters.forEach { (key, value) -> this.parameters.append(key, value) } }
                 if (body != null) {
                     contentType(ContentType.Application.Json)

@@ -66,6 +66,9 @@ ORDER BY created_at DESC, id DESC;
 detail:
 SELECT detail_json FROM note_detail WHERE generation = ? AND id = ? AND deleted_at IS NULL;
 
+allDetails:
+SELECT detail_json FROM note_detail WHERE generation = ? AND deleted_at IS NULL;
+
 saveNote {
     INSERT OR IGNORE INTO note(generation, id, created_at, item_json) VALUES (:generation, :id, :created_at, :item_json);
     UPDATE note SET created_at = :created_at, item_json = :item_json WHERE generation = :generation AND id = :id;

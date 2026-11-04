@@ -6,6 +6,8 @@ import app.clipo.shared.api.ServerAddress
 import app.clipo.shared.auth.AccountInfo
 import app.clipo.shared.model.generated.NoteItem
 import app.clipo.shared.model.generated.NoteResponse
+import app.clipo.shared.model.generated.ReadingPreferences
+import app.clipo.shared.reading.ReadingStyle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,6 +29,11 @@ data class MobileState(
     val notes: List<NoteItem> = emptyList(),
     val detail: NoteResponse? = null,
     val selectedId: Long? = null,
+    val preferences: ReadingPreferences? = null,
+    val readingDraft: ReadingPreferences? = null,
+    val readingNoteId: Long? = null,
+    val readingFailure: Failure? = null,
+    val readingSaving: Boolean = false,
     val busy: Boolean = false,
     val hasMore: Boolean = true,
     val failure: Failure? = null,
@@ -53,11 +60,13 @@ class MobileModel(
     val state = mutable.asStateFlow()
     private var detailJob: Job? = null
     private var actionJob: Job? = null
+    private var readingJob: Job? = null
 
     init {
         scope.launch {
             client.auth.account.collectLatest { owner ->
                 detailJob?.cancel()
+                readingJob?.cancel()
                 mutable.value =
                     MobileState(
                         screen = if (owner == null) Screen.SERVER else Screen.NOTES,
@@ -67,13 +76,23 @@ class MobileModel(
                     )
                 if (owner != null) {
                     launch { refresh() }
+                    launch { client.notes.refreshPreferences() }
+                    launch {
+                        client.notes.preferences.collect { style ->
+                            mutable.update { it.copy(preferences = style) }
+                        }
+                    }
                     client.notes.notes.collect { notes -> mutable.update { it.copy(notes = notes) } }
                 }
             }
         }
         scope.launch {
             client.auth.needsLogin.collect { required ->
-                if (required) mutable.update { it.copy(screen = Screen.LOGIN, detail = null, selectedId = null) }
+                if (required) {
+                    mutable.update {
+                        it.copy(screen = Screen.LOGIN, detail = null, selectedId = null, readingDraft = null)
+                    }
+                }
             }
         }
     }
@@ -149,6 +168,67 @@ class MobileModel(
     fun closeNote() {
         detailJob?.cancel()
         mutable.update { it.copy(selectedId = null, detail = null, failure = null) }
+    }
+
+    fun beginReading(noteScope: Boolean) {
+        if (state.value.readingSaving) return
+        val note = state.value.detail
+        val global = state.value.preferences ?: note?.readingPreferences
+        mutable.update {
+            it.copy(
+                readingDraft =
+                    if (noteScope) {
+                        ReadingStyle.resolve(global, note?.displayOverrides)
+                    } else {
+                        global ?: ReadingStyle.preset("comfortable")
+                    },
+                readingNoteId = if (noteScope) note?.id else null,
+                readingFailure = null,
+            )
+        }
+    }
+
+    fun editReading(
+        key: String,
+        value: String,
+    ) {
+        if (state.value.readingSaving) return
+        mutable.update { current ->
+            val draft = current.readingDraft ?: return@update current
+            current.copy(readingDraft = ReadingStyle.edit(draft, key, value) ?: draft, readingFailure = null)
+        }
+    }
+
+    fun cancelReading() {
+        if (!state.value.readingSaving) mutable.update { it.copy(readingDraft = null, readingFailure = null) }
+    }
+
+    fun saveReading(reset: Boolean = false) {
+        if (readingJob?.isActive == true) return
+        val draft = state.value.readingDraft ?: return
+        val id = state.value.readingNoteId
+        val owner = state.value.account ?: return
+        readingJob =
+            scope.launch {
+                mutable.update { it.copy(readingSaving = true, readingFailure = null) }
+                try {
+                    val result =
+                        if (reset &&
+                            id != null
+                        ) {
+                            client.notes.resetDisplay(id)
+                        } else {
+                            client.notes.saveStyle(draft, id)
+                        }
+                    if (state.value.account != owner) return@launch
+                    when (result) {
+                        is ApiResult.Error -> mutable.update { it.copy(readingFailure = result.failure) }
+                        is ApiResult.Success -> mutable.update { it.copy(readingDraft = null) }
+                    }
+                } finally {
+                    if (state.value.account == owner) mutable.update { it.copy(readingSaving = false) }
+                }
+            }
     }
 
     fun logout() =
