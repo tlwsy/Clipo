@@ -1,5 +1,13 @@
 # 构建进度
 
+## 移动端 M0：KVM 恢复与 Android 原生验收节点（2026-11-04）
+
+- 用户已确认完成模拟器上的 App 测试，未提供具体设备型号与逐项结果；不将此记录扩展为平板/iPhone 实机验收。本次独立复核 `kvm` 组已包含当前用户，通过 `sg kvm` 使用更新后的组权限，`emulator -accel-check` 返回 KVM version 12 可用，Android 15 / Pixel 6 模拟器实际启动成功，KVM 权限阻塞已解除。
+- 保留用户的 `clipo-m0` 实例，另建 `clipo-m0-smoke`（`emulator-5582`）。新增 `scripts/smoke_mobile_android.py`，复用 `scripts/smoke_mobile.py` 提取出的临时 API 上下文；只使用临时 SQLite/队列、虚构账号及直传正文，不读取日常部署密钥、笔记或调用真实平台/模型。脚本必须显式指定设备和 `--reset-app-data`，拒绝在真机自动清除数据。
+- Android 原生 UI 验收通过：APK 安装、服务器检查、登录、列表、中文/emoji 详情、强制停止后的 Keystore 解密及刷新轮换、移除 ADB 反向转发后的列表/详情缓存、联网恢复与退出后凭据和 SQLite 五张表清理。五张截图位于忽略的 `mobile/test-results/android-m0/`，在线与离线正文截图已检查。首轮因冷启动无障碍树未就绪失败，补充有时限等待后重跑通过；不把失败运行计为通过。
+- 本次临时真实 API / JVM 联调、`make lint`、`make test` 通过：后端 **586**、前端 **89**、扩展 **5**。脚本追加后 lint 曾发现一处行宽问题，格式化后重跑通过。此次只修改验收脚本与说明，未修改 App/网页代码或构建配置，复用上一节点生成的 APK，未重新执行 `assembleDebug` / `make build`，也未另跑 PostgreSQL 或 Compose 验收。
+- M0 仍未全部完成：远端三条 CI、iOS 编译/XCTest/未签名 IPA、iPhone 侧载及 Android 平板实机仍待验收。此节点尚未推送或发布；接续验证按 [移动端工程说明](../mobile/README.md) 进行，M1 尚未开始。
+
 ## 移动端 M0：工程、共享层与双端界面实现节点（2026-11-04）
 
 - 按 `docs/mobile-app-plan.md` / `docs/mobile-app-spec.md` 开始实施，分支 `feat/mobile-m0` 新增独立 `mobile/` 工程：Kotlin Multiplatform、Ktor、SQLDelight、Android Compose/Material 3、iOS SwiftUI/XcodeGen，以及三条独立移动端 CI。两份移动端规划作为本节点依据纳入仓库，更新实施状态，并修正正文块 `text`、capabilities 需认证、验收章节编号等与现有代码不符的细节；其他既有未跟踪文件保留。

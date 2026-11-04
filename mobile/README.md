@@ -47,6 +47,31 @@ adb -s emulator-5580 install -r mobile/androidApp/build/outputs/apk/debug/androi
 
 共享单测使用 MockEngine 和 SQLite 内存/临时文件驱动，覆盖刷新并发、失败分类、服务器地址、Retry-After 秒数/日期、账号和服务器切换、迟到响应、分页及删除隔离。JVM 结果不能替代 Android/iOS 安全存储与原生界面验收。
 
+## Android 原生界面验收
+
+使用独立测试模拟器。脚本会安装 debug APK，清除该模拟器中 Clipo 的登录和缓存；必须显式传入 `--reset-app-data`，并拒绝在真机运行。已有日常测试实例应保留，另建 `clipo-m0-smoke`。
+
+本机已创建 Android 15 / Pixel 6 测试实例，SDK 与 AVD 索引都放在忽略目录。用户加入 `kvm` 组后，重新登录或执行 `newgrp kvm`；已有进程也可以通过 `sg kvm -c '命令'` 使用新组权限。完整步骤见 [Android 测试说明](../docs/android-testing.md)。
+
+```bash
+# 仓库根目录；在具备 kvm 权限的终端启动专用模拟器
+export ANDROID_HOME="$PWD/mobile/.local-tools/android-sdk"
+export ANDROID_USER_HOME="$PWD/mobile/.local-tools/android-user"
+export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
+"$ANDROID_HOME/emulator/emulator" -avd clipo-m0-smoke -port 5582 \
+  -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -memory 2048
+```
+
+等 `adb -s emulator-5582 shell getprop sys.boot_completed` 返回 `1`，另开终端执行：
+
+```bash
+.venv/bin/python scripts/smoke_mobile_android.py \
+  --adb "$PWD/mobile/.local-tools/android-sdk/platform-tools/adb" \
+  --serial emulator-5582 --reset-app-data
+```
+
+脚本复用临时 API 夹具，使用 UI Automator 操作真实 Compose 页面：检查服务器、登录、列表及中文/emoji 正文、进程重启后的 Keystore 解密及刷新轮换、断开 API 转发后的列表/详情缓存、联网恢复、退出后 SQLite 五张表及加密凭据清理。退出时移除本次随机端口转发、停止测试 App 并清理临时 API；不调用真实平台或模型。截图保存在忽略的 `mobile/test-results/android-m0/`，不提交到 Git。模拟器结果不替代平板/iPhone 实机验收。
+
 ## iOS
 
 需要 Apple Silicon Mac / macOS runner、JDK 21、Xcode 26.0.1、XcodeGen 与 SwiftLint。CI 固定 `macos-15` 上的 Xcode 26.0.1，版本来源见 [runner 镜像清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md)。使用 [Kotlin 官方直接集成任务](https://kotlinlang.org/docs/multiplatform/multiplatform-direct-integration.html)构建共享 framework。
@@ -74,6 +99,6 @@ xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -sdk iphoneos \
 
 ## 待验收
 
-1. Android 模拟器/平板安装、真实原生登录、进程重启后的离线列表/详情、安全存储与截图。本次环境的 `/dev/kvm` 存在，但当前用户不在 `kvm` 组；已有 MuMu 端口未响应。启用权限或启动 MuMu 后继续，设备映射见 [Android 测试记录](../docs/android-testing.md)。
+1. Android 平板实机验收。2026-11-04 用户已确认完成模拟器上的 App 测试；本机 `kvm` 组已包含当前用户，`-accel-check` 通过。可复现的 Android 原生验收及结果见上节和 [构建进度](../docs/progress.md)，不再以 KVM 权限作为阻塞。
 2. macOS CI 的 Swift/Kotlin Native 编译、XCTest、SwiftLint、IPA 打包，以及 iPhone 侧载。三个工作流仅完成本地定义和 YAML 检查，未执行远端 CI。
 3. M0 所有验收项通过后再进入 M1；截图、CI 工件与实机结果写入 `docs/progress.md`，不能把 APK 构建或 JVM 联调当作真机通过。

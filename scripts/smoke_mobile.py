@@ -11,6 +11,8 @@ import subprocess
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
@@ -23,10 +25,9 @@ from app.main import create_app
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gradle", default=str(ROOT / "mobile/gradlew"))
-    args = parser.parse_args()
+@contextmanager
+def temporary_api() -> Iterator[str]:
+    """提供含固定测试账号及笔记的隔离服务器，退出后清理全部临时数据。"""
     with tempfile.TemporaryDirectory(prefix="clipo-mobile-api-") as temporary:
         folder = Path(temporary)
         settings = Settings(
@@ -94,25 +95,33 @@ def main() -> None:
                     },
                 )
                 annotation.raise_for_status()
-            env = {key: value for key, value in os.environ.items() if not key.startswith("CLIPO_")}
-            env["CLIPO_MOBILE_SMOKE_URL"] = base
-            subprocess.run(
-                [
-                    args.gradle,
-                    "-p",
-                    str(ROOT / "mobile"),
-                    ":shared:backendSmoke",
-                    "--console=plain",
-                ],
-                cwd=ROOT,
-                env=env,
-                check=True,
-            )
+            yield base
         finally:
             server.should_exit = True
             thread.join(timeout=10)
             listener.close()
             app.state.engine.dispose()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--gradle", default=str(ROOT / "mobile/gradlew"))
+    args = parser.parse_args()
+    with temporary_api() as base:
+        env = {key: value for key, value in os.environ.items() if not key.startswith("CLIPO_")}
+        env["CLIPO_MOBILE_SMOKE_URL"] = base
+        subprocess.run(
+            [
+                args.gradle,
+                "-p",
+                str(ROOT / "mobile"),
+                ":shared:backendSmoke",
+                "--console=plain",
+            ],
+            cwd=ROOT,
+            env=env,
+            check=True,
+        )
 
 
 if __name__ == "__main__":
