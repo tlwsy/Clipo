@@ -1,11 +1,15 @@
 # 构建进度
 
-## 移动端 M0：远端 CI 接续（2026-11-04，进行中）
+## 移动端 M0：远端 CI 与未签名 IPA 验收节点（2026-11-04）
 
 - 已推送 `feat/mobile-m0` 并创建 [草稿 PR #4](https://github.com/tlwsy/Clipo/pull/4)，触发三条移动端 CI 与既有 CI，尚未合并或发布。
-- 首轮三条移动端 CI 均在 SDK 初始化失败：`setup-android@v3` 默认请求已下架的 `tools` 包。已改为显式安装 `platform-tools`、`platforms;android-36` 和 `build-tools;35.0.0`，与本地构建版本一致；本地 YAML 配置检查通过，远端重跑结果继续跟踪，首轮失败不计为通过。
+- 首轮三条移动端 CI 均在 SDK 初始化失败：`setup-android@v3` 默认请求已下架的 `tools` 包。已改为显式安装 `platform-tools`、`platforms;android-36` 和 `build-tools;35.0.0`，与本地构建版本一致；本地 YAML 配置检查通过，修正后的远端结果见下方记录，首轮失败不计为通过。
 - `bfd7d61` 上 [Mobile shared](https://github.com/tlwsy/Clipo/actions/runs/41800903031)、[Mobile Android](https://github.com/tlwsy/Clipo/actions/runs/41800902990) 和 [既有 CI](https://github.com/tlwsy/Clipo/actions/runs/41800903028) 已通过：共享单测/契约/临时 HTTP 联调、APK/lint、后端 **586** / 前端 **89** / 扩展 **5**、PostgreSQL **140** 项、浏览器专项与 Docker 首次部署验收。CI APK 已下载至忽略的 `mobile/test-results/ci-android-bfd7d61/`。
-- [iOS 首轮实际构建](https://github.com/tlwsy/Clipo/actions/runs/41800903034) 已完成 SwiftLint、Kotlin/Native、Swift 与测试包编译/链接，但在 iOS 26 模拟器启动测试宿主后长时间无进展；约 20 分钟时取消以取得日志，未计为 XCTest/IPA 通过。改为 iOS 18.6 / iPhone 16 的 M0 运行基线，保留 Xcode 26 构建；拆分编译、开机和测试，模拟器使用临时签名，串行测试并设置超时。改动已完成本地 YAML/命令检查，远端结果待重跑；iOS 26 运行验证仍单独保留。
+- [iOS 首轮实际构建](https://github.com/tlwsy/Clipo/actions/runs/41800903034) 已完成 SwiftLint、Kotlin/Native、Swift 与测试包编译/链接，但在 iOS 26 模拟器启动测试宿主后长时间无进展；约 20 分钟时取消以取得日志，未计为 XCTest/IPA 通过。改为 iOS 18.6 / iPhone 16 的 M0 运行基线，保留 Xcode 26 构建；拆分编译、开机和测试，模拟器使用临时签名，串行测试并设置超时。本地 YAML/命令检查通过，远端重跑结果见下；iOS 26 运行验证仍单独保留。
+- 代码提交 `7dfa3c7` 的 [Mobile iOS](https://github.com/tlwsy/Clipo/actions/runs/41804775435)、[Mobile shared](https://github.com/tlwsy/Clipo/actions/runs/41804775316)、[Mobile Android](https://github.com/tlwsy/Clipo/actions/runs/41804775574) 和 [既有 CI](https://github.com/tlwsy/Clipo/actions/runs/41804775354) 全部通过。iOS 实际完成 SwiftLint、模拟器测试包编译、显式开机、**1 项** Keychain 读写/轮换/删除 XCTest、服务器页启动截图、ARM64 真机 Release 构建及未签名 IPA 上传；启动截图已检查，未将其扩展为 iOS 登录/笔记/离线 UI 验收。
+- [未签名 IPA 工件](https://github.com/tlwsy/Clipo/actions/runs/41804775435/artifacts/13310885639) 已下载至 `mobile/test-results/ci-ios-7dfa3c7/Clipo-unsigned.ipa`，本地核对 ZIP 结构、`app.clipo.ios`、最低 iOS 18.0、Mach-O ARM64 真机平台和无代码签名通过。XCTest 工件及截图位于同目录 `tests/`；均在忽略目录，不提交。Android 本机包与 CI 包的调试签名指纹不同，跨来源覆盖安装说明已补充。
+- 本轮提交：`a821321 test(mobile): verify native Android login and offline recovery`、`bfd7d61 fix(ci): install supported Android SDK packages`、`7dfa3c7 fix(ci): isolate and bound iOS simulator testing`。仅将代码与文档推送到功能分支及草稿 PR；未合并 main、未发布版本或公共镜像。最终验收记录是纯文档更新，核对事实、命令及路径，不将后续自动触发的 CI 重跑混作上述运行结果。
+- **M0 仍待实机验收**：安卓平板；iPhone 签名侧载、真实服务器登录/笔记/离线重启及账号切换；iOS 26 运行。用户本轮确认的是模拟器 App 测试，不能替代这些项目。工程与 CI 条件已具备，M1 尚未开始。
 
 ## 移动端 M0：KVM 恢复与 Android 原生验收节点（2026-11-04）
 

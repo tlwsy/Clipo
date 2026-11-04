@@ -1,12 +1,12 @@
 # Clipo 原生移动端
 
-按 [移动端计划](../docs/mobile-app-plan.md) 和 [移动端规格](../docs/mobile-app-spec.md) 实施。目前为 **M0 工程实现节点，里程碑验收尚未全部完成**。本次验证及限制见 [构建进度](../docs/progress.md)。
+按 [移动端计划](../docs/mobile-app-plan.md) 和 [移动端规格](../docs/mobile-app-spec.md) 实施。**M0 工程、Android 模拟器与三条移动端 CI 已通过；双端实机验收尚未全部完成**。本次验证及限制见 [构建进度](../docs/progress.md)。
 
 ## 当前范围
 
 - `shared/`：Kotlin Multiplatform 的 HTTP / 认证 / SQLDelight 缓存 / 笔记仓储 / 状态流；Android、iOS 和用于测试的 JVM target。
 - `androidApp/`：Android 10+，Jetpack Compose + Material 3，服务器检查、登录、分页列表、纯文本详情、中英资源；Android 12+ 动态配色。
-- `iosApp/`：iOS 18+，SwiftUI 同范围页面、Keychain、XcodeGen 工程描述与 XCTest；尚待 macOS 实际编译验证。
+- `iosApp/`：iOS 18+，SwiftUI 同范围页面、Keychain、XcodeGen 工程描述与 XCTest；macOS CI 已通过编译、iOS 18.6 Keychain 测试、启动截图和未签名 IPA 打包。
 - 三条独立 CI：共享测试、契约漂移与临时 API 联调；Android APK/lint；iOS 模拟器测试/SwiftLint/未签名 IPA。iOS 仅 PR 或手动触发，不随每次 push 运行。
 
 M1 的原生富文本、阅读偏好、平板双栏，以及 M2–M5 的标注编辑、采集、离线写队列、预取、搜索、空间、回忆廊和质量打磨尚未实施。M0 可查看已经打开过的笔记详情缓存；最近 50 篇详情预取属于 M3。
@@ -30,6 +30,8 @@ APK：`mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`。安装�
 ```bash
 adb -s emulator-5580 install -r mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk
 ```
+
+本机包与 CI 包使用各自的调试签名，本次已核对证书指纹不同。跨来源覆盖安装若提示 `INSTALL_FAILED_UPDATE_INCOMPATIBLE`，需先卸载旧测试包再安装；这会清理设备上的登录和缓存，服务端笔记保留。调试签名不作为正式发布签名。
 
 首次填写服务器**根地址**（也接受以 `/api/v1` 结尾的地址），确认规范化地址后输入账号密码。HTTP 自托管地址可用，登录页显示未加密提示；HTTPS 证书使用系统校验。拒绝 URL 内凭据、查询参数和片段，不跟随 HTTP 重定向；反向代理应填写最终可达地址。
 
@@ -88,7 +90,9 @@ xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -sdk iphoneos \
   -configuration Release CODE_SIGNING_ALLOWED=NO build
 ```
 
-`Clipo.xcodeproj` 和 `Info.plist` 从 `project.yml` 生成，不手工编辑、不提交生成产物。CI 将 `.app` 放进 `Payload/` 并打包 `Clipo-unsigned.ipa`，只在构建成功后上传 `mobile-ios-unsigned` 工件；本次尚无经过验证的 IPA。签名/侧载和 iPhone 验收待后续完成。
+`Clipo.xcodeproj` 和 `Info.plist` 从 `project.yml` 生成，不手工编辑、不提交生成产物。CI 将 `.app` 放进 `Payload/` 并打包 `Clipo-unsigned.ipa`，只在构建成功后上传 `mobile-ios-unsigned` 工件。
+
+2026-11-04，代码提交 `7dfa3c7` 的 [iOS CI](https://github.com/tlwsy/Clipo/actions/runs/41804775435) 已通过：SwiftLint、Kotlin/Native 与 Swift 编译、iPhone 16 / iOS 18.6 的 **1 项** Keychain 读写/轮换/删除 XCTest、原生服务器页启动截图及未签名 IPA 打包。[IPA 工件](https://github.com/tlwsy/Clipo/actions/runs/41804775435/artifacts/13310885639) 已下载至本机忽略目录 `mobile/test-results/ci-ios-7dfa3c7/Clipo-unsigned.ipa`；核对包标识 `app.clipo.ios`、最低 iOS 18.0、ARM64 真机平台与未签名状态通过。该包仍需用户签名侧载，当前测试未覆盖 iOS 原生登录、真实服务器笔记或离线重启，这些需在 iPhone 补齐。
 
 ## 数据与认证边界
 
@@ -102,5 +106,5 @@ xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -sdk iphoneos \
 ## 待验收
 
 1. Android 平板实机验收。2026-11-04 用户已确认完成模拟器上的 App 测试；本机 `kvm` 组已包含当前用户，`-accel-check` 通过。可复现的 Android 原生验收及结果见上节和 [构建进度](../docs/progress.md)，不再以 KVM 权限作为阻塞。
-2. macOS CI 的 Swift/Kotlin Native 编译、XCTest、SwiftLint、IPA 打包，以及 iPhone 侧载。三个工作流仅完成本地定义和 YAML 检查，未执行远端 CI。
+2. iPhone 签名侧载、真实服务器登录/列表/详情、进程重启后的离线读取、退出及换账号，以及 iOS 26 运行。三条移动端 CI 和既有全仓库 CI 已在 `7dfa3c7` 通过；iOS CI 的 18.6 Keychain 测试与服务器页截图只覆盖上述实际范围。
 3. M0 所有验收项通过后再进入 M1；截图、CI 工件与实机结果写入 `docs/progress.md`，不能把 APK 构建或 JVM 联调当作真机通过。

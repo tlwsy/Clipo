@@ -2,7 +2,7 @@
 
 **版本**: 1.0
 **日期**: 2026-11-04
-**状态**: M0 工程实现与本地验证进行中；双端设备及远端 CI 尚待验收
+**状态**: M0 工程、Android 模拟器与远端 CI 已通过；双端实机及 iOS 26 运行尚待验收
 **配套文档**: [移动端规格](mobile-app-spec.md)（功能与技术细节）
 
 当前工程、命令和实现边界见 [mobile/README.md](../mobile/README.md)，本次实际验证见 [构建进度](progress.md)。以下里程碑继续作为验收目标，不表示已经全部实现。
@@ -162,15 +162,15 @@
 | 目标 | 方式 | 说明 |
 | --- | --- | --- |
 | 共享层正确性 | JVM 单测（MockEngine + SQLDelight 内存驱动） | 每次 push |
-| Android 快速验证 | WSL2 内 Android 模拟器（`/dev/kvm` 已确认可用） | 需安装 Android SDK |
+| Android 快速验证 | WSL2 内 Android 模拟器（`/dev/kvm` 已确认可用） | SDK 已安装，M0 原生验收通过 |
 | Android 真机 | 安卓平板，adb 安装 debug apk | 主要验收设备 |
 | iOS 构建 | GitHub Actions macOS runner，产出未签名 ipa | 本机 WSL2 无法编译 Swift |
 | iOS 真机 | iPhone + AltStore / Sideloadly 侧载 | 免费签名每 7 天重签，最多 3 个 App，无 APNs |
 | 契约一致性 | `make gen-api` 后对比 `frontend/openapi.json` | 与网页端共用契约 |
 
-已确认的环境事实：WSL2 内核提供 `/dev/kvm`，CPU 支持虚拟化且已开启嵌套虚拟化，当前用户在 `kvm` 组，内存 15 GiB；未安装 Android SDK，首次搭建时用 command-line tools 安装。
+当前已复核的环境事实：WSL2 提供 `/dev/kvm`，`kvm` 组包含当前用户，加速检测与实际模拟器启动通过；SDK、平台工具和 Android 15 系统镜像已安装在仓库忽略目录。原生验收命令见 [移动端工程说明](../mobile/README.md)。
 
-2026-11-04 实施时重新核对：沙箱外 `/dev/kvm` 存在，但实际当前账户 **不在 `kvm` 组**，sudo 需要交互认证；MuMu 已记录端口未响应，不能沿用上段的权限结论。SDK 和任务专用模拟器镜像已安装到忽略目录，Android 编译可运行；设备验收需启用权限或启动已有 MuMu。
+2026-11-04 实施初次核对：沙箱外 `/dev/kvm` 存在，但当时账户 **不在 `kvm` 组**，sudo 需要交互认证；MuMu 已记录端口未响应，规划时的权限假设不成立。当时完成了 SDK 和任务专用模拟器镜像安装、Android 编译，设备验收等待权限配置。
 
 2026-11-04 后续更新：用户完成组权限配置并确认已测试模拟器 App。实际 `kvm` 组现已包含当前用户，经 `sg kvm` 启动的加速检测通过，Android 15 专用验收模拟器成功开机；不再被 KVM 阻塞。保留用户实例，独立自动验收实例及脚本见 [Android 测试说明](android-testing.md)，本次结果见 [构建进度](progress.md)。
 
@@ -214,6 +214,6 @@
 
 ## 10. 待用户确认的后续事项
 
-1. 首次搭建 Android SDK 与模拟器（需下载约数 GB，走 command-line tools）。
+1. Android SDK 与模拟器已搭建并验收，接续安卓平板实机验证。
 2. iOS 侧载工具选择（AltStore 或 Sideloadly）与 Apple ID 签名方式。
 3. M3 完成后决定是否启动模式 B 的需求拆解。
