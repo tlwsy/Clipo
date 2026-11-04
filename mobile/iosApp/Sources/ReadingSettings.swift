@@ -41,7 +41,11 @@ struct ReadingSettingsView: View {
                         Button("cancel") { model.shared.cancelReading() }.disabled(model.state.readingSaving)
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        if model.state.readingSaving { ProgressView() } else { Button("save") { model.shared.saveReading(reset: false) }.disabled(!invalidColors.isEmpty) }
+                        if model.state.readingSaving {
+                            ProgressView()
+                        } else {
+                            Button("save") { model.shared.saveReading(reset: false) }.disabled(!invalidColors.isEmpty)
+                        }
                     }
                 }
                 .onChange(of: draft.theme) { _, _ in invalidColors = [] }
