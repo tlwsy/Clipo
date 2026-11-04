@@ -2,6 +2,7 @@
 
 ## 移动端 M1：字体与跨端阅读语义回归（2026-11-04）
 
+- `db6c66d` 的 iOS CI 后续完成 Release/IPA，但下载检查发现三张阅读截图均为空白；原 XCTest 未检查截图内容，不能计为视觉验收。测试已改用实际 UIWindowScene、等待 SwiftUI 渲染并断言截图非纯色，修正后的远端结果另行记录；本地仅完成差异/格式检查，Linux 无法运行 XCTest。
 - Android 内置字体改为按 400/500/600/700 注册可变字体，修复固定 Typeface 导致正文内加粗丢失的问题；衬线选项使用内置中文衬线字体。iOS 增加实际绘制笔画量随字重递增的断言，等待该断言的远端运行。
 - 本次 Android APK/lint、`ktlintCheck`、完整原生脚本通过。最终截图 `mobile/test-results/android-m1-verified/` 已检查，覆盖富文本、衬线/500 字重、全局/单篇样式保存与重置、平板双栏、200% 字号、离线草稿保留、进程重启与退出清理。未将模拟器结果替代安卓平板实机。
 - 新增 `scripts/smoke_mobile.py --web`，与原生验收使用相同临时 API/富文本夹具，Chromium 核对标题、加粗、表格、折叠、UTF-16 和 390px 布局通过，截图在 `mobile/test-results/web-m1/`。夹具使用固定摘要、临时数据库，无真实平台或模型请求。

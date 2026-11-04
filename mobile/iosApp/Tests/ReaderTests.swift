@@ -45,7 +45,7 @@ final class ReaderTests: XCTestCase {
         return bytes.reduce(0) { $0 + 255 - Int($1) }
     }
 
-    func testNativeReaderSizingAndSnapshot() throws {
+    func testNativeReaderSizingAndSnapshot() async throws {
         let style = ReadingStyle.shared.preset(theme: "comfortable")
         let colors = ReadingStyle.shared.colors(style: style, systemDark: false)
         let block = try XCTUnwrap(ReaderDocument.shared.markdown(source: "## 中文😀阅读\n\n**Bold** and italic").first)
@@ -60,22 +60,37 @@ final class ReaderTests: XCTestCase {
         XCTAssertGreaterThan(large.pointSize, normal.pointSize * 1.5)
         for (name, width, height, large) in [("phone", 390, 844, false), ("tablet", 1024, 768, false),
                                             ("large-text", 390, 844, true)] {
-            let root = ReaderPage(note: fixture(), style: style)
-                .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
-            let host = UIHostingController(rootView: root)
-            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)))
-            window.rootViewController = host
-            window.makeKeyAndVisible()
-            host.view.layoutIfNeeded()
-            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
-                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-            }
-            let attachment = XCTAttachment(image: image)
-            attachment.name = "M1-reader-\(name)"
-            attachment.lifetime = .keepAlways
-            add(attachment)
-            window.isHidden = true
+            try await snapshot(style: style, name: name, width: width, height: height, large: large)
         }
+    }
+
+    private func snapshot(style: ReadingPreferences, name: String, width: Int, height: Int, large: Bool) async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let root = ReaderPage(note: fixture(), style: style)
+            .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
+        let host = UIHostingController(rootView: root)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        host.view.layoutIfNeeded()
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        var rendered = false
+        let image = UIGraphicsImageRenderer(size: window.bounds.size, format: format).image { _ in
+            rendered = window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        XCTAssertTrue(rendered)
+        let bytes = try XCTUnwrap(image.cgImage?.dataProvider?.data) as Data
+        XCTAssertGreaterThan(Set(bytes).count, 16, "阅读截图必须包含实际文字，不能是空白或纯色")
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "M1-reader-\(name)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func fixture() -> NoteResponse {
