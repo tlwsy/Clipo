@@ -32,12 +32,10 @@ struct ReaderText: UIViewRepresentable {
     }
 
     func updateUIView(_ view: UITextView, context: Context) {
-        _ = dynamicTypeSize
-        let text = Self.attributed(block: block, style: style, colors: colors)
+        let text = Self.attributed(block: block, style: style, colors: colors, category: dynamicTypeSize.readingCategory)
         if view.attributedText != text { view.attributedText = text }
         view.linkTextAttributes = [.foregroundColor: UIColor(readingHex: colors.accent), .underlineStyle: 1]
-        if block.kind == "heading" { view.accessibilityTraits.insert(.header) }
-        else { view.accessibilityTraits.remove(.header) }
+        if block.kind == "heading" { view.accessibilityTraits.insert(.header) } else { view.accessibilityTraits.remove(.header) }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
@@ -46,7 +44,7 @@ struct ReaderText: UIViewRepresentable {
     }
 
     static func font(style: ReadingPreferences, bold: Bool = false, italic: Bool = false,
-                     code: Bool = false, scale: Double = 1) -> UIFont {
+                     code: Bool = false, scale: Double = 1, category: UIContentSizeCategory? = nil) -> UIFont {
         let size = CGFloat(Double(style.fontSize) * scale)
         let weightValue = bold ? 700 : Int(style.fontWeight)
         let weight: UIFont.Weight = [400: .regular, 500: .medium, 600: .semibold, 700: .bold][weightValue] ?? .regular
@@ -67,10 +65,11 @@ struct ReaderText: UIViewRepresentable {
         if italic, let descriptor = font.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits.union(.traitItalic)) {
             font = UIFont(descriptor: descriptor, size: size)
         }
-        return UIFontMetrics(forTextStyle: .body).scaledFont(for: font)
+        return UIFontMetrics(forTextStyle: .body).scaledFont(for: font, compatibleWith: category.map { UITraitCollection(preferredContentSizeCategory: $0) })
     }
 
-    static func attributed(block: ReaderBlock, style: ReadingPreferences, colors: ReadingColors) -> NSAttributedString {
+    static func attributed(block: ReaderBlock, style: ReadingPreferences, colors: ReadingColors,
+                           category: UIContentSizeCategory? = nil) -> NSAttributedString {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineHeightMultiple = CGFloat(style.lineHeight)
         paragraph.alignment = style.textAlign == "justify" && block.kind != "code" ? .justified : .natural
@@ -78,7 +77,7 @@ struct ReaderText: UIViewRepresentable {
         let scale = heading ? 1.65 - Double(block.level) * 0.1 : 1
         func attributes(bold: Bool = false, italic: Bool = false, code: Bool = false) -> [NSAttributedString.Key: Any] {
             [.font: font(style: style, bold: heading || block.header || bold, italic: italic,
-                         code: block.kind == "code" || code, scale: scale),
+                         code: block.kind == "code" || code, scale: scale, category: category),
              .foregroundColor: UIColor(readingHex: colors.text), .paragraphStyle: paragraph]
         }
         let result = NSMutableAttributedString(string: block.prefix, attributes: attributes())
@@ -93,5 +92,25 @@ struct ReaderText: UIViewRepresentable {
             }
         }
         return result
+    }
+}
+
+extension DynamicTypeSize {
+    var readingCategory: UIContentSizeCategory {
+        switch self {
+        case .xSmall: return .extraSmall
+        case .small: return .small
+        case .medium: return .medium
+        case .large: return .large
+        case .xLarge: return .extraLarge
+        case .xxLarge: return .extraExtraLarge
+        case .xxxLarge: return .extraExtraExtraLarge
+        case .accessibility1: return .accessibilityMedium
+        case .accessibility2: return .accessibilityLarge
+        case .accessibility3: return .accessibilityExtraLarge
+        case .accessibility4: return .accessibilityExtraExtraLarge
+        case .accessibility5: return .accessibilityExtraExtraExtraLarge
+        @unknown default: return .large
+        }
     }
 }

@@ -35,6 +35,7 @@ struct ReaderPage: View {
     let note: NoteResponse
     let style: ReadingPreferences
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private var colors: ReadingColors { ReadingStyle.shared.colors(style: style, systemDark: colorScheme == .dark) }
 
     var body: some View {
@@ -56,6 +57,9 @@ struct ReaderPage: View {
                 ForEach(ReaderDocument.shared.blocks(content: note.content), id: \.index) { block in
                     BlockView(block: block, style: style, colors: colors)
                 }
+                ForEach(ReaderDocument.shared.extraImages(content: note.content), id: \.self) { url in
+                    ReaderImage(target: url, alt: "")
+                }
                 if !note.commentInsights.isEmpty { section("comment_insights") }
                 ForEach(Array(note.commentInsights.enumerated()), id: \.offset) { _, insight in Text("• \(insight.text)") }
                 if note.comments.contains(where: { $0.isValuable }) { section("comments") }
@@ -75,7 +79,7 @@ struct ReaderPage: View {
                     }
                 }
             }
-            .font(Font(ReaderText.font(style: style)))
+            .font(Font(ReaderText.font(style: style, category: dynamicTypeSize.readingCategory)))
             .textSelection(.enabled)
             .frame(maxWidth: CGFloat(style.contentWidth), alignment: .leading).padding(24)
             .frame(maxWidth: .infinity)

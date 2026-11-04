@@ -21,6 +21,23 @@ data class ReaderBlock(
 )
 
 object ReaderDocument {
+    fun extraImages(content: CapturedContent): List<String> {
+        val included = mutableSetOf<String>()
+
+        fun visit(blocks: List<CapturedBlockOutput>) {
+            blocks.forEach {
+                if (it.type == "image") it.url?.let(included::add)
+                if (it.type == "game_card") it.image?.let(included::add)
+                visit(it.children)
+            }
+        }
+        visit(content.blocks)
+        return content.images
+            .distinct()
+            .filterNot { it in included }
+            .mapNotNull(::safeUrl)
+    }
+
     fun blocks(content: CapturedContent): List<ReaderBlock> =
         index(
             content.blocks.ifEmpty { listOf(CapturedBlockOutput("text", text = content.text)) },

@@ -4,6 +4,7 @@ import SwiftUI
 struct ReadingSettingsView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var invalidColors: Set<String> = []
 
     var body: some View {
@@ -40,8 +41,7 @@ struct ReadingSettingsView: View {
                         Button("cancel") { model.shared.cancelReading() }.disabled(model.state.readingSaving)
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        if model.state.readingSaving { ProgressView() }
-                        else { Button("save") { model.shared.saveReading(reset: false) }.disabled(!invalidColors.isEmpty) }
+                        if model.state.readingSaving { ProgressView() } else { Button("save") { model.shared.saveReading(reset: false) }.disabled(!invalidColors.isEmpty) }
                     }
                 }
                 .onChange(of: draft.theme) { _, _ in invalidColors = [] }
@@ -86,7 +86,7 @@ struct ReadingSettingsView: View {
 
     private func preview(_ style: ReadingPreferences) -> some View {
         let colors = ReadingStyle.shared.colors(style: style, systemDark: colorScheme == .dark)
-        return Text("style_preview").font(Font(ReaderText.font(style: style)))
+        return Text("style_preview").font(Font(ReaderText.font(style: style, category: dynamicTypeSize.readingCategory)))
             .foregroundStyle(Color(uiColor: UIColor(readingHex: colors.text)))
             .frame(maxWidth: .infinity, alignment: .leading).padding(16)
             .background(Color(uiColor: UIColor(readingHex: colors.background)))
@@ -113,8 +113,7 @@ struct ReadingSettingsView: View {
 
     private func color(_ label: LocalizedStringKey, key: String, value: String) -> some View {
         ReadingColorField(label: label, value: value) { text, valid in
-            if valid { invalidColors.remove(key); model.shared.editReading(key: key, value: text) }
-            else { invalidColors.insert(key) }
+            if valid { invalidColors.remove(key); model.shared.editReading(key: key, value: text) } else { invalidColors.insert(key) }
         }.id("\(key)-\(model.state.readingNoteId?.stringValue ?? "global")-\(model.state.readingDraft?.theme ?? "")")
     }
 }

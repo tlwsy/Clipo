@@ -92,8 +92,7 @@ struct NotesNavigation: View {
                     VStack(spacing: 0) { ConnectionBanner(); NotesView { model.shared.openNote(id: $0) } }
                         .navigationTitle("notes").navigationSplitViewColumnWidth(min: 280, ideal: 320).nativeBars()
                 } detail: {
-                    if model.state.selectedId != nil { NoteView().nativeBars() }
-                    else { ContentUnavailableView("select_note", systemImage: "doc.text") }
+                    if model.state.selectedId != nil { NoteView().nativeBars() } else { ContentUnavailableView("select_note", systemImage: "doc.text") }
                 }
             } else {
                 NavigationStack(path: $path) {
@@ -115,8 +114,7 @@ struct NotesNavigation: View {
 
 extension View {
     @ViewBuilder func nativeBars() -> some View {
-        if #available(iOS 26, *) { self }
-        else { self.toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar) }
+        if #available(iOS 26, *) { self } else { self.toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar) }
     }
 }
 

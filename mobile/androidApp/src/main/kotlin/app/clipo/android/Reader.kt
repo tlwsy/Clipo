@@ -152,6 +152,9 @@ internal fun Reader(
                     items(note.keyPoints) { Text("• $it") }
                     item { SectionTitle(R.string.original) }
                     items(blocks, key = { "body-${it.index}" }) { BlockView(it, style, readingColor(colors.accent)) }
+                    items(ReaderDocument.extraImages(note.content), key = { "image-$it" }) {
+                        ReaderImage(it, "", readingColor(colors.accent))
+                    }
                     if (note.commentInsights.isNotEmpty()) item { SectionTitle(R.string.comment_insights) }
                     items(note.commentInsights) { Text("• ${it.text}") }
                     if (note.comments.any { it.isValuable }) item { SectionTitle(R.string.comments) }

@@ -55,6 +55,14 @@ fun main() =
             check(detail.content.text.contains("中文😀"))
             check(detail.annotations.single().selectedText == "中文😀")
             check(detail.readingPreferences != null)
+            if (detail.summaryMarkdown != null) {
+                val excerpt =
+                    client.notes.notes
+                        .first()
+                        .single()
+                        .summaryExcerpt
+                check("**" !in excerpt && "##" !in excerpt && "`" !in excerpt)
+            }
             val global = ReadingStyle.preset("compact").copy(fontSize = 22, colorMode = "system")
             check(client.notes.saveStyle(global) is ApiResult.Success)
             check(client.notes.preferences.first() == global)

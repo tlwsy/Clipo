@@ -164,9 +164,10 @@ def temporary_api(rich: bool = False) -> Iterator[str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--rich", action="store_true", help="使用 M1 富文本阅读夹具")
     parser.add_argument("--gradle", default=str(ROOT / "mobile/gradlew"))
     args = parser.parse_args()
-    with temporary_api() as base:
+    with temporary_api(rich=args.rich) as base:
         env = {key: value for key, value in os.environ.items() if not key.startswith("CLIPO_")}
         env["CLIPO_MOBILE_SMOKE_URL"] = base
         subprocess.run(

@@ -1,5 +1,11 @@
 # 构建进度
 
+## 移动端 M1：Android 原生验收与阅读一致性修正（2026-11-04）
+
+- `c1b6a1b` 已推送至 `feat/mobile-m1`，创建基于 M0 分支的 [草稿 PR #5](https://github.com/tlwsy/Clipo/pull/5)，未合并或发布。独立 Android 15 模拟器完整专项通过：富文本/表格/折叠、服务器核对全局与单篇样式保存/重置、1920×1200/160dpi 平板双栏、平板/手机 200% 字体、进程重启/Keystore 轮换、离线缓存、联网恢复及退出清理。截图在忽略目录 `mobile/test-results/android-m1/`，富文本、样式、平板和大字体截图已检查。
+- 复核后补齐旧笔记 `content.images` 附图并按正文块去重，修正详情刷新使列表摘要露出 Markdown 标记的问题。新增附图黄金测试，扩展 `scripts/smoke_mobile.py --rich` 核对真实接口富文本/样式/摘要投影。修正后共享 JVM **16 项**、`ktlintCheck`、Android APK/lint 和富文本临时 HTTP 联调通过；没有把修正前截图当作后续改动的重新截图。
+- iOS 首轮 CI 在 SwiftLint 的五处 `else` 换行格式中断；已修正，并将 SwiftUI 动态字号显式传给 UITextView/UIFontMetrics，补充原生字号增大断言及截图尺寸类型修正。iOS 新代码仍待修正后的远端编译/XCTest，未将本地 YAML 检查或 Android 结果当作 iOS 通过。
+
 ## 移动端 M1：双端阅读界面实现检查点（2026-11-04）
 
 - Android 接入原生富文本、表格/折叠/图片回退、摘要/评论/标注只读区、样式预览与保存；840dp 以上使用 NavigationRail + 列表/阅读双栏，窄屏底部导航，包含 edge-to-edge、下拉刷新和预测性返回。iOS 接入 NavigationStack/TabView、iPad NavigationSplitView、UITextView 富文本、SwiftUI 样式表单、内置可变字体及旧系统材质回退；iOS 26 使用标准系统工具栏的 Liquid Glass 外观。

@@ -40,12 +40,15 @@ final class ReaderTests: XCTestCase {
         let size = view.sizeThatFits(CGSize(width: 320, height: 10000))
         XCTAssertGreaterThan(size.height, 20)
         XCTAssertLessThan(size.height, 200)
+        let normal = ReaderText.font(style: style, category: .large)
+        let large = ReaderText.font(style: style, category: .accessibilityExtraLarge)
+        XCTAssertGreaterThan(large.pointSize, normal.pointSize * 1.5)
         for (name, width, height, large) in [("phone", 390, 844, false), ("tablet", 1024, 768, false),
                                             ("large-text", 390, 844, true)] {
             let root = ReaderPage(note: fixture(), style: style)
                 .environment(\.dynamicTypeSize, large ? .accessibility3 : .large)
             let host = UIHostingController(rootView: root)
-            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: width, height: height))
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)))
             window.rootViewController = host
             window.makeKeyAndVisible()
             host.view.layoutIfNeeded()

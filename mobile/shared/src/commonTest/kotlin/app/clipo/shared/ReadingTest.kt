@@ -98,6 +98,22 @@ class ReadingTest {
     }
 
     @Test
+    fun legacyImagesAreVisibleWithoutDuplicatingInlineImages() {
+        val image = "https://example.com/a.png"
+        val extra = "https://example.com/b.png"
+        val content =
+            CapturedContent(
+                "https://example.com",
+                title = "old",
+                text = "body",
+                images = listOf(image, extra, extra, "http://localhost/a"),
+                blocks = listOf(Block("details", children = listOf(Block("image", url = image)))),
+            )
+        assertEquals(listOf(extra), ReaderDocument.extraImages(content))
+        assertEquals(listOf(image, extra), ReaderDocument.extraImages(content.copy(blocks = emptyList())))
+    }
+
+    @Test
     fun safeMarkdownDoesNotExecuteHtmlOrUnsafeLinks() {
         val blocks =
             ReaderDocument.markdown(

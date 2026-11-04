@@ -8,6 +8,7 @@ import app.clipo.shared.model.generated.NoteResponse
 import app.clipo.shared.model.generated.ReadingPreferences
 import app.clipo.shared.model.generated.ReadingStylePatch
 import app.clipo.shared.model.generated.UserResponse
+import app.clipo.shared.reading.ReaderDocument
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -145,7 +146,7 @@ internal class NoteCache(
                     note.source.platform,
                     note.source.siteName,
                     note.source.author,
-                    note.summaryMarkdown.orEmpty().take(200),
+                    ReaderDocument.markdown(note.summaryMarkdown.orEmpty()).joinToString(" ") { it.text }.take(200),
                     note.status,
                     note.createdAt,
                     note.isFavorite,
