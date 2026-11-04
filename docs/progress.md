@@ -1,5 +1,12 @@
 # 构建进度
 
+## 移动端 M1：字体与跨端阅读语义回归（2026-11-04）
+
+- Android 内置字体改为按 400/500/600/700 注册可变字体，修复固定 Typeface 导致正文内加粗丢失的问题；衬线选项使用内置中文衬线字体。iOS 增加实际绘制笔画量随字重递增的断言，等待该断言的远端运行。
+- 本次 Android APK/lint、`ktlintCheck`、完整原生脚本通过。最终截图 `mobile/test-results/android-m1-verified/` 已检查，覆盖富文本、衬线/500 字重、全局/单篇样式保存与重置、平板双栏、200% 字号、离线草稿保留、进程重启与退出清理。未将模拟器结果替代安卓平板实机。
+- 新增 `scripts/smoke_mobile.py --web`，与原生验收使用相同临时 API/富文本夹具，Chromium 核对标题、加粗、表格、折叠、UTF-16 和 390px 布局通过，截图在 `mobile/test-results/web-m1/`。夹具使用固定摘要、临时数据库，无真实平台或模型请求。
+- 全仓库最终回归 `make lint`、`make test` 通过：后端 **586**、前端 **89**、扩展 **5**；本阶段 `make build` 已通过。验收脚本另经 Ruff/Black 检查。`db6c66d` 的共享/Android/既有 CI 已通过，iOS 模拟器 **4 项** XCTest 通过，真机 Release/IPA 构建仍在运行；新增笔画断言及 iOS 26 结果在后续节点补充。
+
 ## 移动端 M1：Android 原生验收与阅读一致性修正（2026-11-04）
 
 - `c1b6a1b` 已推送至 `feat/mobile-m1`，创建基于 M0 分支的 [草稿 PR #5](https://github.com/tlwsy/Clipo/pull/5)，未合并或发布。独立 Android 15 模拟器完整专项通过：富文本/表格/折叠、服务器核对全局与单篇样式保存/重置、1920×1200/160dpi 平板双栏、平板/手机 200% 字体、进程重启/Keystore 轮换、离线缓存、联网恢复及退出清理。截图在忽略目录 `mobile/test-results/android-m1/`，富文本、样式、平板和大字体截图已检查。

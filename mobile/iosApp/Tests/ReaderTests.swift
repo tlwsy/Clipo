@@ -23,11 +23,26 @@ final class ReaderTests: XCTestCase {
         XCTAssertNotNil(UIFont(name: "ClipoReadingSerif", size: 18))
         let base = try XCTUnwrap(ReadingStyle.shared.edit(
             style: ReadingStyle.shared.preset(theme: "comfortable"), key: "font_family", value: "online"))
+        var amounts: [Int] = []
         for weight in [400, 500, 600, 700] {
             let style = try XCTUnwrap(ReadingStyle.shared.edit(style: base, key: "font_weight", value: String(weight)))
             let font = ReaderText.font(style: style)
             XCTAssertTrue(font.familyName.contains("Clipo Reading"))
+            amounts.append(try ink(font))
         }
+        for pair in zip(amounts, amounts.dropFirst()) { XCTAssertGreaterThan(pair.1, pair.0) }
+    }
+
+    private func ink(_ font: UIFont) throws -> Int {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 300, height: 90), format: format).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 300, height: 90))
+            ("中文阅读 Aa" as NSString).draw(at: CGPoint(x: 4, y: 4), withAttributes: [.font: font, .foregroundColor: UIColor.black])
+        }
+        let bytes = try XCTUnwrap(image.cgImage?.dataProvider?.data) as Data
+        return bytes.reduce(0) { $0 + 255 - Int($1) }
     }
 
     func testNativeReaderSizingAndSnapshot() throws {

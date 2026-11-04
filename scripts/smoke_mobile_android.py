@@ -25,7 +25,9 @@ class Device:
         self.output = output
 
     def command(self, *args: str, check: bool = True) -> bytes:
-        result = subprocess.run(self.prefix + list(args), capture_output=True, timeout=40)
+        result = subprocess.run(
+            self.prefix + list(args), capture_output=True, timeout=40, check=False
+        )
         if check and result.returncode:
             # 不将命令参数、输入内容或设备私有文件输出到日志。
             raise RuntimeError("ADB 命令执行失败，请检查指定模拟器的状态")
@@ -91,6 +93,7 @@ class Device:
         self.command("shell", "input", "text", value)
 
     def screenshot(self, name: str) -> None:
+        time.sleep(0.5)
         self.output.mkdir(parents=True, exist_ok=True)
         (self.output / f"{name}.png").write_bytes(self.command("exec-out", "screencap", "-p"))
 
@@ -191,6 +194,14 @@ def run(device: Device, apk: Path, reader: bool = False) -> None:
                 "Unable to refresh. Your local cache is available.",
             )
             device.screenshot("04-offline-detail")
+            if reader:
+                device.press("阅读样式", "Reading style")
+                device.press("专注", "Focus")
+                device.press("保存", "Save")
+                device.wait_text("无法连接服务器，请稍后重试")
+                device.wait_text("取消", "Cancel")
+                device.screenshot("m1-offline-style-draft")
+                device.press("取消", "Cancel")
 
             print("Android：恢复网络与退出清理", flush=True)
             offline_session = device.session_file()
@@ -208,7 +219,13 @@ def run(device: Device, apk: Path, reader: bool = False) -> None:
             device.verify_cleared()
             device.restart()
             device.wait_text("检查并继续", "Check and continue")
-            print("Android M0 验收通过；截图：" + str(device.output), flush=True)
+            print(
+                "Android "
+                + ("M0 + M1" if reader else "M0")
+                + " 验收通过；截图："
+                + str(device.output),
+                flush=True,
+            )
         finally:
             device.command("reverse", "--remove", port, check=False)
             device.command("shell", "am", "force-stop", PACKAGE, check=False)

@@ -37,6 +37,17 @@ def verify_reader(device: Device, base: str) -> None:
             assert time.monotonic() < deadline, "全局样式未同步到服务器"
             time.sleep(0.2)
         device.press("阅读样式", "Reading style")
+        device.press("全局", "Global")
+        device.tap(device.scroll_to("衬线", "Serif"))
+        device.tap(device.scroll_to("中等 500", "Medium 500"))
+        device.press("保存", "Save")
+        deadline = time.monotonic() + 15
+        while client.get("/user/reading-preferences").json()["font_family"] != "serif":
+            assert time.monotonic() < deadline, "内置宋体未保存"
+            time.sleep(0.2)
+        assert client.get("/user/reading-preferences").json()["font_weight"] == 500
+        device.screenshot("m1-serif")
+        device.press("阅读样式", "Reading style")
         device.press("专注", "Focus")
         device.screenshot("m1-style-preview")
         device.press("保存", "Save")

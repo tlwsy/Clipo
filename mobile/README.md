@@ -1,15 +1,23 @@
 # Clipo 原生移动端
 
-按 [移动端计划](../docs/mobile-app-plan.md) 和 [移动端规格](../docs/mobile-app-spec.md) 实施。**M0 工程、Android 模拟器与三条移动端 CI 已通过；双端实机验收尚未全部完成**。本次验证及限制见 [构建进度](../docs/progress.md)。
+按 [移动端计划](../docs/mobile-app-plan.md) 和 [移动端规格](../docs/mobile-app-spec.md) 实施。**M1 原生阅读器已接入，Android 本地原生验收通过，iOS 本次 CI 验证进行中；双端实机尚待验收**。本次验证及限制见 [构建进度](../docs/progress.md)。
 
 ## 当前范围
 
 - `shared/`：Kotlin Multiplatform 的 HTTP / 认证 / SQLDelight 缓存 / 笔记仓储 / 状态流；Android、iOS 和用于测试的 JVM target。
-- `androidApp/`：Android 10+，Jetpack Compose + Material 3，服务器检查、登录、分页列表、纯文本详情、中英资源；Android 12+ 动态配色。
-- `iosApp/`：iOS 18+，SwiftUI 同范围页面、Keychain、XcodeGen 工程描述与 XCTest；macOS CI 已通过编译、iOS 18.6 Keychain 测试、启动截图和未签名 IPA 打包。
+- `androidApp/`：Android 10+，Jetpack Compose + Material 3，服务器检查、登录、分页列表、原生富文本/阅读样式、平板双栏、中英资源；Android 12+ 动态配色。
+- `iosApp/`：iOS 18+，SwiftUI + UITextView 阅读器、原生导航/iPad 分栏、样式设置、Keychain 与 XcodeGen/XCTest；M0 macOS CI 曾通过编译、Keychain/启动与 IPA，不能替代本次 M1 验证。
 - 三条独立 CI：共享测试、契约漂移与临时 API 联调；Android APK/lint；iOS 模拟器测试/SwiftLint/未签名 IPA。iOS 仅 PR 或手动触发，不随每次 push 运行。
 
-M1 的原生富文本、阅读偏好、平板双栏，以及 M2–M5 的标注编辑、采集、离线写队列、预取、搜索、空间、回忆廊和质量打磨尚未实施。M0 可查看已经打开过的笔记详情缓存；最近 50 篇详情预取属于 M3。
+M1 的原生富文本、阅读偏好、平板双栏已接入；M2–M5 的标注编辑、采集、离线写队列、预取、搜索、空间、回忆廊和质量打磨尚未实施。M0 可查看已经打开过的笔记详情缓存；最近 50 篇详情预取属于 M3。
+
+## M1 阅读器
+
+- 正文支持标题、富文本、图片、引用、代码、列表、表格、折叠、分隔线及游戏链接卡片；旧正文与额外图片有回退。摘要支持安全 Markdown 子集（标题、加粗/斜体/删除线、链接、代码、列表/引用），不执行 HTML；高级 Markdown 语法保留文本。评论精华、有价值评论与已有私人标注可只读查看，标注编辑属于 M2。
+- 阅读工具栏或「设置 → 全局阅读样式」可配置四套主题、颜色/系统/莫奈、字体、四档字重、字号/行高/段距/宽度/对齐；「仅本文」保存完整覆盖，「清除本文覆盖」重新跟随全局。默认值、主题重置、合并及 HCT 取色与网页黄金值一致。
+- 样式保存需要联网，失败保留当前草稿；关闭草稿后原缓存仍可阅读，不进入离线写队列。缓存受账号/服务器代际隔离，保存全局样式同时更新已缓存详情。
+- Android 840dp 起显示导航栏、300dp 列表与阅读区，窄屏使用底部导航；支持 edge-to-edge、下拉刷新、预测性返回。iOS 使用 NavigationStack/TabView，iPad 分栏；Xcode 26 标准工具栏采用系统 Liquid Glass，旧系统使用材质回退。原生字体缩放保留，阅读宽度为 dp/pt 最大值。
+- 在线字体映射到内置 Noto Sans/Serif 子集，不请求 Fontsource/jsDelivr；共 7681 字符，缺字/emoji 由系统回退。字体许可证、哈希和重建命令见 [字体说明](fonts/README.md)。
 
 ## 构建
 
@@ -49,6 +57,15 @@ adb -s emulator-5580 install -r mobile/androidApp/build/outputs/apk/debug/androi
 
 共享单测使用 MockEngine 和 SQLite 内存/临时文件驱动，覆盖刷新并发、失败分类、服务器地址、Retry-After 秒数/日期、账号和服务器切换、迟到响应、分页及删除隔离。JVM 结果不能替代 Android/iOS 安全存储与原生界面验收。
 
+M1 同夹具跨端语义验证：
+
+```bash
+# 实际临时 API：富文本、样式保存/重置、列表摘要、缓存重开
+.venv/bin/python scripts/smoke_mobile.py --rich
+# 先 make build；Chromium 使用与原生相同的虚构笔记，不访问外站
+.venv/bin/python scripts/smoke_mobile.py --web
+```
+
 ## Android 原生界面验收
 
 使用独立测试模拟器。脚本会安装 debug APK，清除该模拟器中 Clipo 的登录和缓存；必须显式传入 `--reset-app-data`，并拒绝在真机运行。已有日常测试实例应保留，另建 `clipo-m0-smoke`。
@@ -71,6 +88,8 @@ export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
   --adb "$PWD/mobile/.local-tools/android-sdk/platform-tools/adb" \
   --serial emulator-5582 --reset-app-data
 ```
+
+M1 在上述命令追加 `--reader --output mobile/test-results/android-m1`，验证富文本、主题/全局/本文/重置的服务端持久化、1920×1200/160dpi 平板双栏与手机/平板 200% 字体，再跑既有离线及清理链路。仅对专用模拟器临时调整显示尺寸/密度/字体，退出时恢复。
 
 脚本复用临时 API 夹具，使用 UI Automator 操作真实 Compose 页面：检查服务器、登录、列表及中文/emoji 正文、进程重启后的 Keystore 解密及刷新轮换、断开 API 转发后的列表/详情缓存、联网恢复、退出后 SQLite 五张表及加密凭据清理。退出时移除本次随机端口转发、停止测试 App 并清理临时 API；不调用真实平台或模型。截图保存在忽略的 `mobile/test-results/android-m0/`，不提交到 Git。模拟器结果不替代平板/iPhone 实机验收。
 
@@ -107,4 +126,4 @@ xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -sdk iphoneos \
 
 1. Android 平板实机验收。2026-11-04 用户已确认完成模拟器上的 App 测试；本机 `kvm` 组已包含当前用户，`-accel-check` 通过。可复现的 Android 原生验收及结果见上节和 [构建进度](../docs/progress.md)，不再以 KVM 权限作为阻塞。
 2. iPhone 签名侧载、真实服务器登录/列表/详情、进程重启后的离线读取、退出及换账号，以及 iOS 26 运行。三条移动端 CI 和既有全仓库 CI 已在 `7dfa3c7` 通过；iOS CI 的 18.6 Keychain 测试与服务器页截图只覆盖上述实际范围。
-3. M0 所有验收项通过后再进入 M1；截图、CI 工件与实机结果写入 `docs/progress.md`，不能把 APK 构建或 JVM 联调当作真机通过。
+3. 用户已要求推进 M1，M0 剩余实机项目继续单列；M1 的 iOS CI、iOS 26 运行及双端实机阅读验收按 `docs/progress.md` 记录，不能把 APK/JVM 或模拟器结果当作真机通过。

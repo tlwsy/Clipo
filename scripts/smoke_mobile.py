@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @contextmanager
-def temporary_api(rich: bool = False) -> Iterator[str]:
+def temporary_api(rich: bool = False, serve_static: bool = False) -> Iterator[str]:
     """提供含固定测试账号及笔记的隔离服务器，退出后清理全部临时数据。"""
     with tempfile.TemporaryDirectory(prefix="clipo-mobile-api-") as temporary:
         folder = Path(temporary)
@@ -38,7 +38,7 @@ def temporary_api(rich: bool = False) -> Iterator[str]:
             database_url=f"sqlite:///{folder / 'test.db'}",
             queue_path=folder / "queue.db",
             backup_path=folder / "backups",
-            static_path=folder / "static",
+            static_path=ROOT / "backend/app/static" if serve_static else folder / "static",
         )
         app = create_app(settings)
         config = Config(str(BACKEND_ROOT / "alembic.ini"))
@@ -142,6 +142,8 @@ def temporary_api(rich: bool = False) -> Iterator[str]:
                             "## Summary heading\n\n**Bold summary** with `code`."
                         )
                         note.key_points = ["Key point"]
+                        note.status = "ready"
+                        note.summary_error = None
                         database.commit()
                 annotation = client.post(
                     f"/notes/{note_id}/annotations",
@@ -164,10 +166,28 @@ def temporary_api(rich: bool = False) -> Iterator[str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--web", action="store_true", help="用同一份 M1 夹具验证网页语义，先 make build"
+    )
     parser.add_argument("--rich", action="store_true", help="使用 M1 富文本阅读夹具")
     parser.add_argument("--gradle", default=str(ROOT / "mobile/gradlew"))
     args = parser.parse_args()
-    with temporary_api(rich=args.rich) as base:
+    with temporary_api(rich=args.rich or args.web, serve_static=args.web) as base:
+        if args.web:
+            subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "--no-project",
+                    "--with",
+                    "playwright",
+                    "python",
+                    str(ROOT / "scripts/smoke_mobile_web.py"),
+                    base,
+                ],
+                check=True,
+            )
+            return
         env = {key: value for key, value in os.environ.items() if not key.startswith("CLIPO_")}
         env["CLIPO_MOBILE_SMOKE_URL"] = base
         subprocess.run(

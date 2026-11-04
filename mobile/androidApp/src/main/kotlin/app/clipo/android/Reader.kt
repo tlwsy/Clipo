@@ -38,15 +38,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
@@ -63,23 +65,29 @@ import coil3.compose.AsyncImage
 
 internal fun readingColor(value: String): Color = Color(android.graphics.Color.parseColor(value))
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 internal fun readerTextStyle(style: ReadingPreferences): TextStyle {
     val context = LocalContext.current
     val family =
-        remember(style.fontFamily, style.onlineFont, style.fontWeight) {
+        remember(style.fontFamily, style.onlineFont) {
             when (style.fontFamily) {
-                "serif" -> FontFamily.Serif
                 "sans-serif" -> FontFamily.SansSerif
-                "online" -> {
-                    val serif = style.onlineFont?.family?.contains("Serif", ignoreCase = true) == true
+                "serif", "online" -> {
+                    val serif =
+                        style.fontFamily == "serif" ||
+                            style.onlineFont?.family?.contains("Serif", ignoreCase = true) == true
                     val name = if (serif) "ClipoReadingSerif.ttf" else "ClipoReadingSans.ttf"
-                    val face =
-                        android.graphics.Typeface
-                            .Builder(context.assets, name)
-                            .setFontVariationSettings("'wght' ${style.fontWeight}")
-                            .build()
-                    FontFamily(Typeface(face))
+                    FontFamily(
+                        listOf(400, 500, 600, 700).map { weight ->
+                            Font(
+                                path = name,
+                                assetManager = context.assets,
+                                weight = FontWeight(weight),
+                                variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+                            )
+                        },
+                    )
                 }
                 else -> FontFamily.Default
             }
