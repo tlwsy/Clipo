@@ -1,12 +1,12 @@
 # Clipo 原生移动端
 
-按 [移动端计划](../docs/mobile-app-plan.md) 和 [移动端规格](../docs/mobile-app-spec.md) 实施。**M1 原生阅读器已接入，Android 本地原生验收通过，iOS 本次 CI 验证进行中；双端实机尚待验收**。本次验证及限制见 [构建进度](../docs/progress.md)。
+按 [移动端计划](../docs/mobile-app-plan.md) 和 [移动端规格](../docs/mobile-app-spec.md) 实施。**M1 原生阅读器已实现，Android 与 iOS 18.6 自动验证通过；双端实机及 iOS 26 运行仍待验收**。本次验证及限制见 [构建进度](../docs/progress.md)。
 
 ## 当前范围
 
 - `shared/`：Kotlin Multiplatform 的 HTTP / 认证 / SQLDelight 缓存 / 笔记仓储 / 状态流；Android、iOS 和用于测试的 JVM target。
 - `androidApp/`：Android 10+，Jetpack Compose + Material 3，服务器检查、登录、分页列表、原生富文本/阅读样式、平板双栏、中英资源；Android 12+ 动态配色。
-- `iosApp/`：iOS 18+，SwiftUI + UITextView 阅读器、原生导航/iPad 分栏、样式设置、Keychain 与 XcodeGen/XCTest；M0 macOS CI 曾通过编译、Keychain/启动与 IPA，不能替代本次 M1 验证。
+- `iosApp/`：iOS 18+，SwiftUI + UITextView 阅读器、原生导航/iPad 分栏、样式设置、Keychain 与 XcodeGen/XCTest；本次 macOS CI 通过编译、原生阅读测试及 IPA，实际侧载与登录链路仍待 iPhone 验收。
 - 三条独立 CI：共享测试、契约漂移与临时 API 联调；Android APK/lint；iOS 模拟器测试/SwiftLint/未签名 IPA。iOS 仅 PR 或手动触发，不随每次 push 运行。
 
 M1 的原生富文本、阅读偏好、平板双栏已接入；M2–M5 的标注编辑、采集、离线写队列、预取、搜索、空间、回忆廊和质量打磨尚未实施。M0 可查看已经打开过的笔记详情缓存；最近 50 篇详情预取属于 M3。
@@ -97,7 +97,7 @@ M1 在上述命令追加 `--reader --output mobile/test-results/android-m1`，�
 
 需要 Apple Silicon Mac / macOS runner、JDK 21、Xcode 26.0.1、XcodeGen 与 SwiftLint。CI 固定 `macos-15` 上的 Xcode 26.0.1，版本来源见 [runner 镜像清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md)。使用 [Kotlin 官方直接集成任务](https://kotlinlang.org/docs/multiplatform/multiplatform-direct-integration.html)构建共享 framework。
 
-CI 的 M0 运行基线为 iPhone 16 / iOS 18.6；Xcode 26.0.1 编译，模拟器包使用本地临时签名，真机 IPA 保持未签名。编译、显式开机、串行 XCTest 与截图分步执行，并设置超时。首次 iOS 26 模拟器运行在编译/链接完成后卡在测试宿主启动，取消后保留了诊断工件；参考 [runner 同类问题](https://github.com/actions/runner-images/issues/13264)，改用受支持的 18.6 运行基线。iOS 26 的运行和 Liquid Glass 验证仍需独立完成，不能由 18.6 结果替代。
+CI 的运行基线为 iPhone 16 / iOS 18.6；Xcode 26.0.1 编译，模拟器包使用本地临时签名，真机 IPA 保持未签名。编译、显式开机、串行 XCTest 与截图分步执行，并设置超时。可通过手动 workflow 的 `ios_runtime=26.0` 补测新系统；本次两次补测均在 `simctl boot` 启动阶段超时，没有执行 App 测试。iOS 26 的运行和 Liquid Glass 验证仍需独立完成，不能由 18.6 或仅编译结果替代。
 
 ```bash
 cd mobile/iosApp
@@ -111,7 +111,7 @@ xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -sdk iphoneos \
 
 `Clipo.xcodeproj` 和 `Info.plist` 从 `project.yml` 生成，不手工编辑、不提交生成产物。CI 将 `.app` 放进 `Payload/` 并打包 `Clipo-unsigned.ipa`，只在构建成功后上传 `mobile-ios-unsigned` 工件。
 
-2026-11-04，代码提交 `7dfa3c7` 的 [iOS CI](https://github.com/tlwsy/Clipo/actions/runs/41804775435) 已通过：SwiftLint、Kotlin/Native 与 Swift 编译、iPhone 16 / iOS 18.6 的 **1 项** Keychain 读写/轮换/删除 XCTest、原生服务器页启动截图及未签名 IPA 打包。[IPA 工件](https://github.com/tlwsy/Clipo/actions/runs/41804775435/artifacts/13310885639) 已下载至本机忽略目录 `mobile/test-results/ci-ios-7dfa3c7/Clipo-unsigned.ipa`；核对包标识 `app.clipo.ios`、最低 iOS 18.0、ARM64 真机平台与未签名状态通过。该包仍需用户签名侧载，当前测试未覆盖 iOS 原生登录、真实服务器笔记或离线重启，这些需在 iPhone 补齐。
+2026-11-04，M1 提交 `67b716c` 的 [iOS CI](https://github.com/tlwsy/Clipo/actions/runs/41829625029) 已通过：SwiftLint、Kotlin/Native 与 Swift 编译、iPhone 16 / iOS 18.6 的 **4 项** XCTest（Keychain、原生富文本/UTF-16、字体字重、动态字号与阅读截图）及未签名 IPA 打包。[IPA 工件](https://github.com/tlwsy/Clipo/actions/runs/41829625029/artifacts/13322083798) 已下载至本机忽略目录 `mobile/test-results/ci-ios-67b716c/Clipo-unsigned.ipa`；版本 `0.1.0 (2)`、包标识 `app.clipo.ios`、最低 iOS 18.0、ARM64 真机平台、未签名状态及双字体完整性核对通过。手机/宽屏/大字号截图在同目录 `tests/reader-screenshots/`，已检查；该包仍需签名侧载，完整登录、真实服务器笔记或离线重启需在 iPhone 补齐。
 
 ## 数据与认证边界
 
@@ -125,5 +125,5 @@ xcodebuild -project iosApp/Clipo.xcodeproj -scheme Clipo -sdk iphoneos \
 ## 待验收
 
 1. Android 平板实机验收。2026-11-04 用户已确认完成模拟器上的 App 测试；本机 `kvm` 组已包含当前用户，`-accel-check` 通过。可复现的 Android 原生验收及结果见上节和 [构建进度](../docs/progress.md)，不再以 KVM 权限作为阻塞。
-2. iPhone 签名侧载、真实服务器登录/列表/详情、进程重启后的离线读取、退出及换账号，以及 iOS 26 运行。三条移动端 CI 和既有全仓库 CI 已在 `7dfa3c7` 通过；iOS CI 的 18.6 Keychain 测试与服务器页截图只覆盖上述实际范围。
-3. 用户已要求推进 M1，M0 剩余实机项目继续单列；M1 的 iOS CI、iOS 26 运行及双端实机阅读验收按 `docs/progress.md` 记录，不能把 APK/JVM 或模拟器结果当作真机通过。
+2. iPhone 签名侧载、真实服务器登录/列表/详情、进程重启后的离线读取、退出及换账号，以及 iOS 26 的运行/Liquid Glass。本次 iOS 自动测试覆盖 Keychain、原生富文本/字号/字重和 ReaderPage 的手机/宽屏/大字号渲染，不覆盖完整登录与样式保存 UI 链路，也不替代 iPad 分栏实机操作。
+3. 双端实机横屏、系统字体缩放、触摸选择与返回手势。M0 剩余实机项目继续单列；M1 已实现及自动验证的范围按 `docs/progress.md` 记录，不把 APK/JVM 或模拟器结果当作真机通过。

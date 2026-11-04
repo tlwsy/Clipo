@@ -1,5 +1,16 @@
 # 构建进度
 
+## 移动端 M1：实现与自动验收收尾（2026-11-04）
+
+- `feat/mobile-m1` 已实现本阶段原生阅读器、全局/单篇阅读样式、内置字体、Android 平板双栏和 iOS 原生导航。复用既有 API，无后端接口或数据库迁移变更；M2 标注编辑、M3 离线写队列等后续能力没有提前计为完成。使用与边界见 [移动端工程说明](../mobile/README.md)。
+- 本地共享 JVM **16 项**、临时真实 API 富文本/样式联调、Android APK/lint、Kotlin lint、网页同夹具 Chromium、Android 原生完整专项通过。最终 Android 截图在 `mobile/test-results/android-m1-verified/`，网页在 `mobile/test-results/web-m1/`，均已检查；覆盖样式保存/重置、字体、平板横屏、200% 字号、离线保留草稿/缓存和退出清理。
+- 本阶段本地 `make lint`、`make test`、`make build` 通过，后端 **586**、前端 **89**、扩展 **5**。最终代码 `67b716c` 的 [共享 CI](https://github.com/tlwsy/Clipo/actions/runs/41829624877)、[Android CI](https://github.com/tlwsy/Clipo/actions/runs/41829625069) 和 [既有 CI](https://github.com/tlwsy/Clipo/actions/runs/41829625044) 通过；远端额外实际执行 PostgreSQL **140 项**、浏览器专项和空 Compose 首次部署。没有把远端 Compose 记录为本机测试实例更新。
+- 最终 `67b716c` 的 [iOS CI](https://github.com/tlwsy/Clipo/actions/runs/41829625029) 通过 SwiftLint、模拟器/真机编译和 **4 项** XCTest，覆盖 Keychain、UTF-16/安全链接、双字体/四字重实际绘制、动态字号与非空阅读截图。三张最终截图已下载检查，位于 `mobile/test-results/ci-ios-67b716c/tests/reader-screenshots/`；分别为 390×844 手机、1024×768 阅读区和辅助大字号。它们验证 ReaderPage，不等同于完整登录/样式表单操作或 iPad 分栏实机验收。
+- [最终 IPA 工件](https://github.com/tlwsy/Clipo/actions/runs/41829625029/artifacts/13322083798) 已下载至 `mobile/test-results/ci-ios-67b716c/Clipo-unsigned.ipa`。本地核对 ZIP 结构、版本 `0.1.0 (2)`、包标识 `app.clipo.ios`、最低 iOS 18.0、ARM64 真机平台、无代码签名及双字体完整性通过。Android 本机包在 `mobile/androidApp/build/outputs/apk/debug/androidApp-debug.apk`；所有安装包与截图均为忽略产物，不提交。
+- iOS 26 两次补测（[第一次](https://github.com/tlwsy/Clipo/actions/runs/41828173079)、[第二次](https://github.com/tlwsy/Clipo/actions/runs/41829011093)）均完成测试包编译，但在独立模拟器 `simctl boot` 阶段 5 分钟超时，未执行 App 测试。**iOS 26/Liquid Glass 运行、安卓平板及 iPhone 签名侧载/真实服务器业务链路仍待验收，M1 尚未完成全部实机验收**；本机 Linux 没有可替代的 Xcode/iPhone 环境。
+- 节点提交：`3514197 feat(mobile): add shared reader styles and content semantics`、`c1b6a1b feat(mobile): add native readers and appearance controls`、`8145ee1 fix(mobile): align reader scaling and cached content rendering`、`c5f9093 fix(mobile): preserve bundled font weights and verify reader parity`、`1663884 test(ios): attach reader snapshots to an active window scene`、`67b716c fix(ios): include configured versions in unsigned packages`。代码已推送至基于 M0 的 [草稿 PR #5](https://github.com/tlwsy/Clipo/pull/5)，未合并或发布；用户原有未跟踪文件保持原样。
+- 收尾只更新两份规划文档、工程说明及本记录，核对事实、链接和路径；没有把文档提交后的自动 CI 重跑算作上述测试。任务专用 `emulator-5582` 已关闭，用户原有模拟器保留。
+
 ## 移动端 M1：字体与跨端阅读语义回归（2026-11-04）
 
 - `db6c66d` 的 iOS CI 后续完成 Release/IPA，但下载检查发现三张阅读截图均为空白；原 XCTest 未检查截图内容，不能计为视觉验收。测试已改用实际 UIWindowScene、等待 SwiftUI 渲染并断言截图非纯色，修正后的远端结果另行记录；本地仅完成差异/格式检查，Linux 无法运行 XCTest。
